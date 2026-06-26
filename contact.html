@@ -75,7 +75,7 @@
         </p>
       </div>
 
-      <form data-contact>
+      <form data-contact id="contactForm">
         <div class="field-row">
           <div class="field">
             <label><span data-lang="fr">Nom</span><span data-lang="en">Name</span></label>
@@ -114,9 +114,9 @@
           <span data-lang="fr">Merci. Votre demande a été reçue — nous vous contacterons sous peu.</span>
           <span data-lang="en">Thank you. Your request has been received — we'll be in touch shortly.</span>
         </p>
-        <p style="font-size:.8rem;color:var(--ink-soft);margin-top:14px">
-          <span data-lang="fr">Note : ce formulaire de démonstration ne transmet pas encore les données. Connectez-le à votre service de courriel ou à votre plateforme avant la mise en ligne.</span>
-          <span data-lang="en">Note: this demo form does not yet send data. Connect it to your email service or platform before launch.</span>
+        <p class="form-err" style="display:none;margin-top:18px;color:#a8402d">
+          <span data-lang="fr">Une erreur est survenue. Veuillez réessayer ou nous appeler directement.</span>
+          <span data-lang="en">Something went wrong. Please try again or call us directly.</span>
         </p>
       </form>
 
@@ -156,6 +156,7 @@
   </div>
 </footer>
 
+<script src="assets/config.js"></script>
 <script src="assets/site.js"></script>
 </body>
 </html>

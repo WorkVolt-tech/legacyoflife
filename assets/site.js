@@ -49,11 +49,64 @@
   function initForm() {
     var f = document.querySelector("form[data-contact]");
     if (!f) return;
+    var okMsg = f.querySelector(".form-msg");
+    var errMsg = f.querySelector(".form-err");
+    var btn = f.querySelector('button[type="submit"]');
+
     f.addEventListener("submit", function (e) {
       e.preventDefault();
-      var msg = f.querySelector(".form-msg");
-      if (msg) msg.style.display = "block";
-      f.reset();
+      if (okMsg) okMsg.style.display = "none";
+      if (errMsg) errMsg.style.display = "none";
+
+      var cfg = window.HDV_CONFIG || {};
+      var configured =
+        cfg.SUPABASE_URL &&
+        cfg.SUPABASE_URL.indexOf("YOUR-") === -1 &&
+        cfg.SUPABASE_ANON_KEY &&
+        cfg.SUPABASE_ANON_KEY.indexOf("YOUR-") === -1;
+
+      var data = {
+        name: (f.name && f.name.value || "").trim(),
+        phone: (f.phone && f.phone.value || "").trim(),
+        email: (f.email && f.email.value || "").trim(),
+        preferred: (f.preferred && f.preferred.value || "").trim(),
+        consultation_date: (f.date && f.date.value || "") || null,
+        message: (f.message && f.message.value || "").trim(),
+        lang: document.documentElement.getAttribute("lang") || "fr"
+      };
+
+      // If Supabase isn't configured yet, fail gracefully (no silent data loss).
+      if (!configured) {
+        if (errMsg) errMsg.style.display = "block";
+        console.warn("HDV: Supabase not configured — edit assets/config.js");
+        return;
+      }
+
+      if (btn) { btn.disabled = true; btn.style.opacity = "0.6"; }
+
+      fetch(cfg.SUPABASE_URL.replace(/\/+$/, "") + "/rest/v1/contact_submissions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": cfg.SUPABASE_ANON_KEY,
+          "Authorization": "Bearer " + cfg.SUPABASE_ANON_KEY,
+          "Prefer": "return=minimal"
+        },
+        body: JSON.stringify(data)
+      })
+        .then(function (res) {
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          if (okMsg) okMsg.style.display = "block";
+          f.reset();
+          setLang(document.documentElement.getAttribute("lang") || "fr");
+        })
+        .catch(function (err) {
+          console.error("HDV submit error:", err);
+          if (errMsg) errMsg.style.display = "block";
+        })
+        .finally(function () {
+          if (btn) { btn.disabled = false; btn.style.opacity = ""; }
+        });
     });
   }
 

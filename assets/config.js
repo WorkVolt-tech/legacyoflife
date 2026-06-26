@@ -11,6 +11,6 @@
      • anon / public → SUPABASE_ANON_KEY
    ========================================================================= */
 window.HDV_CONFIG = {
-  SUPABASE_URL: "https://YOUR-PROJECT-ref.supabase.co",
-  SUPABASE_ANON_KEY: "YOUR-PUBLIC-ANON-KEY"
+  SUPABASE_URL: "https://zpkswhucfdldibtltuxg.supabase.co",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uY25zaHJncndnZGJjcmRlYnJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MzMyODksImV4cCI6MjA5ODAwOTI4OX0.LRTUqtVoHrG6A1Kcm5LeJBt6A9yxB6OEs43cW7jHhCY"
 };

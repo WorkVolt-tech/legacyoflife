@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Submissions — Héritage de Vie</title>
+<title>Espace privé — Héritage de Vie</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
@@ -11,107 +11,153 @@
 <style>
   body { background: var(--cream-deep); }
   .dash-wrap { max-width: 1200px; margin: 0 auto; padding: 28px; }
-  .dash-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
-  .dash-head h1 { font-size: 1.9rem; margin: 0; }
-  .dash-head .brand-row { display: flex; align-items: center; gap: 12px; }
-  .dash-head img { height: 40px; }
+  .dash-head { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px; flex-wrap:wrap; }
+  .dash-head .brand-row { display:flex; align-items:center; gap:12px; }
+  .dash-head img { height:40px; }
+  .dash-head h1 { font-size:1.7rem; margin:0; }
+  .whoami { font-size:.8rem; color:var(--ink-soft); }
+  .whoami b { color:var(--gold-deep); text-transform:capitalize; }
 
-  /* Login card */
-  .login-card { max-width: 400px; margin: 60px auto; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 40px 34px; }
-  .login-card h1 { font-size: 1.6rem; text-align: center; margin-bottom: 6px; }
-  .login-card p.sub { text-align: center; color: var(--ink-soft); font-size: .9rem; margin: 0 0 26px; }
-  .login-card .field { margin-bottom: 18px; }
+  .login-card { max-width:400px; margin:60px auto; background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:40px 34px; }
+  .login-card h1 { font-size:1.6rem; text-align:center; margin-bottom:6px; }
+  .login-card p.sub { text-align:center; color:var(--ink-soft); font-size:.9rem; margin:0 0 26px; }
+  .login-card .field { margin-bottom:18px; }
   .login-card label { display:block; font-size:.74rem; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:7px; }
   .login-card input { width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:var(--radius); font-family:var(--sans); }
   .login-card input:focus { outline:none; border-color:var(--gold); }
   .login-card .btn { width:100%; text-align:center; margin-top:8px; }
   .login-err { display:none; color:#a8402d; font-size:.85rem; margin-top:14px; text-align:center; }
 
-  /* Controls */
+  .tabs { display:flex; gap:8px; margin-bottom:20px; border-bottom:1px solid var(--line); }
+  .tab { padding:10px 20px; cursor:pointer; font-family:var(--sans); font-size:.85rem; letter-spacing:.06em; color:var(--ink-soft); border-bottom:2px solid transparent; margin-bottom:-1px; }
+  .tab.active { color:var(--gold-deep); border-bottom-color:var(--gold); }
+
   .controls { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:18px; }
-  .controls select, .controls input[type="search"] {
-    padding:9px 12px; border:1px solid var(--line); border-radius:var(--radius);
-    font-family:var(--sans); font-size:.9rem; background:#fff;
-  }
+  .controls select, .controls input[type="search"] { padding:9px 12px; border:1px solid var(--line); border-radius:var(--radius); font-family:var(--sans); font-size:.9rem; background:#fff; }
   .controls .count { margin-left:auto; color:var(--ink-soft); font-size:.85rem; }
 
-  /* Cards list */
   .sub-list { display:grid; gap:14px; }
-  .sub-card { background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; }
-  .sub-card.status-new { border-left:4px solid var(--gold); }
-  .sub-card.status-in_progress { border-left:4px solid #5b8aa6; }
-  .sub-card.status-contacted { border-left:4px solid #8aa17c; }
-  .sub-card.status-closed { border-left:4px solid #b0a89a; opacity:.72; }
-  .sub-top { display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap; align-items:baseline; }
-  .sub-name { font-family:var(--serif); font-size:1.4rem; color:var(--ink); }
-  .sub-date { color:var(--ink-soft); font-size:.82rem; }
-  .sub-meta { display:flex; gap:22px; flex-wrap:wrap; margin:12px 0; font-size:.92rem; }
-  .sub-meta .lbl { color:var(--gold-deep); font-size:.68rem; letter-spacing:.14em; text-transform:uppercase; display:block; margin-bottom:2px; }
-  .sub-meta a { color:var(--ink); }
-  .sub-msg { background:var(--cream); border-radius:var(--radius); padding:12px 14px; font-size:.93rem; color:var(--ink-soft); margin:10px 0 16px; white-space:pre-wrap; }
-  .sub-actions { display:flex; gap:12px; flex-wrap:wrap; align-items:center; border-top:1px solid var(--line); padding-top:14px; }
-  .sub-actions select, .sub-actions input {
-    padding:8px 11px; border:1px solid var(--line); border-radius:var(--radius);
-    font-family:var(--sans); font-size:.85rem; background:#fff;
-  }
-  .sub-actions .saved { color:#8aa17c; font-size:.82rem; opacity:0; transition:opacity .2s; }
-  .sub-actions .saved.show { opacity:1; }
-  .pill { font-size:.66rem; letter-spacing:.12em; text-transform:uppercase; padding:4px 10px; border-radius:30px; font-family:var(--sans); }
-  .pill.status-new { background:#f3e6c8; color:#927235; }
-  .pill.status-in_progress { background:#dce8ef; color:#3f6b85; }
-  .pill.status-contacted { background:#dfe9d6; color:#5a7448; }
-  .pill.status-closed { background:#e8e3da; color:#6e6457; }
+  .card2 { background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; border-left:4px solid var(--line); }
+  .st-new,.st-open { border-left-color:var(--gold)!important; }
+  .st-in_progress,.st-claimed { border-left-color:#5b8aa6!important; }
+  .st-contacted,.st-done { border-left-color:#8aa17c!important; }
+  .st-closed,.st-cancelled { border-left-color:#b0a89a!important; opacity:.72; }
+  .c-top { display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap; align-items:baseline; }
+  .c-name { font-family:var(--serif); font-size:1.35rem; color:var(--ink); }
+  .c-date { color:var(--ink-soft); font-size:.82rem; }
+  .c-meta { display:flex; gap:22px; flex-wrap:wrap; margin:12px 0; font-size:.92rem; }
+  .c-meta .lbl { color:var(--gold-deep); font-size:.66rem; letter-spacing:.13em; text-transform:uppercase; display:block; margin-bottom:2px; }
+  .c-meta a { color:var(--ink); }
+  .c-msg { background:var(--cream); border-radius:var(--radius); padding:12px 14px; font-size:.93rem; color:var(--ink-soft); margin:10px 0 16px; white-space:pre-wrap; }
+  .c-actions { display:flex; gap:12px; flex-wrap:wrap; align-items:center; border-top:1px solid var(--line); padding-top:14px; }
+  .c-actions select, .c-actions input { padding:8px 11px; border:1px solid var(--line); border-radius:var(--radius); font-family:var(--sans); font-size:.85rem; background:#fff; }
+  .saved { color:#8aa17c; font-size:.82rem; opacity:0; transition:opacity .2s; }
+  .saved.show { opacity:1; }
+  .pill { font-size:.64rem; letter-spacing:.1em; text-transform:uppercase; padding:4px 10px; border-radius:30px; font-family:var(--sans); background:#eee; color:#555; }
+  .pill.st-new,.pill.st-open { background:#f3e6c8; color:#927235; }
+  .pill.st-in_progress,.pill.st-claimed { background:#dce8ef; color:#3f6b85; }
+  .pill.st-contacted,.pill.st-done { background:#dfe9d6; color:#5a7448; }
+  .pill.st-closed,.pill.st-cancelled { background:#e8e3da; color:#6e6457; }
   .empty { text-align:center; color:var(--ink-soft); padding:60px 0; }
   .topbar-btn { font-size:.8rem; padding:9px 18px; }
-  @media (max-width:640px){ .sub-meta{gap:14px;} }
+  .pay { font-family:var(--serif); font-size:1.05rem; color:var(--gold-deep); }
+
+  .job-form { background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:24px; margin-bottom:22px; display:none; }
+  .job-form.open { display:block; }
+  .job-form h3 { margin:0 0 16px; font-size:1.3rem; }
+  .jf-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .job-form label { display:block; font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:5px; }
+  .job-form input, .job-form select, .job-form textarea { width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:var(--radius); font-family:var(--sans); font-size:.9rem; }
+  .job-form .full { grid-column:1 / -1; }
+  .cater-only { display:none; }
+  .cater-only.show { display:block; }
+  @media (max-width:640px){ .jf-grid{grid-template-columns:1fr;} .c-meta{gap:14px;} }
 </style>
 </head>
 <body>
 
-<!-- LOGIN VIEW -->
 <div id="loginView" style="display:none">
   <div class="login-card">
     <h1>Héritage de Vie</h1>
     <p class="sub">Espace privé — connexion du personnel<br>Staff sign-in</p>
-    <div class="field">
-      <label>Courriel / Email</label>
-      <input type="email" id="loginEmail" autocomplete="username">
-    </div>
-    <div class="field">
-      <label>Mot de passe / Password</label>
-      <input type="password" id="loginPassword" autocomplete="current-password">
-    </div>
+    <div class="field"><label>Courriel / Email</label><input type="email" id="loginEmail" autocomplete="username"></div>
+    <div class="field"><label>Mot de passe / Password</label><input type="password" id="loginPassword" autocomplete="current-password"></div>
     <button class="btn btn--solid" id="loginBtn">Se connecter / Sign in</button>
     <p class="login-err" id="loginErr">Identifiants invalides. / Invalid credentials.</p>
   </div>
 </div>
 
-<!-- DASHBOARD VIEW -->
 <div id="dashView" style="display:none">
   <div class="dash-wrap">
     <div class="dash-head">
       <div class="brand-row">
         <img src="assets/crest-dark.webp" alt="">
-        <h1>Demandes / Submissions</h1>
+        <div><h1>Espace privé</h1><div class="whoami" id="whoami"></div></div>
       </div>
       <button class="btn btn--ghost topbar-btn" id="logoutBtn">Déconnexion / Sign out</button>
     </div>
 
-    <div class="controls">
-      <select id="filterStatus">
-        <option value="">Tous les statuts / All statuses</option>
-        <option value="new">Nouveau / New</option>
-        <option value="in_progress">En cours / In progress</option>
-        <option value="contacted">Contacté / Contacted</option>
-        <option value="closed">Fermé / Closed</option>
-      </select>
-      <input type="search" id="searchBox" placeholder="Rechercher / Search (name, email)…" style="min-width:240px">
-      <button class="btn btn--ghost topbar-btn" id="refreshBtn">↻ Actualiser / Refresh</button>
-      <span class="count" id="countLbl"></span>
+    <div class="tabs" id="tabs"></div>
+
+    <div id="tab-inquiries" class="tabpane">
+      <div class="controls">
+        <select id="filterStatus">
+          <option value="">Tous les statuts / All statuses</option>
+          <option value="new">Nouveau / New</option>
+          <option value="in_progress">En cours / In progress</option>
+          <option value="contacted">Contacté / Contacted</option>
+          <option value="closed">Fermé / Closed</option>
+        </select>
+        <input type="search" id="searchBox" placeholder="Rechercher / Search…" style="min-width:220px">
+        <button class="btn btn--ghost topbar-btn" id="refreshBtn">↻ Actualiser</button>
+        <span class="count" id="countLbl"></span>
+      </div>
+      <div class="sub-list" id="inquiryList"></div>
+      <div class="empty" id="inquiryEmpty" style="display:none">Aucune demande. / No submissions.</div>
     </div>
 
-    <div class="sub-list" id="subList"></div>
-    <div class="empty" id="emptyState" style="display:none">Aucune demande. / No submissions yet.</div>
+    <div id="tab-jobs" class="tabpane" style="display:none">
+      <div class="controls">
+        <button class="btn btn--solid topbar-btn" id="newJobBtn" style="display:none">+ Nouveau mandat / New job</button>
+        <select id="jobFilterStatus">
+          <option value="">Tous / All</option>
+          <option value="open">Ouvert / Open</option>
+          <option value="claimed">Accepté / Claimed</option>
+          <option value="done">Terminé / Done</option>
+          <option value="cancelled">Annulé / Cancelled</option>
+        </select>
+        <span class="count" id="jobCountLbl"></span>
+      </div>
+
+      <div class="job-form" id="jobForm">
+        <h3>Nouveau mandat / New job</h3>
+        <div class="jf-grid">
+          <div><label>Type</label>
+            <select id="jf_type">
+              <option value="photographer">Photographie / Photography</option>
+              <option value="caterer">Traiteur / Catering</option>
+            </select>
+          </div>
+          <div><label>Titre / Title</label><input type="text" id="jf_title"></div>
+          <div><label>Nom de famille / Family name</label><input type="text" id="jf_family"></div>
+          <div><label>Date</label><input type="date" id="jf_date"></div>
+          <div><label>Heure / Time</label><input type="text" id="jf_time" placeholder="14:00"></div>
+          <div><label>Lieu / Location</label><input type="text" id="jf_location"></div>
+          <div><label>Rémunération / Pay ($)</label><input type="number" id="jf_pay" step="0.01"></div>
+          <div class="cater-only" id="cater_budget_wrap"><label>Budget nourriture / Food budget ($)</label><input type="number" id="jf_foodbudget" step="0.01"></div>
+          <div class="full cater-only" id="cater_cook_wrap"><label>Liste à préparer / Cook list</label><textarea id="jf_cooklist" rows="2"></textarea></div>
+          <div class="full"><label>Détails / Details</label><textarea id="jf_details" rows="2"></textarea></div>
+        </div>
+        <div style="margin-top:16px; display:flex; gap:10px;">
+          <button class="btn btn--solid topbar-btn" id="jobSaveBtn">Créer / Create</button>
+          <button class="btn btn--ghost topbar-btn" id="jobCancelBtn">Annuler / Cancel</button>
+        </div>
+        <p id="jobFormErr" style="color:#a8402d; font-size:.85rem; margin-top:10px; display:none"></p>
+      </div>
+
+      <div class="sub-list" id="jobList"></div>
+      <div class="empty" id="jobEmpty" style="display:none">Aucun mandat. / No jobs.</div>
+    </div>
   </div>
 </div>
 
@@ -120,119 +166,220 @@
 <script>
 (function () {
   var cfg = window.HDV_CONFIG || {};
-  var loginView = document.getElementById("loginView");
-  var dashView  = document.getElementById("dashView");
-
   if (!cfg.SUPABASE_URL || cfg.SUPABASE_URL.indexOf("YOUR-") !== -1) {
-    document.body.innerHTML = '<div class="login-card"><h1>Configuration manquante</h1><p class="sub">assets/config.js is not set up yet.</p></div>';
+    document.body.innerHTML = '<div class="login-card"><h1>Configuration manquante</h1><p class="sub">assets/config.js is not set up.</p></div>';
     return;
   }
-
   var sb = supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
-  var allRows = [];
+
+  var loginView = document.getElementById("loginView");
+  var dashView  = document.getElementById("dashView");
+  var ME = { id:null, role:"none", name:"" };
+  var inquiries = [], jobs = [];
 
   function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
-  function fmtDate(iso){ if(!iso) return "—"; var d=new Date(iso); return d.toLocaleString(); }
-
-  var STATUS_LABEL = { new:"Nouveau / New", in_progress:"En cours / In progress", contacted:"Contacté / Contacted", closed:"Fermé / Closed" };
+  function fmtDate(iso){ if(!iso) return "—"; return new Date(iso).toLocaleString(); }
+  var ISTAT = { new:"Nouveau / New", in_progress:"En cours / In progress", contacted:"Contacté / Contacted", closed:"Fermé / Closed" };
+  var JSTAT = { open:"Ouvert / Open", claimed:"Accepté / Claimed", done:"Terminé / Done", cancelled:"Annulé / Cancelled" };
 
   function showLogin(){ loginView.style.display="block"; dashView.style.display="none"; }
-  function showDash(){ loginView.style.display="none"; dashView.style.display="block"; load(); }
+  function showDash(){ loginView.style.display="none"; dashView.style.display="block"; }
 
-  // ---- Auth ----
   document.getElementById("loginBtn").addEventListener("click", doLogin);
   document.getElementById("loginPassword").addEventListener("keydown", function(e){ if(e.key==="Enter") doLogin(); });
   function doLogin(){
-    var err = document.getElementById("loginErr");
-    err.style.display="none";
-    var email = document.getElementById("loginEmail").value.trim();
-    var pass  = document.getElementById("loginPassword").value;
-    sb.auth.signInWithPassword({ email: email, password: pass }).then(function(res){
-      if (res.error) { err.style.display="block"; return; }
-      showDash();
+    var err=document.getElementById("loginErr"); err.style.display="none";
+    sb.auth.signInWithPassword({
+      email: document.getElementById("loginEmail").value.trim(),
+      password: document.getElementById("loginPassword").value
+    }).then(function(res){
+      if (res.error){ err.style.display="block"; return; }
+      boot();
     });
   }
-  document.getElementById("logoutBtn").addEventListener("click", function(){
-    sb.auth.signOut().then(showLogin);
-  });
+  document.getElementById("logoutBtn").addEventListener("click", function(){ sb.auth.signOut().then(showLogin); });
 
-  // ---- Load + render ----
-  function load(){
-    sb.from("contact_submissions").select("*").order("created_at",{ascending:false}).then(function(res){
-      if (res.error){ console.error(res.error); alert("Erreur de chargement / Load error: "+res.error.message); return; }
-      allRows = res.data || [];
-      render();
-    });
-  }
-
-  function render(){
-    var status = document.getElementById("filterStatus").value;
-    var q = document.getElementById("searchBox").value.trim().toLowerCase();
-    var list = document.getElementById("subList");
-    var rows = allRows.filter(function(r){
-      if (status && r.status !== status) return false;
-      if (q) {
-        var hay = ((r.name||"")+" "+(r.email||"")+" "+(r.phone||"")).toLowerCase();
-        if (hay.indexOf(q) === -1) return false;
-      }
-      return true;
-    });
-
-    document.getElementById("countLbl").textContent = rows.length + " / " + allRows.length;
-    document.getElementById("emptyState").style.display = rows.length ? "none" : "block";
-
-    list.innerHTML = rows.map(function(r){
-      return '<div class="sub-card status-'+esc(r.status)+'">'
-        + '<div class="sub-top"><span class="sub-name">'+esc(r.name)+'</span>'
-        + '<span class="sub-date">'+esc(fmtDate(r.created_at))+' · <span class="pill status-'+esc(r.status)+'">'+esc(STATUS_LABEL[r.status]||r.status)+'</span></span></div>'
-        + '<div class="sub-meta">'
-        + '<div><span class="lbl">Courriel / Email</span><a href="mailto:'+esc(r.email)+'">'+esc(r.email)+'</a></div>'
-        + '<div><span class="lbl">Téléphone / Phone</span>'+(r.phone?'<a href="tel:'+esc(r.phone)+'">'+esc(r.phone)+'</a>':'—')+'</div>'
-        + '<div><span class="lbl">Contact préféré</span>'+esc(r.preferred||"—")+'</div>'
-        + '<div><span class="lbl">Date souhaitée</span>'+esc(r.consultation_date||"—")+'</div>'
-        + '<div><span class="lbl">Langue</span>'+esc((r.lang||"").toUpperCase())+'</div>'
-        + '</div>'
-        + (r.message?'<div class="sub-msg">'+esc(r.message)+'</div>':'')
-        + '<div class="sub-actions">'
-        + '<select data-id="'+esc(r.id)+'" data-field="status">'
-        +   ['new','in_progress','contacted','closed'].map(function(s){return '<option value="'+s+'"'+(r.status===s?' selected':'')+'>'+esc(STATUS_LABEL[s])+'</option>';}).join('')
-        + '</select>'
-        + '<input type="text" data-id="'+esc(r.id)+'" data-field="assigned_to" placeholder="Assigné à / Assigned to" value="'+esc(r.assigned_to||"")+'" style="width:170px">'
-        + '<input type="text" data-id="'+esc(r.id)+'" data-field="staff_notes" placeholder="Notes internes" value="'+esc(r.staff_notes||"")+'" style="flex:1;min-width:160px">'
-        + '<span class="saved" data-saved="'+esc(r.id)+'">✓ Enregistré / Saved</span>'
-        + '</div>'
-        + '</div>';
-    }).join('');
-
-    // wire updates
-    list.querySelectorAll("select[data-field], input[data-field]").forEach(function(el){
-      var evt = el.tagName === "SELECT" ? "change" : "change";
-      el.addEventListener(evt, function(){
-        updateRow(el.getAttribute("data-id"), el.getAttribute("data-field"), el.value);
+  function boot(){
+    sb.auth.getSession().then(function(res){
+      if (!res.data || !res.data.session){ showLogin(); return; }
+      ME.id = res.data.session.user.id;
+      sb.from("profiles").select("role, full_name").eq("id", ME.id).single().then(function(p){
+        if (p.error || !p.data){ ME.role="none"; ME.name=res.data.session.user.email; }
+        else { ME.role=p.data.role; ME.name=p.data.full_name||res.data.session.user.email; }
+        setupUI(); showDash();
       });
     });
   }
 
-  function updateRow(id, field, value){
-    var patch = {}; patch[field] = value;
-    sb.from("contact_submissions").update(patch).eq("id", id).then(function(res){
-      if (res.error){ console.error(res.error); alert("Erreur d'enregistrement / Save error: "+res.error.message); return; }
-      var badge = document.querySelector('[data-saved="'+id+'"]');
-      if (badge){ badge.classList.add("show"); setTimeout(function(){ badge.classList.remove("show"); }, 1500); }
-      // keep local copy in sync so re-filtering reflects new status
-      var row = allRows.filter(function(r){return String(r.id)===String(id);})[0];
-      if (row){ row[field] = value; if(field==="status"){ render(); } }
+  function isAdmin(){ return ME.role==="admin"; }
+  function isStaff(){ return ME.role==="staff"; }
+  function isWorker(){ return ["photographer","caterer","florist","driver"].indexOf(ME.role)!==-1; }
+  function seesInquiries(){ return isAdmin()||isStaff(); }
+  function seesPay(){ return !isStaff(); }
+
+  function setupUI(){
+    document.getElementById("whoami").innerHTML = "Connecté / Signed in: "+esc(ME.name)+" · <b>"+esc(ME.role)+"</b>";
+    var tabs=document.getElementById("tabs"); tabs.innerHTML="";
+    var tabDefs=[];
+    if (seesInquiries()) tabDefs.push(["inquiries","Demandes / Inquiries"]);
+    tabDefs.push(["jobs", isWorker()?"Mes mandats / My jobs":"Mandats / Jobs"]);
+    tabDefs.forEach(function(t,i){
+      var el=document.createElement("div"); el.className="tab"+(i===0?" active":""); el.textContent=t[1];
+      el.addEventListener("click", function(){ switchTab(t[0], el); });
+      tabs.appendChild(el);
+    });
+    document.getElementById("tab-inquiries").style.display = seesInquiries()?"":"none";
+    document.getElementById("tab-jobs").style.display = seesInquiries()?"none":"";
+    document.getElementById("newJobBtn").style.display = isAdmin()?"":"none";
+    if (seesInquiries()) loadInquiries();
+    loadJobs();
+  }
+  function switchTab(name, el){
+    document.querySelectorAll(".tab").forEach(function(t){ t.classList.remove("active"); });
+    el.classList.add("active");
+    document.getElementById("tab-inquiries").style.display=(name==="inquiries")?"":"none";
+    document.getElementById("tab-jobs").style.display=(name==="jobs")?"":"none";
+  }
+
+  function loadInquiries(){
+    sb.from("contact_submissions").select("*").order("created_at",{ascending:false}).then(function(res){
+      if (res.error){ console.error(res.error); return; }
+      inquiries=res.data||[]; renderInquiries();
+    });
+  }
+  function renderInquiries(){
+    var status=document.getElementById("filterStatus").value;
+    var q=document.getElementById("searchBox").value.trim().toLowerCase();
+    var list=document.getElementById("inquiryList");
+    var rows=inquiries.filter(function(r){
+      if(status&&r.status!==status) return false;
+      if(q){ var h=((r.name||"")+" "+(r.email||"")+" "+(r.phone||"")).toLowerCase(); if(h.indexOf(q)===-1) return false; }
+      return true;
+    });
+    document.getElementById("countLbl").textContent=rows.length+" / "+inquiries.length;
+    document.getElementById("inquiryEmpty").style.display=rows.length?"none":"block";
+    list.innerHTML=rows.map(function(r){
+      return '<div class="card2 st-'+esc(r.status)+'">'
+        +'<div class="c-top"><span class="c-name">'+esc(r.name)+'</span>'
+        +'<span class="c-date">'+esc(fmtDate(r.created_at))+' · <span class="pill st-'+esc(r.status)+'">'+esc(ISTAT[r.status]||r.status)+'</span></span></div>'
+        +'<div class="c-meta">'
+        +'<div><span class="lbl">Courriel</span><a href="mailto:'+esc(r.email)+'">'+esc(r.email)+'</a></div>'
+        +'<div><span class="lbl">Téléphone</span>'+(r.phone?'<a href="tel:'+esc(r.phone)+'">'+esc(r.phone)+'</a>':'—')+'</div>'
+        +'<div><span class="lbl">Contact préféré</span>'+esc(r.preferred||"—")+'</div>'
+        +'<div><span class="lbl">Date souhaitée</span>'+esc(r.consultation_date||"—")+'</div>'
+        +'<div><span class="lbl">Langue</span>'+esc((r.lang||"").toUpperCase())+'</div></div>'
+        +(r.message?'<div class="c-msg">'+esc(r.message)+'</div>':'')
+        +'<div class="c-actions">'
+        +'<select data-id="'+esc(r.id)+'" data-field="status">'
+        +['new','in_progress','contacted','closed'].map(function(s){return '<option value="'+s+'"'+(r.status===s?' selected':'')+'>'+esc(ISTAT[s])+'</option>';}).join('')
+        +'</select>'
+        +'<input type="text" data-id="'+esc(r.id)+'" data-field="assigned_to" placeholder="Assigné à" value="'+esc(r.assigned_to||"")+'" style="width:160px">'
+        +'<input type="text" data-id="'+esc(r.id)+'" data-field="staff_notes" placeholder="Notes internes" value="'+esc(r.staff_notes||"")+'" style="flex:1;min-width:150px">'
+        +'<span class="saved" data-saved="'+esc(r.id)+'">✓</span></div></div>';
+    }).join('');
+    list.querySelectorAll("[data-field]").forEach(function(el){
+      el.addEventListener("change", function(){ updateInquiry(el.getAttribute("data-id"), el.getAttribute("data-field"), el.value); });
+    });
+  }
+  function updateInquiry(id, field, value){
+    var patch={}; patch[field]=value;
+    sb.from("contact_submissions").update(patch).eq("id",id).then(function(res){
+      if(res.error){ alert("Erreur: "+res.error.message); return; }
+      flash(id);
+      var row=inquiries.filter(function(r){return String(r.id)===String(id);})[0];
+      if(row){ row[field]=value; if(field==="status") renderInquiries(); }
     });
   }
 
-  document.getElementById("filterStatus").addEventListener("change", render);
-  document.getElementById("searchBox").addEventListener("input", render);
-  document.getElementById("refreshBtn").addEventListener("click", load);
+  function loadJobs(){
+    var src = isAdmin() ? "jobs" : "jobs_safe";
+    sb.from(src).select("*").order("created_at",{ascending:false}).then(function(res){
+      if (res.error){ console.error(res.error); return; }
+      jobs=res.data||[]; renderJobs();
+    });
+  }
+  function renderJobs(){
+    var status=document.getElementById("jobFilterStatus").value;
+    var list=document.getElementById("jobList");
+    var rows=jobs.filter(function(r){ return !status || r.status===status; });
+    document.getElementById("jobCountLbl").textContent=rows.length+" / "+jobs.length;
+    document.getElementById("jobEmpty").style.display=rows.length?"none":"block";
+    list.innerHTML=rows.map(function(r){
+      var canClaim=(isWorker()||isStaff())&&r.status==="open";
+      var mine=r.assigned_to===ME.id;
+      return '<div class="card2 st-'+esc(r.status)+'">'
+        +'<div class="c-top"><span class="c-name">'+esc(r.title)+'</span>'
+        +'<span class="c-date"><span class="pill st-'+esc(r.status)+'">'+esc(JSTAT[r.status]||r.status)+'</span></span></div>'
+        +'<div class="c-meta">'
+        +'<div><span class="lbl">Type</span>'+esc(r.job_type)+'</div>'
+        +'<div><span class="lbl">Famille</span>'+esc(r.family_name||"—")+'</div>'
+        +'<div><span class="lbl">Date</span>'+esc(r.job_date||"—")+(r.job_time?(' · '+esc(r.job_time)):'')+'</div>'
+        +'<div><span class="lbl">Lieu</span>'+esc(r.location||"—")+'</div>'
+        +(seesPay()?('<div><span class="lbl">Rémunération</span><span class="pay">'+(r.pay_amount!=null?esc(r.pay_amount)+' $':'—')+'</span></div>'):'')
+        +(r.job_type==="caterer"&&r.food_budget!=null?('<div><span class="lbl">Budget nourriture</span>'+esc(r.food_budget)+' $</div>'):'')
+        +(r.assigned_name?('<div><span class="lbl">Accepté par</span>'+esc(r.assigned_name)+'</div>'):'')
+        +'</div>'
+        +(r.cook_list?('<div class="c-msg"><b>À préparer:</b> '+esc(r.cook_list)+'</div>'):'')
+        +(r.details?('<div class="c-msg">'+esc(r.details)+'</div>'):'')
+        +'<div class="c-actions">'
+        + (canClaim?('<button class="btn btn--solid topbar-btn" data-claim="'+esc(r.id)+'">J\'accepte / Claim</button>'):'')
+        + (mine&&r.status==="claimed"?('<button class="btn btn--ghost topbar-btn" data-done="'+esc(r.id)+'">Marquer terminé / Mark done</button>'):'')
+        + (isAdmin()?('<select data-jobid="'+esc(r.id)+'" data-field="status">'+['open','claimed','done','cancelled'].map(function(s){return '<option value="'+s+'"'+(r.status===s?' selected':'')+'>'+esc(JSTAT[s])+'</option>';}).join('')+'</select>'):'')
+        +'<span class="saved" data-saved="'+esc(r.id)+'">✓</span></div></div>';
+    }).join('');
+    list.querySelectorAll("[data-claim]").forEach(function(b){ b.addEventListener("click", function(){ claimJob(b.getAttribute("data-claim")); }); });
+    list.querySelectorAll("[data-done]").forEach(function(b){ b.addEventListener("click", function(){ setJob(b.getAttribute("data-done"), {status:"done"}); }); });
+    list.querySelectorAll("[data-jobid]").forEach(function(s){ s.addEventListener("change", function(){ setJob(s.getAttribute("data-jobid"), {status:s.value}); }); });
+  }
+  function claimJob(id){ setJob(id, { status:"claimed", assigned_to:ME.id, assigned_name:ME.name }); }
+  function setJob(id, patch){
+    sb.from("jobs").update(patch).eq("id",id).then(function(res){
+      if(res.error){ alert("Erreur: "+res.error.message); return; }
+      flash(id); loadJobs();
+    });
+  }
 
-  // ---- Boot: restore session if present ----
-  sb.auth.getSession().then(function(res){
-    if (res.data && res.data.session) showDash(); else showLogin();
+  document.getElementById("newJobBtn").addEventListener("click", function(){ document.getElementById("jobForm").classList.add("open"); });
+  document.getElementById("jobCancelBtn").addEventListener("click", function(){ document.getElementById("jobForm").classList.remove("open"); });
+  document.getElementById("jf_type").addEventListener("change", function(){
+    var cater=this.value==="caterer";
+    document.getElementById("cater_budget_wrap").classList.toggle("show",cater);
+    document.getElementById("cater_cook_wrap").classList.toggle("show",cater);
   });
+  document.getElementById("jobSaveBtn").addEventListener("click", function(){
+    var err=document.getElementById("jobFormErr"); err.style.display="none";
+    var rec={
+      job_type:document.getElementById("jf_type").value,
+      title:document.getElementById("jf_title").value.trim(),
+      family_name:document.getElementById("jf_family").value.trim()||null,
+      job_date:document.getElementById("jf_date").value||null,
+      job_time:document.getElementById("jf_time").value.trim()||null,
+      location:document.getElementById("jf_location").value.trim()||null,
+      pay_amount:document.getElementById("jf_pay").value||null,
+      details:document.getElementById("jf_details").value.trim()||null,
+      status:"open"
+    };
+    if (rec.job_type==="caterer"){
+      rec.food_budget=document.getElementById("jf_foodbudget").value||null;
+      rec.cook_list=document.getElementById("jf_cooklist").value.trim()||null;
+    }
+    if(!rec.title){ err.textContent="Titre requis / Title required."; err.style.display="block"; return; }
+    sb.from("jobs").insert(rec).then(function(res){
+      if(res.error){ err.textContent="Erreur: "+res.error.message; err.style.display="block"; return; }
+      document.getElementById("jobForm").classList.remove("open");
+      ["jf_title","jf_family","jf_date","jf_time","jf_location","jf_pay","jf_details","jf_foodbudget","jf_cooklist"].forEach(function(i){var e=document.getElementById(i); if(e) e.value="";});
+      loadJobs();
+    });
+  });
+
+  function flash(id){ var b=document.querySelector('[data-saved="'+id+'"]'); if(b){ b.classList.add("show"); setTimeout(function(){b.classList.remove("show");},1500); } }
+
+  document.getElementById("filterStatus").addEventListener("change", renderInquiries);
+  document.getElementById("searchBox").addEventListener("input", renderInquiries);
+  document.getElementById("refreshBtn").addEventListener("click", loadInquiries);
+  document.getElementById("jobFilterStatus").addEventListener("change", renderJobs);
+
+  sb.auth.getSession().then(function(res){ if(res.data&&res.data.session) boot(); else showLogin(); });
 })();
 </script>
 </body>

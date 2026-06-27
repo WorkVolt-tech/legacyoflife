@@ -138,7 +138,65 @@
     });
   }
 
+  function initApplyForm() {
+    var f = document.querySelector("form[data-apply]");
+    if (!f) return;
+    var okMsg = f.querySelector(".form-msg");
+    var errMsg = f.querySelector(".form-err");
+    var btn = f.querySelector('button[type="submit"]');
+
+    function emailValid(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+    function setFieldError(input, on){ var fl=input.closest(".field"); if(fl) fl.classList.toggle("invalid", on); }
+    ["full_name","email"].forEach(function(n){
+      var i=f.querySelector('[name="'+n+'"]'); if(i) i.addEventListener("input", function(){ setFieldError(i,false); });
+    });
+
+    f.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (okMsg) okMsg.style.display = "none";
+      if (errMsg) errMsg.style.display = "none";
+
+      var hp = f.querySelector('[name="website"]');
+      if (hp && hp.value.trim() !== "") { if (okMsg) okMsg.style.display="block"; f.reset(); return; }
+
+      var nameI=f.querySelector('[name="full_name"]'), emailI=f.querySelector('[name="email"]');
+      var ok=true;
+      if (nameI && !nameI.value.trim()){ setFieldError(nameI,true); ok=false; }
+      if (emailI && !emailValid(emailI.value.trim())){ setFieldError(emailI,true); ok=false; }
+      if (!ok) return;
+
+      var cfg = window.HDV_CONFIG || {};
+      var configured = cfg.SUPABASE_URL && cfg.SUPABASE_URL.indexOf("YOUR-")===-1 && cfg.SUPABASE_ANON_KEY && cfg.SUPABASE_ANON_KEY.indexOf("YOUR-")===-1;
+
+      var data = {
+        full_name: (f.full_name && f.full_name.value || "").trim(),
+        email: (f.email && f.email.value || "").trim(),
+        phone: (f.phone && f.phone.value || "").trim(),
+        role_wanted: (f.role_wanted && f.role_wanted.value || "").trim(),
+        experience: (f.experience && f.experience.value || "").trim(),
+        portfolio: (f.portfolio && f.portfolio.value || "").trim()
+      };
+
+      if (!configured) { if (errMsg) errMsg.style.display="block"; console.warn("HDV: Supabase not configured"); return; }
+      if (btn){ btn.disabled=true; btn.style.opacity="0.6"; }
+
+      fetch(cfg.SUPABASE_URL.replace(/\/+$/, "") + "/rest/v1/applications", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": cfg.SUPABASE_ANON_KEY,
+          "Authorization": "Bearer " + cfg.SUPABASE_ANON_KEY,
+          "Prefer": "return=minimal"
+        },
+        body: JSON.stringify(data)
+      })
+        .then(function(res){ if(!res.ok) throw new Error("HTTP "+res.status); if(okMsg) okMsg.style.display="block"; f.reset(); setLang(document.documentElement.getAttribute("lang")||"fr"); })
+        .catch(function(err){ console.error("HDV apply error:", err); if(errMsg) errMsg.style.display="block"; })
+        .finally(function(){ if(btn){ btn.disabled=false; btn.style.opacity=""; } });
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
-    initLang(); initNav(); initForm();
+    initLang(); initNav(); initForm(); initApplyForm();
   });
 })();

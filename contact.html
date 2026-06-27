@@ -75,11 +75,20 @@
         </p>
       </div>
 
-      <form data-contact id="contactForm">
+      <form data-contact id="contactForm" novalidate>
+        <!-- Honeypot: hidden from people, bots tend to fill it. Leave empty. -->
+        <div class="hp-field" aria-hidden="true">
+          <label>Website</label>
+          <input type="text" name="website" tabindex="-1" autocomplete="off">
+        </div>
         <div class="field-row">
           <div class="field">
             <label><span data-lang="fr">Nom</span><span data-lang="en">Name</span></label>
             <input type="text" name="name" required>
+            <span class="field-error" data-for="name">
+              <span data-lang="fr">Veuillez entrer votre nom.</span>
+              <span data-lang="en">Please enter your name.</span>
+            </span>
           </div>
           <div class="field">
             <label><span data-lang="fr">Téléphone</span><span data-lang="en">Phone</span></label>
@@ -89,6 +98,10 @@
         <div class="field">
           <label><span data-lang="fr">Courriel</span><span data-lang="en">Email</span></label>
           <input type="email" name="email" required>
+          <span class="field-error" data-for="email">
+            <span data-lang="fr">Veuillez entrer une adresse courriel valide.</span>
+            <span data-lang="en">Please enter a valid email address.</span>
+          </span>
         </div>
         <div class="field-row">
           <div class="field">

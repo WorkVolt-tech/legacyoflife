@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Submissions — Héritage de Vie</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  body { background: var(--cream-deep); }
+  .dash-wrap { max-width: 1200px; margin: 0 auto; padding: 28px; }
+  .dash-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+  .dash-head h1 { font-size: 1.9rem; margin: 0; }
+  .dash-head .brand-row { display: flex; align-items: center; gap: 12px; }
+  .dash-head img { height: 40px; }
+
+  /* Login card */
+  .login-card { max-width: 400px; margin: 60px auto; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 40px 34px; }
+  .login-card h1 { font-size: 1.6rem; text-align: center; margin-bottom: 6px; }
+  .login-card p.sub { text-align: center; color: var(--ink-soft); font-size: .9rem; margin: 0 0 26px; }
+  .login-card .field { margin-bottom: 18px; }
+  .login-card label { display:block; font-size:.74rem; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:7px; }
+  .login-card input { width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:var(--radius); font-family:var(--sans); }
+  .login-card input:focus { outline:none; border-color:var(--gold); }
+  .login-card .btn { width:100%; text-align:center; margin-top:8px; }
+  .login-err { display:none; color:#a8402d; font-size:.85rem; margin-top:14px; text-align:center; }
+
+  /* Controls */
+  .controls { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:18px; }
+  .controls select, .controls input[type="search"] {
+    padding:9px 12px; border:1px solid var(--line); border-radius:var(--radius);
+    font-family:var(--sans); font-size:.9rem; background:#fff;
+  }
+  .controls .count { margin-left:auto; color:var(--ink-soft); font-size:.85rem; }
+
+  /* Cards list */
+  .sub-list { display:grid; gap:14px; }
+  .sub-card { background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; }
+  .sub-card.status-new { border-left:4px solid var(--gold); }
+  .sub-card.status-in_progress { border-left:4px solid #5b8aa6; }
+  .sub-card.status-contacted { border-left:4px solid #8aa17c; }
+  .sub-card.status-closed { border-left:4px solid #b0a89a; opacity:.72; }
+  .sub-top { display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap; align-items:baseline; }
+  .sub-name { font-family:var(--serif); font-size:1.4rem; color:var(--ink); }
+  .sub-date { color:var(--ink-soft); font-size:.82rem; }
+  .sub-meta { display:flex; gap:22px; flex-wrap:wrap; margin:12px 0; font-size:.92rem; }
+  .sub-meta .lbl { color:var(--gold-deep); font-size:.68rem; letter-spacing:.14em; text-transform:uppercase; display:block; margin-bottom:2px; }
+  .sub-meta a { color:var(--ink); }
+  .sub-msg { background:var(--cream); border-radius:var(--radius); padding:12px 14px; font-size:.93rem; color:var(--ink-soft); margin:10px 0 16px; white-space:pre-wrap; }
+  .sub-actions { display:flex; gap:12px; flex-wrap:wrap; align-items:center; border-top:1px solid var(--line); padding-top:14px; }
+  .sub-actions select, .sub-actions input {
+    padding:8px 11px; border:1px solid var(--line); border-radius:var(--radius);
+    font-family:var(--sans); font-size:.85rem; background:#fff;
+  }
+  .sub-actions .saved { color:#8aa17c; font-size:.82rem; opacity:0; transition:opacity .2s; }
+  .sub-actions .saved.show { opacity:1; }
+  .pill { font-size:.66rem; letter-spacing:.12em; text-transform:uppercase; padding:4px 10px; border-radius:30px; font-family:var(--sans); }
+  .pill.status-new { background:#f3e6c8; color:#927235; }
+  .pill.status-in_progress { background:#dce8ef; color:#3f6b85; }
+  .pill.status-contacted { background:#dfe9d6; color:#5a7448; }
+  .pill.status-closed { background:#e8e3da; color:#6e6457; }
+  .empty { text-align:center; color:var(--ink-soft); padding:60px 0; }
+  .topbar-btn { font-size:.8rem; padding:9px 18px; }
+  @media (max-width:640px){ .sub-meta{gap:14px;} }
+</style>
+</head>
+<body>
+
+<!-- LOGIN VIEW -->
+<div id="loginView" style="display:none">
+  <div class="login-card">
+    <h1>Héritage de Vie</h1>
+    <p class="sub">Espace privé — connexion du personnel<br>Staff sign-in</p>
+    <div class="field">
+      <label>Courriel / Email</label>
+      <input type="email" id="loginEmail" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Mot de passe / Password</label>
+      <input type="password" id="loginPassword" autocomplete="current-password">
+    </div>
+    <button class="btn btn--solid" id="loginBtn">Se connecter / Sign in</button>
+    <p class="login-err" id="loginErr">Identifiants invalides. / Invalid credentials.</p>
+  </div>
+</div>
+
+<!-- DASHBOARD VIEW -->
+<div id="dashView" style="display:none">
+  <div class="dash-wrap">
+    <div class="dash-head">
+      <div class="brand-row">
+        <img src="assets/crest-dark.webp" alt="">
+        <h1>Demandes / Submissions</h1>
+      </div>
+      <button class="btn btn--ghost topbar-btn" id="logoutBtn">Déconnexion / Sign out</button>
+    </div>
+
+    <div class="controls">
+      <select id="filterStatus">
+        <option value="">Tous les statuts / All statuses</option>
+        <option value="new">Nouveau / New</option>
+        <option value="in_progress">En cours / In progress</option>
+        <option value="contacted">Contacté / Contacted</option>
+        <option value="closed">Fermé / Closed</option>
+      </select>
+      <input type="search" id="searchBox" placeholder="Rechercher / Search (name, email)…" style="min-width:240px">
+      <button class="btn btn--ghost topbar-btn" id="refreshBtn">↻ Actualiser / Refresh</button>
+      <span class="count" id="countLbl"></span>
+    </div>
+
+    <div class="sub-list" id="subList"></div>
+    <div class="empty" id="emptyState" style="display:none">Aucune demande. / No submissions yet.</div>
+  </div>
+</div>
+
+<script src="assets/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function () {
+  var cfg = window.HDV_CONFIG || {};
+  var loginView = document.getElementById("loginView");
+  var dashView  = document.getElementById("dashView");
+
+  if (!cfg.SUPABASE_URL || cfg.SUPABASE_URL.indexOf("YOUR-") !== -1) {
+    document.body.innerHTML = '<div class="login-card"><h1>Configuration manquante</h1><p class="sub">assets/config.js is not set up yet.</p></div>';
+    return;
+  }
+
+  var sb = supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
+  var allRows = [];
+
+  function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+  function fmtDate(iso){ if(!iso) return "—"; var d=new Date(iso); return d.toLocaleString(); }
+
+  var STATUS_LABEL = { new:"Nouveau / New", in_progress:"En cours / In progress", contacted:"Contacté / Contacted", closed:"Fermé / Closed" };
+
+  function showLogin(){ loginView.style.display="block"; dashView.style.display="none"; }
+  function showDash(){ loginView.style.display="none"; dashView.style.display="block"; load(); }
+
+  // ---- Auth ----
+  document.getElementById("loginBtn").addEventListener("click", doLogin);
+  document.getElementById("loginPassword").addEventListener("keydown", function(e){ if(e.key==="Enter") doLogin(); });
+  function doLogin(){
+    var err = document.getElementById("loginErr");
+    err.style.display="none";
+    var email = document.getElementById("loginEmail").value.trim();
+    var pass  = document.getElementById("loginPassword").value;
+    sb.auth.signInWithPassword({ email: email, password: pass }).then(function(res){
+      if (res.error) { err.style.display="block"; return; }
+      showDash();
+    });
+  }
+  document.getElementById("logoutBtn").addEventListener("click", function(){
+    sb.auth.signOut().then(showLogin);
+  });
+
+  // ---- Load + render ----
+  function load(){
+    sb.from("contact_submissions").select("*").order("created_at",{ascending:false}).then(function(res){
+      if (res.error){ console.error(res.error); alert("Erreur de chargement / Load error: "+res.error.message); return; }
+      allRows = res.data || [];
+      render();
+    });
+  }
+
+  function render(){
+    var status = document.getElementById("filterStatus").value;
+    var q = document.getElementById("searchBox").value.trim().toLowerCase();
+    var list = document.getElementById("subList");
+    var rows = allRows.filter(function(r){
+      if (status && r.status !== status) return false;
+      if (q) {
+        var hay = ((r.name||"")+" "+(r.email||"")+" "+(r.phone||"")).toLowerCase();
+        if (hay.indexOf(q) === -1) return false;
+      }
+      return true;
+    });
+
+    document.getElementById("countLbl").textContent = rows.length + " / " + allRows.length;
+    document.getElementById("emptyState").style.display = rows.length ? "none" : "block";
+
+    list.innerHTML = rows.map(function(r){
+      return '<div class="sub-card status-'+esc(r.status)+'">'
+        + '<div class="sub-top"><span class="sub-name">'+esc(r.name)+'</span>'
+        + '<span class="sub-date">'+esc(fmtDate(r.created_at))+' · <span class="pill status-'+esc(r.status)+'">'+esc(STATUS_LABEL[r.status]||r.status)+'</span></span></div>'
+        + '<div class="sub-meta">'
+        + '<div><span class="lbl">Courriel / Email</span><a href="mailto:'+esc(r.email)+'">'+esc(r.email)+'</a></div>'
+        + '<div><span class="lbl">Téléphone / Phone</span>'+(r.phone?'<a href="tel:'+esc(r.phone)+'">'+esc(r.phone)+'</a>':'—')+'</div>'
+        + '<div><span class="lbl">Contact préféré</span>'+esc(r.preferred||"—")+'</div>'
+        + '<div><span class="lbl">Date souhaitée</span>'+esc(r.consultation_date||"—")+'</div>'
+        + '<div><span class="lbl">Langue</span>'+esc((r.lang||"").toUpperCase())+'</div>'
+        + '</div>'
+        + (r.message?'<div class="sub-msg">'+esc(r.message)+'</div>':'')
+        + '<div class="sub-actions">'
+        + '<select data-id="'+esc(r.id)+'" data-field="status">'
+        +   ['new','in_progress','contacted','closed'].map(function(s){return '<option value="'+s+'"'+(r.status===s?' selected':'')+'>'+esc(STATUS_LABEL[s])+'</option>';}).join('')
+        + '</select>'
+        + '<input type="text" data-id="'+esc(r.id)+'" data-field="assigned_to" placeholder="Assigné à / Assigned to" value="'+esc(r.assigned_to||"")+'" style="width:170px">'
+        + '<input type="text" data-id="'+esc(r.id)+'" data-field="staff_notes" placeholder="Notes internes" value="'+esc(r.staff_notes||"")+'" style="flex:1;min-width:160px">'
+        + '<span class="saved" data-saved="'+esc(r.id)+'">✓ Enregistré / Saved</span>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+
+    // wire updates
+    list.querySelectorAll("select[data-field], input[data-field]").forEach(function(el){
+      var evt = el.tagName === "SELECT" ? "change" : "change";
+      el.addEventListener(evt, function(){
+        updateRow(el.getAttribute("data-id"), el.getAttribute("data-field"), el.value);
+      });
+    });
+  }
+
+  function updateRow(id, field, value){
+    var patch = {}; patch[field] = value;
+    sb.from("contact_submissions").update(patch).eq("id", id).then(function(res){
+      if (res.error){ console.error(res.error); alert("Erreur d'enregistrement / Save error: "+res.error.message); return; }
+      var badge = document.querySelector('[data-saved="'+id+'"]');
+      if (badge){ badge.classList.add("show"); setTimeout(function(){ badge.classList.remove("show"); }, 1500); }
+      // keep local copy in sync so re-filtering reflects new status
+      var row = allRows.filter(function(r){return String(r.id)===String(id);})[0];
+      if (row){ row[field] = value; if(field==="status"){ render(); } }
+    });
+  }
+
+  document.getElementById("filterStatus").addEventListener("change", render);
+  document.getElementById("searchBox").addEventListener("input", render);
+  document.getElementById("refreshBtn").addEventListener("click", load);
+
+  // ---- Boot: restore session if present ----
+  sb.auth.getSession().then(function(res){
+    if (res.data && res.data.session) showDash(); else showLogin();
+  });
+})();
+</script>
+</body>
+</html>

@@ -53,10 +53,38 @@
     var errMsg = f.querySelector(".form-err");
     var btn = f.querySelector('button[type="submit"]');
 
+    function emailValid(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+    function setFieldError(input, on) {
+      var field = input.closest(".field");
+      if (field) field.classList.toggle("invalid", on);
+    }
+    ["name", "email"].forEach(function (n) {
+      var input = f.querySelector('[name="' + n + '"]');
+      if (input) input.addEventListener("input", function () { setFieldError(input, false); });
+    });
+    function validate() {
+      var ok = true;
+      var nameI = f.querySelector('[name="name"]');
+      var emailI = f.querySelector('[name="email"]');
+      if (nameI && !nameI.value.trim()) { setFieldError(nameI, true); ok = false; }
+      if (emailI && !emailValid(emailI.value.trim())) { setFieldError(emailI, true); ok = false; }
+      return ok;
+    }
+
     f.addEventListener("submit", function (e) {
       e.preventDefault();
       if (okMsg) okMsg.style.display = "none";
       if (errMsg) errMsg.style.display = "none";
+
+      // Honeypot: if filled, silently drop (show success to the bot).
+      var hp = f.querySelector('[name="website"]');
+      if (hp && hp.value.trim() !== "") {
+        if (okMsg) okMsg.style.display = "block";
+        f.reset();
+        return;
+      }
+
+      if (!validate()) return;
 
       var cfg = window.HDV_CONFIG || {};
       var configured =

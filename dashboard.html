@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,7 +10,6 @@
 <link rel="stylesheet" href="assets/style.css">
 <style>
   body { background: var(--cream-deep); }
-  /* Login */
   .login-card { max-width:400px; margin:60px auto; background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:40px 34px; }
   .login-card h1 { font-size:1.6rem; text-align:center; margin-bottom:6px; }
   .login-card p.sub { text-align:center; color:var(--ink-soft); font-size:.9rem; margin:0 0 26px; }
@@ -20,13 +19,18 @@
   .login-card input:focus { outline:none; border-color:var(--gold); }
   .login-card .btn { width:100%; text-align:center; margin-top:8px; }
   .login-err { display:none; color:#a8402d; font-size:.85rem; margin-top:14px; text-align:center; }
+  .login-lang { text-align:center; margin-bottom:18px; }
+  .login-lang button { background:none; border:1px solid var(--line); border-radius:20px; padding:5px 14px; margin:0 3px; cursor:pointer; font-family:var(--sans); font-size:.75rem; color:var(--ink-soft); }
+  .login-lang button.active { background:var(--gold); color:#fff; border-color:var(--gold); }
 
-  /* Layout */
   .hub { display:grid; grid-template-columns:230px 1fr; min-height:100vh; }
   .side { background:var(--dark); color:var(--cream); padding:24px 0; position:sticky; top:0; height:100vh; overflow:auto; }
-  .side .brand { display:flex; align-items:center; gap:10px; padding:0 22px 22px; border-bottom:1px solid rgba(255,255,255,.1); margin-bottom:14px; }
+  .side .brand { display:flex; align-items:center; gap:10px; padding:0 22px 18px; border-bottom:1px solid rgba(255,255,255,.1); margin-bottom:10px; }
   .side .brand img { height:34px; }
   .side .brand b { font-family:var(--serif); font-size:1.05rem; }
+  .side .lang { display:flex; gap:6px; padding:0 22px 14px; }
+  .side .lang button { flex:1; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15); border-radius:20px; padding:5px 0; cursor:pointer; font-family:var(--sans); font-size:.72rem; color:rgba(247,243,236,.7); }
+  .side .lang button.active { background:var(--gold); color:#fff; border-color:var(--gold); }
   .side nav a { display:flex; align-items:center; gap:10px; padding:12px 22px; color:rgba(247,243,236,.75); font-size:.9rem; cursor:pointer; border-left:3px solid transparent; }
   .side nav a:hover { background:rgba(255,255,255,.05); color:#fff; }
   .side nav a.active { background:rgba(176,141,73,.18); border-left-color:var(--gold); color:#fff; }
@@ -37,9 +41,7 @@
 
   .main { padding:30px 34px; }
   .main h2.module-title { font-size:1.7rem; margin:0 0 22px; }
-
-  /* Summary cards */
-  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:10px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; }
   .scard { background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:22px 24px; }
   .scard .n { font-family:var(--serif); font-size:2.4rem; color:var(--gold-deep); line-height:1; }
   .scard .l { font-size:.82rem; color:var(--ink-soft); margin-top:8px; letter-spacing:.04em; }
@@ -73,15 +75,11 @@
   .empty { text-align:center; color:var(--ink-soft); padding:50px 0; }
   .tbtn { font-size:.8rem; padding:8px 16px; }
   .pay { font-family:var(--serif); font-size:1.05rem; color:var(--gold-deep); }
-
-  /* roster table */
   table.roster { width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
   table.roster th, table.roster td { text-align:left; padding:13px 16px; border-bottom:1px solid var(--line); font-size:.92rem; }
-  table.roster th { background:var(--cream); font-family:var(--sans); font-weight:400; font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); }
+  table.roster th { background:var(--cream); font-weight:400; font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); }
   table.roster tr:last-child td { border-bottom:none; }
   .rolechip { font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; padding:3px 10px; border-radius:20px; background:#efe7d6; color:#927235; }
-
-  /* job form */
   .job-form { background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:24px; margin-bottom:22px; display:none; }
   .job-form.open { display:block; }
   .job-form h3 { margin:0 0 16px; font-size:1.3rem; }
@@ -89,43 +87,37 @@
   .job-form label { display:block; font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:5px; }
   .job-form input, .job-form select, .job-form textarea { width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:var(--radius); font-family:var(--sans); font-size:.9rem; }
   .job-form .full { grid-column:1 / -1; }
+  .postto { display:flex; gap:18px; align-items:center; }
+  .postto label { display:flex; align-items:center; gap:7px; text-transform:none; letter-spacing:0; font-size:.9rem; margin:0; color:var(--ink); }
+  .postto input { width:auto; }
   .cater-only { display:none; } .cater-only.show { display:block; }
-
-  /* checklist */
-  .check { display:flex; align-items:center; gap:10px; padding:7px 0; font-size:.92rem; border-bottom:1px solid var(--cream-deep); }
-  .check input { width:18px; height:18px; accent-color:var(--gold); }
-  .check.done span { text-decoration:line-through; color:var(--ink-soft); }
-
   .hide { display:none!important; }
   @media (max-width:820px){ .hub{grid-template-columns:1fr;} .side{position:relative;height:auto;} .jf-grid{grid-template-columns:1fr;} }
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
 <div id="loginView" style="display:none">
   <div class="login-card">
     <h1>Héritage de Vie</h1>
-    <p class="sub">Espace privé — connexion du personnel<br>Staff sign-in</p>
-    <div class="field"><label>Courriel / Email</label><input type="email" id="loginEmail" autocomplete="username"></div>
-    <div class="field"><label>Mot de passe / Password</label><input type="password" id="loginPassword" autocomplete="current-password"></div>
-    <button class="btn btn--solid" id="loginBtn">Se connecter / Sign in</button>
-    <p class="login-err" id="loginErr">Identifiants invalides. / Invalid credentials.</p>
-    <p style="text-align:center;margin-top:24px;font-size:.85rem;color:var(--ink-soft)">
-      Photographe ou traiteur ? / Photographer or caterer?<br>
-      <a href="apply.html" style="color:var(--gold-deep)">Postulez ici / Apply here</a>
-    </p>
+    <p class="sub" id="loginSub"></p>
+    <div class="login-lang"><button data-ll="fr">FR</button><button data-ll="en">EN</button></div>
+    <div class="field"><label id="llEmail"></label><input type="email" id="loginEmail" autocomplete="username"></div>
+    <div class="field"><label id="llPass"></label><input type="password" id="loginPassword" autocomplete="current-password"></div>
+    <button class="btn btn--solid" id="loginBtn"></button>
+    <p class="login-err" id="loginErr"></p>
+    <p style="text-align:center;margin-top:24px;font-size:.85rem;color:var(--ink-soft)" id="applyPrompt"></p>
   </div>
 </div>
 
-<!-- HUB -->
 <div id="hubView" style="display:none">
   <div class="hub">
     <aside class="side">
       <div class="brand"><img src="assets/crest-white.webp" alt=""><b>Héritage de Vie</b></div>
+      <div class="lang"><button data-ll="fr">Français</button><button data-ll="en">English</button></div>
       <nav id="sideNav"></nav>
       <div class="me" id="meBox"></div>
-      <button class="btn btn--light tbtn signout" id="logoutBtn">Déconnexion / Sign out</button>
+      <button class="btn btn--light tbtn signout" id="logoutBtn"></button>
     </aside>
     <main class="main" id="moduleArea"></main>
   </div>
@@ -141,21 +133,121 @@
     return;
   }
   var sb = supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
-  var loginView = document.getElementById("loginView");
-  var hubView = document.getElementById("hubView");
-  var ME = { id:null, role:"none", name:"" };
-  var DATA = { inquiries:[], jobs:[], roster:[], applications:[] };
-  var current = "overview";
+
+  // ---------- i18n ----------
+  var LANG = "fr";
+  try { LANG = localStorage.getItem("hdv-lang") || "fr"; } catch(e){}
+  var T = {
+    signIn:{fr:"Se connecter",en:"Sign in"},
+    loginSub:{fr:"Espace privé — connexion du personnel",en:"Private area — staff sign-in"},
+    email:{fr:"Courriel",en:"Email"},
+    password:{fr:"Mot de passe",en:"Password"},
+    badCreds:{fr:"Identifiants invalides.",en:"Invalid credentials."},
+    applyPrompt:{fr:"Photographe ou traiteur ? ",en:"Photographer or caterer? "},
+    applyHere:{fr:"Postulez ici",en:"Apply here"},
+    signOut:{fr:"Déconnexion",en:"Sign out"},
+    overview:{fr:"Tableau de bord",en:"Overview"},
+    inquiries:{fr:"Demandes",en:"Inquiries"},
+    jobs:{fr:"Mandats",en:"Jobs"},
+    myJobs:{fr:"Mes mandats",en:"My jobs"},
+    photographers:{fr:"Photographes",en:"Photographers"},
+    caterers:{fr:"Traiteurs",en:"Caterers"},
+    staff:{fr:"Personnel",en:"Staff"},
+    applications:{fr:"Candidatures",en:"Applications"},
+    newInquiries:{fr:"Nouvelles demandes",en:"New inquiries"},
+    openJobs:{fr:"Mandats ouverts",en:"Open jobs"},
+    unassigned:{fr:"Non assignés",en:"Unassigned"},
+    myCompleted:{fr:"Mes mandats terminés",en:"My completed jobs"},
+    pendingApps:{fr:"Candidatures en attente",en:"Pending applications"},
+    all:{fr:"Tous",en:"All"},
+    search:{fr:"Rechercher…",en:"Search…"},
+    name:{fr:"Nom",en:"Name"},
+    phone:{fr:"Téléphone",en:"Phone"},
+    preferred:{fr:"Contact préféré",en:"Preferred contact"},
+    wantedDate:{fr:"Date souhaitée",en:"Preferred date"},
+    language:{fr:"Langue",en:"Language"},
+    notes:{fr:"Notes",en:"Notes"},
+    assignedTo:{fr:"Assigné à",en:"Assigned to"},
+    makeJob:{fr:"→ Créer un mandat",en:"→ Make a job"},
+    noInquiries:{fr:"Aucune demande.",en:"No inquiries."},
+    newJob:{fr:"+ Nouveau mandat",en:"+ New job"},
+    type:{fr:"Type",en:"Type"},
+    family:{fr:"Famille",en:"Family"},
+    date:{fr:"Date",en:"Date"},
+    time:{fr:"Heure",en:"Time"},
+    location:{fr:"Lieu",en:"Location"},
+    pay:{fr:"Rémunération",en:"Pay"},
+    foodBudget:{fr:"Budget nourriture",en:"Food budget"},
+    cookList:{fr:"Liste à préparer",en:"Cook list"},
+    toPrepare:{fr:"À préparer",en:"To prepare"},
+    details:{fr:"Détails",en:"Details"},
+    package:{fr:"Forfait",en:"Package"},
+    title:{fr:"Titre",en:"Title"},
+    postTo:{fr:"Publier auprès de",en:"Post to"},
+    create:{fr:"Créer",en:"Create"},
+    cancel:{fr:"Annuler",en:"Cancel"},
+    titleReq:{fr:"Titre requis.",en:"Title required."},
+    claim:{fr:"J'accepte",en:"Claim"},
+    markDone:{fr:"Marquer terminé",en:"Mark done"},
+    assign:{fr:"— assigner —",en:"— assign —"},
+    del:{fr:"Supprimer",en:"Delete"},
+    delConfirm:{fr:"Supprimer ce mandat ?",en:"Delete this job?"},
+    noJobs:{fr:"Aucun mandat.",en:"No jobs."},
+    jobsCol:{fr:"Mandats",en:"Jobs"},
+    role:{fr:"Rôle",en:"Role"},
+    accepted:{fr:"acceptés",en:"accepted"},
+    completed:{fr:"terminés",en:"completed"},
+    nobody:{fr:"Personne pour l'instant.",en:"Nobody yet."},
+    addAccountsHint:{fr:"Ajoutez des comptes dans Supabase → Authentication, puis attribuez un rôle.",en:"Add accounts in Supabase → Authentication, then assign a role."},
+    roleWanted:{fr:"Rôle souhaité",en:"Desired role"},
+    portfolio:{fr:"Portfolio",en:"Portfolio"},
+    link:{fr:"lien",en:"link"},
+    noApps:{fr:"Aucune candidature.",en:"No applications."},
+    approveHint:{fr:"Pour approuver : créez un compte dans Supabase → Authentication, puis attribuez le rôle.",en:"To approve: create an account in Supabase → Authentication, then assign the role."},
+    postGroupOnly:{fr:"Ouvrir au groupe (selon les cases ci-dessus)",en:"Open to group (per checkboxes above)"},
+    orAssign:{fr:"…ou assigner directement",en:"…or assign directly"},
+    statuses:{
+      new:{fr:"Nouveau",en:"New"}, in_progress:{fr:"En cours",en:"In progress"}, contacted:{fr:"Contacté",en:"Contacted"}, closed:{fr:"Fermé",en:"Closed"},
+      open:{fr:"Ouvert",en:"Open"}, claimed:{fr:"Accepté",en:"Claimed"}, assigned:{fr:"Assigné",en:"Assigned"}, done:{fr:"Terminé",en:"Done"}, cancelled:{fr:"Annulé",en:"Cancelled"},
+      pending:{fr:"En attente",en:"Pending"}, approved:{fr:"Approuvé",en:"Approved"}, declined:{fr:"Refusé",en:"Declined"}
+    }
+  };
+  function t(k){ var e=T[k]; return e? (e[LANG]||e.fr) : k; }
+  function ts(s){ var e=T.statuses[s]; return e?(e[LANG]||e.fr):s; }
+  var ISTAT=["new","in_progress","contacted","closed"];
+  var JSTAT=["open","claimed","assigned","done","cancelled"];
+  var ASTAT=["pending","approved","declined"];
+
+  function setLang(l){
+    LANG=l; try{ localStorage.setItem("hdv-lang",l);}catch(e){}
+    document.documentElement.setAttribute("lang",l);
+    document.querySelectorAll("[data-ll]").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-ll")===l); });
+    paintLogin();
+    if (hubView.style.display!=="none"){ buildNav(); render(); }
+  }
+
+  var loginView=document.getElementById("loginView");
+  var hubView=document.getElementById("hubView");
+  var ME={id:null,role:"none",name:""};
+  var DATA={inquiries:[],jobs:[],roster:[],applications:[]};
+  var current="overview";
 
   function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
-  function fmtDate(iso){ if(!iso) return "—"; return new Date(iso).toLocaleString(); }
-  var ISTAT = { new:"Nouveau / New", in_progress:"En cours / In progress", contacted:"Contacté / Contacted", closed:"Fermé / Closed" };
-  var JSTAT = { open:"Ouvert / Open", claimed:"Accepté / Claimed", assigned:"Assigné / Assigned", done:"Terminé / Done", cancelled:"Annulé / Cancelled" };
-  var ASTAT = { pending:"En attente / Pending", approved:"Approuvé / Approved", declined:"Refusé / Declined" };
+  function fmtDate(iso){ if(!iso) return "—"; return new Date(iso).toLocaleString(LANG==="fr"?"fr-CA":"en-CA"); }
 
-  function showLogin(){ loginView.style.display="block"; hubView.style.display="none"; }
+  function showLogin(){ loginView.style.display="block"; hubView.style.display="none"; paintLogin(); }
   function showHub(){ loginView.style.display="none"; hubView.style.display="block"; }
 
+  function paintLogin(){
+    document.getElementById("loginSub").textContent=t("loginSub");
+    document.getElementById("llEmail").textContent=t("email");
+    document.getElementById("llPass").textContent=t("password");
+    document.getElementById("loginBtn").textContent=t("signIn");
+    document.getElementById("loginErr").textContent=t("badCreds");
+    document.getElementById("applyPrompt").innerHTML=esc(t("applyPrompt"))+'<a href="apply.html" style="color:var(--gold-deep)">'+esc(t("applyHere"))+'</a>';
+  }
+
+  document.querySelectorAll("[data-ll]").forEach(function(b){ b.addEventListener("click", function(){ setLang(b.getAttribute("data-ll")); }); });
   document.getElementById("loginBtn").addEventListener("click", doLogin);
   document.getElementById("loginPassword").addEventListener("keydown", function(e){ if(e.key==="Enter") doLogin(); });
   function doLogin(){
@@ -183,186 +275,146 @@
     });
   }
 
-  // ---- Navigation ----
   function menuItems(){
-    var items=[];
-    items.push(["overview","Tableau / Overview"]);
-    if (seesInquiries()) items.push(["inquiries","Demandes / Inquiries"]);
-    items.push(["jobs", isWorker()?"Mes mandats / My jobs":"Mandats / Jobs"]);
-    if (isAdmin()||isStaff()){
-      items.push(["photographers","Photographes"]);
-      items.push(["caterers","Traiteurs"]);
-    }
-    if (isAdmin()){
-      items.push(["staff","Personnel / Staff"]);
-      items.push(["applications","Candidatures / Applications"]);
-    }
+    var items=[["overview",t("overview")]];
+    if(seesInquiries()) items.push(["inquiries",t("inquiries")]);
+    items.push(["jobs", isWorker()?t("myJobs"):t("jobs")]);
+    if(isAdmin()||isStaff()){ items.push(["photographers",t("photographers")]); items.push(["caterers",t("caterers")]); }
+    if(isAdmin()){ items.push(["staff",t("staff")]); items.push(["applications",t("applications")]); }
     return items;
   }
   function buildNav(){
     var nav=document.getElementById("sideNav"); nav.innerHTML="";
     menuItems().forEach(function(it){
-      var a=document.createElement("a"); a.textContent=it[1]; a.setAttribute("data-mod",it[0]);
-      if(it[0]===current) a.className="active";
+      var a=document.createElement("a"); a.textContent=it[1]; if(it[0]===current) a.className="active";
       a.addEventListener("click", function(){ current=it[0]; buildNav(); render(); });
-      // badges
       if(it[0]==="applications"){ var n=DATA.applications.filter(function(x){return x.status==="pending";}).length; if(n){ var b=document.createElement("span"); b.className="badge"; b.textContent=n; a.appendChild(b);} }
       if(it[0]==="inquiries"){ var n2=DATA.inquiries.filter(function(x){return x.status==="new";}).length; if(n2){ var b2=document.createElement("span"); b2.className="badge"; b2.textContent=n2; a.appendChild(b2);} }
       nav.appendChild(a);
     });
-    document.getElementById("meBox").innerHTML = esc(ME.name)+"<br><b>"+esc(ME.role)+"</b>";
+    document.getElementById("meBox").innerHTML=esc(ME.name)+"<br><b>"+esc(ME.role)+"</b>";
+    document.getElementById("logoutBtn").textContent=t("signOut");
+    document.querySelectorAll(".side [data-ll]").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-ll")===LANG); });
   }
 
-  // ---- Load all data the role can see ----
   function loadAll(){
-    var jobs_src = isAdmin() ? "jobs" : "jobs_safe";
-    var q = [];
-    if (seesInquiries()) q.push(sb.from("contact_submissions").select("*").order("created_at",{ascending:false}));
-    else q.push(Promise.resolve({data:[]}));
+    var jobs_src=isAdmin()?"jobs":"jobs_safe";
+    var q=[];
+    q.push(seesInquiries()? sb.from("contact_submissions").select("*").order("created_at",{ascending:false}) : Promise.resolve({data:[]}));
     q.push(sb.from(jobs_src).select("*").order("created_at",{ascending:false}));
-    if (isAdmin()||isStaff()) q.push(sb.from("roster").select("*")); else q.push(Promise.resolve({data:[]}));
-    if (isAdmin()) q.push(sb.from("applications").select("*").order("created_at",{ascending:false})); else q.push(Promise.resolve({data:[]}));
+    q.push((isAdmin()||isStaff())? sb.from("roster").select("*") : Promise.resolve({data:[]}));
+    q.push(isAdmin()? sb.from("applications").select("*").order("created_at",{ascending:false}) : Promise.resolve({data:[]}));
     Promise.all(q).then(function(r){
-      DATA.inquiries = (r[0]&&r[0].data)||[];
-      DATA.jobs = (r[1]&&r[1].data)||[];
-      DATA.roster = (r[2]&&r[2].data)||[];
-      DATA.applications = (r[3]&&r[3].data)||[];
+      DATA.inquiries=(r[0]&&r[0].data)||[]; DATA.jobs=(r[1]&&r[1].data)||[];
+      DATA.roster=(r[2]&&r[2].data)||[]; DATA.applications=(r[3]&&r[3].data)||[];
       buildNav(); render();
     });
   }
 
   function render(){
     var m=document.getElementById("moduleArea");
-    if (current==="overview") return renderOverview(m);
-    if (current==="inquiries") return renderInquiries(m);
-    if (current==="jobs") return renderJobs(m);
-    if (current==="photographers") return renderRoster(m,"photographer","Photographes");
-    if (current==="caterers") return renderRoster(m,"caterer","Traiteurs");
-    if (current==="staff") return renderRoster(m,null,"Personnel / Staff");
-    if (current==="applications") return renderApplications(m);
+    if(current==="overview") return renderOverview(m);
+    if(current==="inquiries") return renderInquiries(m);
+    if(current==="jobs") return renderJobs(m);
+    if(current==="photographers") return renderRoster(m,"photographer",t("photographers"));
+    if(current==="caterers") return renderRoster(m,"caterer",t("caterers"));
+    if(current==="staff") return renderRoster(m,null,t("staff"));
+    if(current==="applications") return renderApplications(m);
   }
 
-  // ---- OVERVIEW ----
   function renderOverview(m){
     var newInq=DATA.inquiries.filter(function(x){return x.status==="new";}).length;
     var openJobs=DATA.jobs.filter(function(x){return x.status==="open";}).length;
-    var unassigned=DATA.jobs.filter(function(x){return !x.assigned_to && x.status!=="cancelled" && x.status!=="done";}).length;
-    var myDone=DATA.jobs.filter(function(x){return x.assigned_to===ME.id && x.status==="done";}).length;
+    var unassigned=DATA.jobs.filter(function(x){return !x.assigned_to&&x.status!=="cancelled"&&x.status!=="done";}).length;
+    var myDone=DATA.jobs.filter(function(x){return x.assigned_to===ME.id&&x.status==="done";}).length;
     var pendApps=DATA.applications.filter(function(x){return x.status==="pending";}).length;
     var cards=[];
-    if (seesInquiries()) cards.push([newInq,"Nouvelles demandes / New inquiries"]);
-    cards.push([openJobs,"Mandats ouverts / Open jobs"]);
-    if (isAdmin()||isStaff()) cards.push([unassigned,"Non assignés / Unassigned"]);
-    cards.push([myDone,"Mes mandats terminés / My completed"]);
-    if (isAdmin()) cards.push([pendApps,"Candidatures en attente / Pending applications"]);
-    m.innerHTML='<h2 class="module-title">Tableau de bord / Overview</h2><div class="cards">'+
-      cards.map(function(c){return '<div class="scard"><div class="n">'+c[0]+'</div><div class="l">'+c[1]+'</div></div>';}).join('')+
-      '</div>';
+    if(seesInquiries()) cards.push([newInq,t("newInquiries")]);
+    cards.push([openJobs,t("openJobs")]);
+    if(isAdmin()||isStaff()) cards.push([unassigned,t("unassigned")]);
+    cards.push([myDone,t("myCompleted")]);
+    if(isAdmin()) cards.push([pendApps,t("pendingApps")]);
+    m.innerHTML='<h2 class="module-title">'+esc(t("overview"))+'</h2><div class="cards">'+
+      cards.map(function(c){return '<div class="scard"><div class="n">'+c[0]+'</div><div class="l">'+esc(c[1])+'</div></div>';}).join('')+'</div>';
   }
 
-  // ---- INQUIRIES ----
   function renderInquiries(m){
-    m.innerHTML='<h2 class="module-title">Demandes / Inquiries</h2>'+
-      '<div class="controls">'+
-      '<select id="fStatus"><option value="">Tous / All</option>'+Object.keys(ISTAT).map(function(s){return '<option value="'+s+'">'+esc(ISTAT[s])+'</option>';}).join('')+'</select>'+
-      '<input type="search" id="fSearch" placeholder="Rechercher / Search…" style="min-width:220px">'+
-      '<span class="count" id="iCount"></span></div>'+
-      '<div class="sub-list" id="iList"></div><div class="empty hide" id="iEmpty">Aucune demande. / No submissions.</div>';
+    m.innerHTML='<h2 class="module-title">'+esc(t("inquiries"))+'</h2>'+
+      '<div class="controls"><select id="fStatus"><option value="">'+esc(t("all"))+'</option>'+ISTAT.map(function(s){return '<option value="'+s+'">'+esc(ts(s))+'</option>';}).join('')+'</select>'+
+      '<input type="search" id="fSearch" placeholder="'+esc(t("search"))+'" style="min-width:220px"><span class="count" id="iCount"></span></div>'+
+      '<div class="sub-list" id="iList"></div><div class="empty hide" id="iEmpty">'+esc(t("noInquiries"))+'</div>';
     function draw(){
       var st=document.getElementById("fStatus").value, q=document.getElementById("fSearch").value.trim().toLowerCase();
-      var rows=DATA.inquiries.filter(function(r){
-        if(st&&r.status!==st) return false;
-        if(q){ var h=((r.name||"")+" "+(r.email||"")+" "+(r.phone||"")).toLowerCase(); if(h.indexOf(q)===-1) return false; }
-        return true;
-      });
+      var rows=DATA.inquiries.filter(function(r){ if(st&&r.status!==st)return false; if(q){var h=((r.name||"")+" "+(r.email||"")+" "+(r.phone||"")).toLowerCase(); if(h.indexOf(q)===-1)return false;} return true; });
       document.getElementById("iCount").textContent=rows.length+" / "+DATA.inquiries.length;
-      document.getElementById("iEmpty").classList.toggle("hide", rows.length>0);
+      document.getElementById("iEmpty").classList.toggle("hide",rows.length>0);
       document.getElementById("iList").innerHTML=rows.map(function(r){
-        return '<div class="card2 st-'+esc(r.status)+'">'
-          +'<div class="c-top"><span class="c-name">'+esc(r.name)+'</span><span class="c-date">'+esc(fmtDate(r.created_at))+' · <span class="pill st-'+esc(r.status)+'">'+esc(ISTAT[r.status]||r.status)+'</span></span></div>'
+        return '<div class="card2 st-'+esc(r.status)+'"><div class="c-top"><span class="c-name">'+esc(r.name)+'</span><span class="c-date">'+esc(fmtDate(r.created_at))+' · <span class="pill st-'+esc(r.status)+'">'+esc(ts(r.status))+'</span></span></div>'
           +'<div class="c-meta">'
-          +'<div><span class="lbl">Courriel</span><a href="mailto:'+esc(r.email)+'">'+esc(r.email)+'</a></div>'
-          +'<div><span class="lbl">Téléphone</span>'+(r.phone?'<a href="tel:'+esc(r.phone)+'">'+esc(r.phone)+'</a>':'—')+'</div>'
-          +'<div><span class="lbl">Contact préféré</span>'+esc(r.preferred||"—")+'</div>'
-          +'<div><span class="lbl">Date souhaitée</span>'+esc(r.consultation_date||"—")+'</div></div>'
+          +'<div><span class="lbl">'+esc(t("email"))+'</span><a href="mailto:'+esc(r.email)+'">'+esc(r.email)+'</a></div>'
+          +'<div><span class="lbl">'+esc(t("phone"))+'</span>'+(r.phone?'<a href="tel:'+esc(r.phone)+'">'+esc(r.phone)+'</a>':'—')+'</div>'
+          +'<div><span class="lbl">'+esc(t("preferred"))+'</span>'+esc(r.preferred||"—")+'</div>'
+          +'<div><span class="lbl">'+esc(t("wantedDate"))+'</span>'+esc(r.consultation_date||"—")+'</div>'
+          +'<div><span class="lbl">'+esc(t("language"))+'</span>'+esc((r.lang||"").toUpperCase())+'</div></div>'
           +(r.message?'<div class="c-msg">'+esc(r.message)+'</div>':'')
-          +'<div class="c-actions">'
-          +'<select data-iid="'+esc(r.id)+'" data-f="status">'+Object.keys(ISTAT).map(function(s){return '<option value="'+s+'"'+(r.status===s?' selected':'')+'>'+esc(ISTAT[s])+'</option>';}).join('')+'</select>'
-          +'<input type="text" data-iid="'+esc(r.id)+'" data-f="assigned_to" placeholder="Assigné à" value="'+esc(r.assigned_to||"")+'" style="width:150px">'
-          +'<input type="text" data-iid="'+esc(r.id)+'" data-f="staff_notes" placeholder="Notes" value="'+esc(r.staff_notes||"")+'" style="flex:1;min-width:140px">'
-          +(isAdmin()||isStaff()?'<button class="btn btn--ghost tbtn" data-convert="'+esc(r.id)+'">→ Créer mandat / Make job</button>':'')
+          +'<div class="c-actions"><select data-iid="'+esc(r.id)+'" data-f="status">'+ISTAT.map(function(s){return '<option value="'+s+'"'+(r.status===s?' selected':'')+'>'+esc(ts(s))+'</option>';}).join('')+'</select>'
+          +'<input type="text" data-iid="'+esc(r.id)+'" data-f="assigned_to" placeholder="'+esc(t("assignedTo"))+'" value="'+esc(r.assigned_to||"")+'" style="width:150px">'
+          +'<input type="text" data-iid="'+esc(r.id)+'" data-f="staff_notes" placeholder="'+esc(t("notes"))+'" value="'+esc(r.staff_notes||"")+'" style="flex:1;min-width:140px">'
+          +'<button class="btn btn--ghost tbtn" data-convert="'+esc(r.id)+'">'+esc(t("makeJob"))+'</button>'
           +'<span class="saved" data-saved="'+esc(r.id)+'">✓</span></div></div>';
       }).join('');
-      document.querySelectorAll("[data-iid]").forEach(function(el){ el.addEventListener("change", function(){ updateInquiry(el.getAttribute("data-iid"), el.getAttribute("data-f"), el.value); }); });
+      document.querySelectorAll("[data-iid]").forEach(function(el){ el.addEventListener("change", function(){ updateInquiry(el.getAttribute("data-iid"),el.getAttribute("data-f"),el.value); }); });
       document.querySelectorAll("[data-convert]").forEach(function(b){ b.addEventListener("click", function(){ convertToJob(b.getAttribute("data-convert")); }); });
     }
     document.getElementById("fStatus").addEventListener("change",draw);
     document.getElementById("fSearch").addEventListener("input",draw);
     draw();
   }
-  function updateInquiry(id,f,v){
-    var p={}; p[f]=v;
-    sb.from("contact_submissions").update(p).eq("id",id).then(function(res){
-      if(res.error){ alert("Erreur: "+res.error.message); return; }
-      flash(id); var row=DATA.inquiries.filter(function(r){return String(r.id)===String(id);})[0]; if(row){ row[f]=v; }
-    });
-  }
+  function updateInquiry(id,f,v){ var p={}; p[f]=v; sb.from("contact_submissions").update(p).eq("id",id).then(function(res){ if(res.error){alert(res.error.message);return;} flash(id); var row=DATA.inquiries.filter(function(r){return String(r.id)===String(id);})[0]; if(row) row[f]=v; }); }
   function convertToJob(inqId){
     var inq=DATA.inquiries.filter(function(r){return String(r.id)===String(inqId);})[0]; if(!inq) return;
     current="jobs"; buildNav(); render();
-    setTimeout(function(){
-      var form=document.getElementById("jobForm"); if(form) form.classList.add("open");
-      var t=document.getElementById("jf_title"); if(t) t.value="Mandat — "+(inq.name||"");
-      var fam=document.getElementById("jf_family"); if(fam) fam.value=inq.name||"";
-      var src=document.getElementById("jf_source"); if(src) src.value=inq.id;
-    },60);
+    setTimeout(function(){ var f=document.getElementById("jobForm"); if(f) f.classList.add("open");
+      var ti=document.getElementById("jf_title"); if(ti) ti.value=(LANG==="fr"?"Mandat — ":"Job — ")+(inq.name||"");
+      var fa=document.getElementById("jf_family"); if(fa) fa.value=inq.name||"";
+      var sr=document.getElementById("jf_source"); if(sr) sr.value=inq.id; },60);
   }
 
-  // ---- JOBS ----
   function renderJobs(m){
-    var workerNames = DATA.roster;
-    m.innerHTML='<h2 class="module-title">'+(isWorker()?"Mes mandats / My jobs":"Mandats / Jobs")+'</h2>'+
-      '<div class="controls">'+
-      (isAdmin()?'<button class="btn btn--solid tbtn" id="newJobBtn">+ Nouveau mandat / New job</button>':'')+
-      '<select id="jFilter"><option value="">Tous / All</option>'+Object.keys(JSTAT).map(function(s){return '<option value="'+s+'">'+esc(JSTAT[s])+'</option>';}).join('')+'</select>'+
-      '<span class="count" id="jCount"></span></div>'+
-      jobFormHTML()+
-      '<div class="sub-list" id="jList"></div><div class="empty hide" id="jEmpty">Aucun mandat. / No jobs.</div>';
-    if(isAdmin()){
-      document.getElementById("newJobBtn").addEventListener("click", function(){ document.getElementById("jobForm").classList.add("open"); });
-      wireJobForm();
-    }
+    m.innerHTML='<h2 class="module-title">'+esc(isWorker()?t("myJobs"):t("jobs"))+'</h2>'+
+      '<div class="controls">'+(isAdmin()?'<button class="btn btn--solid tbtn" id="newJobBtn">'+esc(t("newJob"))+'</button>':'')+
+      '<select id="jFilter"><option value="">'+esc(t("all"))+'</option>'+JSTAT.map(function(s){return '<option value="'+s+'">'+esc(ts(s))+'</option>';}).join('')+'</select><span class="count" id="jCount"></span></div>'+
+      jobFormHTML()+'<div class="sub-list" id="jList"></div><div class="empty hide" id="jEmpty">'+esc(t("noJobs"))+'</div>';
+    if(isAdmin()){ document.getElementById("newJobBtn").addEventListener("click", function(){ document.getElementById("jobForm").classList.add("open"); }); wireJobForm(); }
     document.getElementById("jFilter").addEventListener("change", drawJobs);
     drawJobs();
   }
   function jobFormHTML(){
     if(!isAdmin()) return "";
-    return '<div class="job-form" id="jobForm"><h3>Nouveau mandat / New job</h3>'+
-      '<input type="hidden" id="jf_source">'+
-      '<div class="jf-grid">'+
-      '<div><label>Type</label><select id="jf_type"><option value="photographer">Photographie</option><option value="caterer">Traiteur / Catering</option></select></div>'+
-      '<div><label>Titre / Title</label><input type="text" id="jf_title"></div>'+
-      '<div><label>Nom de famille / Family</label><input type="text" id="jf_family"></div>'+
-      '<div><label>Forfait / Package</label><select id="jf_package"><option value="">—</option><option value="essentiel">Essentiel</option><option value="serenite">Sérénité</option><option value="heritage">Héritage</option></select></div>'+
-      '<div><label>Date</label><input type="date" id="jf_date"></div>'+
-      '<div><label>Heure / Time</label><input type="text" id="jf_time" placeholder="14:00"></div>'+
-      '<div><label>Lieu / Location</label><input type="text" id="jf_location"></div>'+
-      '<div><label>Rémunération / Pay ($)</label><input type="number" id="jf_pay" step="0.01"></div>'+
-      '<div class="cater-only" id="cb_wrap"><label>Budget nourriture / Food budget ($)</label><input type="number" id="jf_foodbudget" step="0.01"></div>'+
-      '<div class="full cater-only" id="cc_wrap"><label>Liste à préparer / Cook list</label><textarea id="jf_cooklist" rows="2"></textarea></div>'+
-      '<div class="full"><label>Détails / Details</label><textarea id="jf_details" rows="2"></textarea></div>'+
-      '<div class="full"><label>Assignation / Assignment</label><select id="jf_assign"><option value="">Ouvrir au groupe / Post to group</option>'+
-        DATA.roster.map(function(p){ return '<option value="'+esc(p.id)+'|'+esc(p.full_name||"")+'|'+esc(p.role)+'">'+esc(p.full_name||"(sans nom)")+' — '+esc(p.role)+'</option>'; }).join('')+
-      '</select></div>'+
-      '</div>'+
-      '<div style="margin-top:16px;display:flex;gap:10px;"><button class="btn btn--solid tbtn" id="jobSaveBtn">Créer / Create</button><button class="btn btn--ghost tbtn" id="jobCancelBtn">Annuler / Cancel</button></div>'+
+    return '<div class="job-form" id="jobForm"><h3>'+esc(t("newJob"))+'</h3><input type="hidden" id="jf_source"><div class="jf-grid">'+
+      '<div><label>'+esc(t("type"))+'</label><select id="jf_type"><option value="photographer">'+esc(t("photographers"))+'</option><option value="caterer">'+esc(t("caterers"))+'</option></select></div>'+
+      '<div><label>'+esc(t("title"))+'</label><input type="text" id="jf_title"></div>'+
+      '<div><label>'+esc(t("family"))+'</label><input type="text" id="jf_family"></div>'+
+      '<div><label>'+esc(t("package"))+'</label><select id="jf_package"><option value="">—</option><option value="essentiel">Essentiel</option><option value="serenite">Sérénité</option><option value="heritage">Héritage</option></select></div>'+
+      '<div><label>'+esc(t("date"))+'</label><input type="date" id="jf_date"></div>'+
+      '<div><label>'+esc(t("time"))+'</label><input type="text" id="jf_time" placeholder="14:00"></div>'+
+      '<div><label>'+esc(t("location"))+'</label><input type="text" id="jf_location"></div>'+
+      '<div><label>'+esc(t("pay"))+' ($)</label><input type="number" id="jf_pay" step="0.01"></div>'+
+      '<div class="cater-only" id="cb_wrap"><label>'+esc(t("foodBudget"))+' ($)</label><input type="number" id="jf_foodbudget" step="0.01"></div>'+
+      '<div class="full cater-only" id="cc_wrap"><label>'+esc(t("cookList"))+'</label><textarea id="jf_cooklist" rows="2"></textarea></div>'+
+      '<div class="full"><label>'+esc(t("details"))+'</label><textarea id="jf_details" rows="2"></textarea></div>'+
+      '<div class="full"><label>'+esc(t("postTo"))+'</label><div class="postto">'+
+        '<label><input type="checkbox" id="pt_photo"> '+esc(t("photographers"))+'</label>'+
+        '<label><input type="checkbox" id="pt_cater"> '+esc(t("caterers"))+'</label>'+
+      '</div></div>'+
+      '<div class="full"><label>'+esc(t("orAssign"))+'</label><select id="jf_assign"><option value="">'+esc(t("postGroupOnly"))+'</option>'+
+        DATA.roster.map(function(p){return '<option value="'+esc(p.id)+'|'+esc(p.full_name||"")+'|'+esc(p.role)+'">'+esc(p.full_name||"—")+' — '+esc(p.role)+'</option>';}).join('')+'</select></div>'+
+      '</div><div style="margin-top:16px;display:flex;gap:10px;"><button class="btn btn--solid tbtn" id="jobSaveBtn">'+esc(t("create"))+'</button><button class="btn btn--ghost tbtn" id="jobCancelBtn">'+esc(t("cancel"))+'</button></div>'+
       '<p id="jobFormErr" style="color:#a8402d;font-size:.85rem;margin-top:10px;display:none"></p></div>';
   }
   function wireJobForm(){
     document.getElementById("jobCancelBtn").addEventListener("click", function(){ document.getElementById("jobForm").classList.remove("open"); });
-    document.getElementById("jf_type").addEventListener("change", function(){
-      var c=this.value==="caterer"; document.getElementById("cb_wrap").classList.toggle("show",c); document.getElementById("cc_wrap").classList.toggle("show",c);
-    });
+    document.getElementById("jf_type").addEventListener("change", function(){ var c=this.value==="caterer"; document.getElementById("cb_wrap").classList.toggle("show",c); document.getElementById("cc_wrap").classList.toggle("show",c); });
     document.getElementById("jobSaveBtn").addEventListener("click", function(){
       var err=document.getElementById("jobFormErr"); err.style.display="none";
       var rec={ job_type:document.getElementById("jf_type").value, title:document.getElementById("jf_title").value.trim(),
@@ -372,96 +424,85 @@
         details:document.getElementById("jf_details").value.trim()||null, status:"open" };
       var src=document.getElementById("jf_source").value; if(src) rec.source_submission=src;
       if(rec.job_type==="caterer"){ rec.food_budget=document.getElementById("jf_foodbudget").value||null; rec.cook_list=document.getElementById("jf_cooklist").value.trim()||null; }
+      var pt=[]; if(document.getElementById("pt_photo").checked) pt.push("photographer"); if(document.getElementById("pt_cater").checked) pt.push("caterer");
+      if(pt.length) rec.post_to=pt;
       var assign=document.getElementById("jf_assign").value;
       if(assign){ var parts=assign.split("|"); rec.assigned_to=parts[0]; rec.assigned_name=parts[1]; rec.status="assigned"; }
-      if(!rec.title){ err.textContent="Titre requis / Title required."; err.style.display="block"; return; }
+      if(!rec.title){ err.textContent=t("titleReq"); err.style.display="block"; return; }
       sb.from("jobs").insert(rec).select().single().then(function(res){
-        if(res.error){ err.textContent="Erreur: "+res.error.message; err.style.display="block"; return; }
-        var newJob=res.data;
-        var done=function(){ document.getElementById("jobForm").classList.remove("open"); loadAll(); };
-        if(rec.package_key && newJob){ sb.rpc("apply_package_to_job",{p_job_id:newJob.id,p_package_key:rec.package_key}).then(done,done); }
-        else done();
+        if(res.error){ err.textContent=res.error.message; err.style.display="block"; return; }
+        var nj=res.data; var done=function(){ document.getElementById("jobForm").classList.remove("open"); loadAll(); };
+        if(rec.package_key&&nj){ sb.rpc("apply_package_to_job",{p_job_id:nj.id,p_package_key:rec.package_key}).then(done,done); } else done();
       });
     });
   }
   function drawJobs(){
     var st=document.getElementById("jFilter").value;
-    var rows=DATA.jobs.filter(function(r){ return !st || r.status===st; });
+    var rows=DATA.jobs.filter(function(r){ return !st||r.status===st; });
     document.getElementById("jCount").textContent=rows.length+" / "+DATA.jobs.length;
-    document.getElementById("jEmpty").classList.toggle("hide", rows.length>0);
+    document.getElementById("jEmpty").classList.toggle("hide",rows.length>0);
     document.getElementById("jList").innerHTML=rows.map(function(r){
-      var canClaim=(isWorker()||isStaff())&&r.status==="open";
-      var mine=r.assigned_to===ME.id;
-      return '<div class="card2 st-'+esc(r.status)+'">'
-        +'<div class="c-top"><span class="c-name">'+esc(r.title)+'</span><span class="c-date"><span class="pill st-'+esc(r.status)+'">'+esc(JSTAT[r.status]||r.status)+'</span></span></div>'
+      var canClaim=(isWorker()||isStaff())&&r.status==="open"; var mine=r.assigned_to===ME.id;
+      return '<div class="card2 st-'+esc(r.status)+'"><div class="c-top"><span class="c-name">'+esc(r.title)+'</span><span class="c-date"><span class="pill st-'+esc(r.status)+'">'+esc(ts(r.status))+'</span></span></div>'
         +'<div class="c-meta">'
-        +'<div><span class="lbl">Type</span>'+esc(r.job_type)+'</div>'
-        +'<div><span class="lbl">Famille</span>'+esc(r.family_name||"—")+'</div>'
-        +'<div><span class="lbl">Date</span>'+esc(r.job_date||"—")+(r.job_time?(' · '+esc(r.job_time)):'')+'</div>'
-        +'<div><span class="lbl">Lieu</span>'+esc(r.location||"—")+'</div>'
-        +(seesPay()?('<div><span class="lbl">Rémunération</span><span class="pay">'+(r.pay_amount!=null?esc(r.pay_amount)+' $':'—')+'</span></div>'):'')
-        +(r.job_type==="caterer"&&r.food_budget!=null?('<div><span class="lbl">Budget nourriture</span>'+esc(r.food_budget)+' $</div>'):'')
-        +(r.assigned_name?('<div><span class="lbl">Assigné à</span>'+esc(r.assigned_name)+'</div>'):'')
+        +'<div><span class="lbl">'+esc(t("type"))+'</span>'+esc(r.job_type)+'</div>'
+        +'<div><span class="lbl">'+esc(t("family"))+'</span>'+esc(r.family_name||"—")+'</div>'
+        +'<div><span class="lbl">'+esc(t("date"))+'</span>'+esc(r.job_date||"—")+(r.job_time?(' · '+esc(r.job_time)):'')+'</div>'
+        +'<div><span class="lbl">'+esc(t("location"))+'</span>'+esc(r.location||"—")+'</div>'
+        +(seesPay()?('<div><span class="lbl">'+esc(t("pay"))+'</span><span class="pay">'+(r.pay_amount!=null?esc(r.pay_amount)+' $':'—')+'</span></div>'):'')
+        +(r.job_type==="caterer"&&r.food_budget!=null?('<div><span class="lbl">'+esc(t("foodBudget"))+'</span>'+esc(r.food_budget)+' $</div>'):'')
+        +(r.assigned_name?('<div><span class="lbl">'+esc(t("assignedTo"))+'</span>'+esc(r.assigned_name)+'</div>'):'')
         +'</div>'
-        +(r.cook_list?('<div class="c-msg"><b>À préparer:</b> '+esc(r.cook_list)+'</div>'):'')
+        +(r.cook_list?('<div class="c-msg"><b>'+esc(t("toPrepare"))+':</b> '+esc(r.cook_list)+'</div>'):'')
         +(r.details?('<div class="c-msg">'+esc(r.details)+'</div>'):'')
         +'<div class="c-actions">'
-        +(canClaim?('<button class="btn btn--solid tbtn" data-claim="'+esc(r.id)+'">J\'accepte / Claim</button>'):'')
-        +(mine&&(r.status==="claimed"||r.status==="assigned")?('<button class="btn btn--ghost tbtn" data-done="'+esc(r.id)+'">Marquer terminé / Done</button>'):'')
-        +(isAdmin()?('<select data-jid="'+esc(r.id)+'" data-f="status">'+Object.keys(JSTAT).map(function(s){return '<option value="'+s+'"'+(r.status===s?' selected':'')+'>'+esc(JSTAT[s])+'</option>';}).join('')+'</select>'+
-          '<select data-assignjid="'+esc(r.id)+'"><option value="">— assigner / assign —</option>'+DATA.roster.filter(function(p){return p.role===r.job_type;}).map(function(p){return '<option value="'+esc(p.id)+'|'+esc(p.full_name||"")+'"'+(r.assigned_to===p.id?' selected':'')+'>'+esc(p.full_name||"(sans nom)")+'</option>';}).join('')+'</select>'+
-          '<button class="btn btn--ghost tbtn" data-deljid="'+esc(r.id)+'">Supprimer / Delete</button>'):'')
+        +(canClaim?('<button class="btn btn--solid tbtn" data-claim="'+esc(r.id)+'">'+esc(t("claim"))+'</button>'):'')
+        +(mine&&(r.status==="claimed"||r.status==="assigned")?('<button class="btn btn--ghost tbtn" data-done="'+esc(r.id)+'">'+esc(t("markDone"))+'</button>'):'')
+        +(isAdmin()?('<select data-jid="'+esc(r.id)+'" data-f="status">'+JSTAT.map(function(s){return '<option value="'+s+'"'+(r.status===s?' selected':'')+'>'+esc(ts(s))+'</option>';}).join('')+'</select>'+
+          '<select data-assignjid="'+esc(r.id)+'"><option value="">'+esc(t("assign"))+'</option>'+DATA.roster.filter(function(p){return p.role===r.job_type;}).map(function(p){return '<option value="'+esc(p.id)+'|'+esc(p.full_name||"")+'"'+(r.assigned_to===p.id?' selected':'')+'>'+esc(p.full_name||"—")+'</option>';}).join('')+'</select>'+
+          '<button class="btn btn--ghost tbtn" data-deljid="'+esc(r.id)+'">'+esc(t("del"))+'</button>'):'')
         +'<span class="saved" data-saved="'+esc(r.id)+'">✓</span></div></div>';
     }).join('');
     document.querySelectorAll("[data-claim]").forEach(function(b){ b.addEventListener("click", function(){ setJob(b.getAttribute("data-claim"),{status:"claimed",assigned_to:ME.id,assigned_name:ME.name}); }); });
     document.querySelectorAll("[data-done]").forEach(function(b){ b.addEventListener("click", function(){ setJob(b.getAttribute("data-done"),{status:"done"}); }); });
     document.querySelectorAll("[data-jid]").forEach(function(s){ s.addEventListener("change", function(){ setJob(s.getAttribute("data-jid"),{status:s.value}); }); });
-    document.querySelectorAll("[data-assignjid]").forEach(function(s){ s.addEventListener("change", function(){ var v=s.value; if(!v) return; var p=v.split("|"); setJob(s.getAttribute("data-assignjid"),{assigned_to:p[0],assigned_name:p[1],status:"assigned"}); }); });
-    document.querySelectorAll("[data-deljid]").forEach(function(b){ b.addEventListener("click", function(){ if(confirm("Supprimer ce mandat ? / Delete this job?")) delJob(b.getAttribute("data-deljid")); }); });
+    document.querySelectorAll("[data-assignjid]").forEach(function(s){ s.addEventListener("change", function(){ var v=s.value; if(!v)return; var p=v.split("|"); setJob(s.getAttribute("data-assignjid"),{assigned_to:p[0],assigned_name:p[1],status:"assigned"}); }); });
+    document.querySelectorAll("[data-deljid]").forEach(function(b){ b.addEventListener("click", function(){ if(confirm(t("delConfirm"))) delJob(b.getAttribute("data-deljid")); }); });
   }
-  function setJob(id,patch){ sb.from("jobs").update(patch).eq("id",id).then(function(res){ if(res.error){ alert("Erreur: "+res.error.message); return; } flash(id); loadAll(); }); }
-  function delJob(id){ sb.from("jobs").delete().eq("id",id).then(function(res){ if(res.error){ alert("Erreur: "+res.error.message); return; } loadAll(); }); }
+  function setJob(id,patch){ sb.from("jobs").update(patch).eq("id",id).then(function(res){ if(res.error){alert(res.error.message);return;} flash(id); loadAll(); }); }
+  function delJob(id){ sb.from("jobs").delete().eq("id",id).then(function(res){ if(res.error){alert(res.error.message);return;} loadAll(); }); }
 
-  // ---- ROSTER ----
   function renderRoster(m, roleFilter, title){
-    var rows=DATA.roster.filter(function(p){ return roleFilter ? p.role===roleFilter : true; });
+    var rows=DATA.roster.filter(function(p){ return roleFilter? p.role===roleFilter : true; });
     m.innerHTML='<h2 class="module-title">'+esc(title)+'</h2>'+
-      (rows.length? '<table class="roster"><thead><tr><th>Nom / Name</th><th>Rôle / Role</th><th>Mandats / Jobs</th></tr></thead><tbody>'+
-        rows.map(function(p){
-          var acc=DATA.jobs.filter(function(j){return j.assigned_to===p.id;}).length;
-          var done=DATA.jobs.filter(function(j){return j.assigned_to===p.id&&j.status==="done";}).length;
-          return '<tr><td>'+esc(p.full_name||"(sans nom)")+'</td><td><span class="rolechip">'+esc(p.role)+'</span></td><td>'+acc+' acceptés · '+done+' terminés</td></tr>';
-        }).join('')+'</tbody></table>'
-       : '<div class="empty">Personne pour l\'instant. / Nobody yet.<br><span style="font-size:.85rem">Ajoutez des comptes dans Supabase → Authentication, puis attribuez un rôle.</span></div>');
+      (rows.length? '<table class="roster"><thead><tr><th>'+esc(t("name"))+'</th><th>'+esc(t("role"))+'</th><th>'+esc(t("jobsCol"))+'</th></tr></thead><tbody>'+
+        rows.map(function(p){ var acc=DATA.jobs.filter(function(j){return j.assigned_to===p.id;}).length; var done=DATA.jobs.filter(function(j){return j.assigned_to===p.id&&j.status==="done";}).length;
+          return '<tr><td>'+esc(p.full_name||"—")+'</td><td><span class="rolechip">'+esc(p.role)+'</span></td><td>'+acc+' '+esc(t("accepted"))+' · '+done+' '+esc(t("completed"))+'</td></tr>'; }).join('')+'</tbody></table>'
+       : '<div class="empty">'+esc(t("nobody"))+'<br><span style="font-size:.85rem">'+esc(t("addAccountsHint"))+'</span></div>');
   }
 
-  // ---- APPLICATIONS ----
   function renderApplications(m){
-    m.innerHTML='<h2 class="module-title">Candidatures / Applications</h2><div class="sub-list" id="aList"></div>'+
-      '<div class="empty hide" id="aEmpty">Aucune candidature. / No applications.</div>';
+    m.innerHTML='<h2 class="module-title">'+esc(t("applications"))+'</h2><div class="sub-list" id="aList"></div><div class="empty hide" id="aEmpty">'+esc(t("noApps"))+'</div>';
     var rows=DATA.applications;
-    document.getElementById("aEmpty").classList.toggle("hide", rows.length>0);
+    document.getElementById("aEmpty").classList.toggle("hide",rows.length>0);
     document.getElementById("aList").innerHTML=rows.map(function(r){
-      return '<div class="card2 st-'+esc(r.status)+'">'
-        +'<div class="c-top"><span class="c-name">'+esc(r.full_name)+'</span><span class="c-date">'+esc(fmtDate(r.created_at))+' · <span class="pill st-'+esc(r.status)+'">'+esc(ASTAT[r.status]||r.status)+'</span></span></div>'
+      return '<div class="card2 st-'+esc(r.status)+'"><div class="c-top"><span class="c-name">'+esc(r.full_name)+'</span><span class="c-date">'+esc(fmtDate(r.created_at))+' · <span class="pill st-'+esc(r.status)+'">'+esc(ts(r.status))+'</span></span></div>'
         +'<div class="c-meta">'
-        +'<div><span class="lbl">Rôle souhaité</span>'+esc(r.role_wanted||"—")+'</div>'
-        +'<div><span class="lbl">Courriel</span><a href="mailto:'+esc(r.email)+'">'+esc(r.email)+'</a></div>'
-        +'<div><span class="lbl">Téléphone</span>'+(r.phone?'<a href="tel:'+esc(r.phone)+'">'+esc(r.phone)+'</a>':'—')+'</div>'
-        +(r.portfolio?('<div><span class="lbl">Portfolio</span><a href="'+esc(r.portfolio)+'" target="_blank" rel="noopener">lien</a></div>'):'')
-        +'</div>'
+        +'<div><span class="lbl">'+esc(t("roleWanted"))+'</span>'+esc(r.role_wanted||"—")+'</div>'
+        +'<div><span class="lbl">'+esc(t("email"))+'</span><a href="mailto:'+esc(r.email)+'">'+esc(r.email)+'</a></div>'
+        +'<div><span class="lbl">'+esc(t("phone"))+'</span>'+(r.phone?'<a href="tel:'+esc(r.phone)+'">'+esc(r.phone)+'</a>':'—')+'</div>'
+        +(r.portfolio?('<div><span class="lbl">'+esc(t("portfolio"))+'</span><a href="'+esc(r.portfolio)+'" target="_blank" rel="noopener">'+esc(t("link"))+'</a></div>'):'')+'</div>'
         +(r.experience?('<div class="c-msg">'+esc(r.experience)+'</div>'):'')
-        +'<div class="c-actions">'
-        +'<select data-aid="'+esc(r.id)+'" data-f="status">'+Object.keys(ASTAT).map(function(s){return '<option value="'+s+'"'+(r.status===s?' selected':'')+'>'+esc(ASTAT[s])+'</option>';}).join('')+'</select>'
-        +'<input type="text" data-aid="'+esc(r.id)+'" data-f="notes" placeholder="Notes" value="'+esc(r.notes||"")+'" style="flex:1;min-width:160px">'
-        +'<span style="font-size:.8rem;color:var(--ink-soft)">Pour approuver : créez un compte dans Supabase → Authentication, puis attribuez le rôle.</span>'
-        +'<span class="saved" data-saved="'+esc(r.id)+'">✓</span></div></div>';
+        +'<div class="c-actions"><select data-aid="'+esc(r.id)+'" data-f="status">'+ASTAT.map(function(s){return '<option value="'+s+'"'+(r.status===s?' selected':'')+'>'+esc(ts(s))+'</option>';}).join('')+'</select>'
+        +'<input type="text" data-aid="'+esc(r.id)+'" data-f="notes" placeholder="'+esc(t("notes"))+'" value="'+esc(r.notes||"")+'" style="flex:1;min-width:160px">'
+        +'<span style="font-size:.8rem;color:var(--ink-soft)">'+esc(t("approveHint"))+'</span><span class="saved" data-saved="'+esc(r.id)+'">✓</span></div></div>';
     }).join('');
-    document.querySelectorAll("[data-aid]").forEach(function(el){ el.addEventListener("change", function(){ var p={}; p[el.getAttribute("data-f")]=el.value; sb.from("applications").update(p).eq("id",el.getAttribute("data-aid")).then(function(res){ if(res.error){alert("Erreur: "+res.error.message);return;} flash(el.getAttribute("data-aid")); var row=DATA.applications.filter(function(x){return String(x.id)===String(el.getAttribute("data-aid"));})[0]; if(row) row[el.getAttribute("data-f")]=el.value; }); }); });
+    document.querySelectorAll("[data-aid]").forEach(function(el){ el.addEventListener("change", function(){ var p={}; p[el.getAttribute("data-f")]=el.value; sb.from("applications").update(p).eq("id",el.getAttribute("data-aid")).then(function(res){ if(res.error){alert(res.error.message);return;} flash(el.getAttribute("data-aid")); var row=DATA.applications.filter(function(x){return String(x.id)===String(el.getAttribute("data-aid"));})[0]; if(row) row[el.getAttribute("data-f")]=el.value; }); }); });
   }
 
   function flash(id){ var b=document.querySelector('[data-saved="'+id+'"]'); if(b){ b.classList.add("show"); setTimeout(function(){b.classList.remove("show");},1500); } }
 
+  setLang(LANG);
   sb.auth.getSession().then(function(res){ if(res.data&&res.data.session) boot(); else showLogin(); });
 })();
 </script>

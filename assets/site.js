@@ -196,7 +196,28 @@
     });
   }
 
+  function prefillPackage() {
+    var ta = document.querySelector('form[data-contact] [name="message"]');
+    if (!ta) return;
+    var params = new URLSearchParams(window.location.search);
+    var pkg = params.get("package");
+    if (!pkg) return;
+    var names = {
+      essentiel: { fr: "Forfait Essentiel", en: "Essential Guidance" },
+      serenite:  { fr: "Forfait Sérénité",  en: "Family Support" },
+      heritage:  { fr: "Forfait Héritage",  en: "Legacy Premium" }
+    };
+    var n = names[pkg];
+    if (!n) return;
+    var lang = document.documentElement.getAttribute("lang") || "fr";
+    var msg = lang === "en"
+      ? "Hello, I am interested in the " + n.en + " package. "
+      : "Bonjour, je suis intéressé(e) par le " + n.fr + ". ";
+    // only prefill if empty, so we don't overwrite anything the user typed
+    if (!ta.value.trim()) ta.value = msg;
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
-    initLang(); initNav(); initForm(); initApplyForm();
+    initLang(); initNav(); initForm(); initApplyForm(); prefillPackage();
   });
 })();

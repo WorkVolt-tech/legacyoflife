@@ -173,8 +173,7 @@
         email: (f.email && f.email.value || "").trim(),
         phone: (f.phone && f.phone.value || "").trim(),
         role_wanted: (f.role_wanted && f.role_wanted.value || "").trim(),
-        experience: (f.experience && f.experience.value || "").trim(),
-        portfolio: (f.portfolio && f.portfolio.value || "").trim()
+        experience: (f.experience && f.experience.value || "").trim()
       };
 
       if (!configured) { if (errMsg) errMsg.style.display="block"; console.warn("HDV: Supabase not configured"); return; }

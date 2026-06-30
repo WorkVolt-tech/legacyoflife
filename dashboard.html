@@ -56,6 +56,8 @@
   .st-new,.st-open,.st-pending { border-left-color:var(--gold)!important; }
   .st-in_progress,.st-claimed,.st-assigned { border-left-color:#5b8aa6!important; }
   .st-contacted,.st-done,.st-approved { border-left-color:#8aa17c!important; }
+  .st-question_only { border-left-color:#7a8cb0!important; }
+  .st-not_proceeding { border-left-color:#b08a8a!important; }
   .st-closed,.st-cancelled,.st-declined { border-left-color:#b0a89a!important; opacity:.75; }
   .c-top { display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap; align-items:baseline; }
   .c-name { font-family:var(--serif); font-size:1.35rem; color:var(--ink); }
@@ -72,6 +74,8 @@
   .pill.st-new,.pill.st-open,.pill.st-pending { background:#f3e6c8; color:#927235; }
   .pill.st-in_progress,.pill.st-claimed,.pill.st-assigned { background:#dce8ef; color:#3f6b85; }
   .pill.st-contacted,.pill.st-done,.pill.st-approved { background:#dfe9d6; color:#5a7448; }
+  .pill.st-question_only { background:#dde2ef; color:#46557e; }
+  .pill.st-not_proceeding { background:#efdddd; color:#8a4646; }
   .pill.st-closed,.pill.st-cancelled,.pill.st-declined { background:#e8e3da; color:#6e6457; }
   .empty { text-align:center; color:var(--ink-soft); padding:50px 0; }
   .tbtn { font-size:.8rem; padding:8px 16px; }
@@ -207,19 +211,19 @@
     tempPass:{fr:"Mot de passe temporaire",en:"Temp password"},
     chooseRole:{fr:"Choisir le rôle",en:"Choose role"},
     approveConfirm:{fr:"Créer le compte pour cet applicant ?",en:"Create the account for this applicant?"},
-    approveDone:{fr:"Compte créé. Communiquez le mot de passe temporaire à la personne.",en:"Account created. Share the temp password with the person."},
+    approveDone:{fr:"Compte créé. Transmettez ces identifiants à la personne :",en:"Account created. Share these credentials with the person:"},
     working:{fr:"Création…",en:"Creating…"},
     postGroupOnly:{fr:"Ouvrir au groupe (selon les cases ci-dessus)",en:"Open to group (per checkboxes above)"},
     orAssign:{fr:"…ou assigner directement",en:"…or assign directly"},
     statuses:{
-      new:{fr:"Nouveau",en:"New"}, in_progress:{fr:"En cours",en:"In progress"}, contacted:{fr:"Contacté",en:"Contacted"}, closed:{fr:"Fermé",en:"Closed"},
+      new:{fr:"Nouveau",en:"New"}, in_progress:{fr:"En cours",en:"In progress"}, contacted:{fr:"Contacté",en:"Contacted"}, question_only:{fr:"Question seulement",en:"Question only"}, not_proceeding:{fr:"Ne donne pas suite",en:"Not proceeding"}, closed:{fr:"Fermé",en:"Closed"},
       open:{fr:"Ouvert",en:"Open"}, claimed:{fr:"Accepté",en:"Claimed"}, assigned:{fr:"Assigné",en:"Assigned"}, done:{fr:"Terminé",en:"Done"}, cancelled:{fr:"Annulé",en:"Cancelled"},
       pending:{fr:"En attente",en:"Pending"}, approved:{fr:"Approuvé",en:"Approved"}, declined:{fr:"Refusé",en:"Declined"}
     }
   };
   function t(k){ var e=T[k]; return e? (e[LANG]||e.fr) : k; }
   function ts(s){ var e=T.statuses[s]; return e?(e[LANG]||e.fr):s; }
-  var ISTAT=["new","in_progress","contacted","closed"];
+  var ISTAT=["new","in_progress","contacted","question_only","not_proceeding","closed"];
   var JSTAT=["open","claimed","assigned","done","cancelled"];
   var ASTAT=["pending","approved","declined"];
 
@@ -480,9 +484,9 @@
   function renderRoster(m, roleFilter, title){
     var rows=DATA.roster.filter(function(p){ return roleFilter? p.role===roleFilter : true; });
     m.innerHTML='<h2 class="module-title">'+esc(title)+'</h2>'+
-      (rows.length? '<table class="roster"><thead><tr><th>'+esc(t("name"))+'</th><th>'+esc(t("role"))+'</th><th>'+esc(t("jobsCol"))+'</th></tr></thead><tbody>'+
+      (rows.length? '<table class="roster"><thead><tr><th>'+esc(t("name"))+'</th><th>'+esc(t("email"))+'</th><th>'+esc(t("role"))+'</th><th>'+esc(t("jobsCol"))+'</th></tr></thead><tbody>'+
         rows.map(function(p){ var acc=DATA.jobs.filter(function(j){return j.assigned_to===p.id;}).length; var done=DATA.jobs.filter(function(j){return j.assigned_to===p.id&&j.status==="done";}).length;
-          return '<tr><td>'+esc(p.full_name||"—")+'</td><td><span class="rolechip">'+esc(p.role)+'</span></td><td>'+acc+' '+esc(t("accepted"))+' · '+done+' '+esc(t("completed"))+'</td></tr>'; }).join('')+'</tbody></table>'
+          return '<tr><td>'+esc(p.full_name||"—")+'</td><td>'+(p.email?'<a href="mailto:'+esc(p.email)+'">'+esc(p.email)+'</a>':"—")+'</td><td><span class="rolechip">'+esc(p.role)+'</span></td><td>'+acc+' '+esc(t("accepted"))+' · '+done+' '+esc(t("completed"))+'</td></tr>'; }).join('')+'</tbody></table>'
        : '<div class="empty">'+esc(t("nobody"))+'<br><span style="font-size:.85rem">'+esc(t("addAccountsHint"))+'</span></div>');
   }
 
@@ -525,6 +529,8 @@
       var id=b.getAttribute("data-approve");
       var role=(document.querySelector('[data-arole="'+id+'"]')||{}).value;
       var pass=(document.querySelector('[data-apass="'+id+'"]')||{}).value||"";
+      var appRow=DATA.applications.filter(function(x){return String(x.id)===String(id);})[0]||{};
+      var appEmail=appRow.email||"";
       if(pass.length<8){ alert(LANG==="fr"?"Mot de passe d'au moins 8 caractères.":"Password must be at least 8 characters."); return; }
       if(!confirm(t("approveConfirm"))) return;
       var orig=b.textContent; b.disabled=true; b.textContent=t("working");
@@ -533,7 +539,8 @@
           b.disabled=false; b.textContent=orig;
           if(res.error){ alert("Erreur / Error: "+(res.error.message||res.error)); return; }
           if(res.data && res.data.error){ alert("Erreur / Error: "+res.data.error); return; }
-          alert(t("approveDone"));
+          var em=(res.data && res.data.email) || appEmail;
+          alert(t("approveDone") + "\n\n" + (LANG==="fr"?"Courriel : ":"Email: ") + em + "\n" + (LANG==="fr"?"Mot de passe : ":"Password: ") + pass);
           loadAll();
         }, function(err){ b.disabled=false; b.textContent=orig; alert("Erreur / Error: "+err); });
     }); });

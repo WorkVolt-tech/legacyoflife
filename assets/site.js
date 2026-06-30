@@ -163,6 +163,25 @@
       var ok=true;
       if (nameI && !nameI.value.trim()){ setFieldError(nameI,true); ok=false; }
       if (emailI && !emailValid(emailI.value.trim())){ setFieldError(emailI,true); ok=false; }
+
+      // Sanitize social handles: usernames only, no URLs. Returns clean handle or "".
+      function cleanHandle(v){
+        if(!v) return "";
+        var s=String(v).trim();
+        if(s==="") return "";
+        // reject anything that looks like a URL or has illegal chars
+        if(/https?:|\/|\s|\\|@.*@/i.test(s.replace(/^@/,""))) return null; // null = invalid
+        s=s.replace(/^@/,"");                       // drop a leading @
+        if(!/^[A-Za-z0-9._-]{1,40}$/.test(s)) return null; // valid username chars only
+        return s;
+      }
+      var igRaw=f.ig&&f.ig.value, fbRaw=f.fb&&f.fb.value, ttRaw=f.tt&&f.tt.value;
+      var ig=cleanHandle(igRaw), fb=cleanHandle(fbRaw), tt=cleanHandle(ttRaw);
+      var socialErr=f.querySelector('.field-error[data-for="social"]');
+      if (ig===null||fb===null||tt===null){
+        if(socialErr){ var fld=socialErr.closest(".field"); if(fld) fld.classList.add("invalid"); }
+        ok=false;
+      } else if(socialErr){ var fld2=socialErr.closest(".field"); if(fld2) fld2.classList.remove("invalid"); }
       if (!ok) return;
 
       var cfg = window.HDV_CONFIG || {};
@@ -173,7 +192,10 @@
         email: (f.email && f.email.value || "").trim(),
         phone: (f.phone && f.phone.value || "").trim(),
         role_wanted: (f.role_wanted && f.role_wanted.value || "").trim(),
-        experience: (f.experience && f.experience.value || "").trim()
+        experience: (f.experience && f.experience.value || "").trim(),
+        ig_handle: ig || null,
+        fb_handle: fb || null,
+        tt_handle: tt || null
       };
 
       if (!configured) { if (errMsg) errMsg.style.display="block"; console.warn("HDV: Supabase not configured"); return; }

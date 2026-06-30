@@ -204,7 +204,13 @@
     portfolio:{fr:"Portfolio",en:"Portfolio"},
     link:{fr:"lien",en:"link"},
     noApps:{fr:"Aucune candidature.",en:"No applications."},
-    approveHint:{fr:"Pour approuver : créez un compte dans Supabase → Authentication, puis attribuez le rôle.",en:"To approve: create an account in Supabase → Authentication, then assign the role."},
+    approveHint:{fr:"Approuver crée le compte avec le mot de passe temporaire ci-dessous.",en:"Approving creates the account with the temp password below."},
+    approveCreate:{fr:"Approuver & créer le compte",en:"Approve & create login"},
+    tempPass:{fr:"Mot de passe temporaire",en:"Temp password"},
+    chooseRole:{fr:"Choisir le rôle",en:"Choose role"},
+    approveConfirm:{fr:"Créer le compte pour cet applicant ?",en:"Create the account for this applicant?"},
+    approveDone:{fr:"Compte créé. Communiquez le mot de passe temporaire à la personne.",en:"Account created. Share the temp password with the person."},
+    working:{fr:"Création…",en:"Creating…"},
     postGroupOnly:{fr:"Ouvrir au groupe (selon les cases ci-dessus)",en:"Open to group (per checkboxes above)"},
     orAssign:{fr:"…ou assigner directement",en:"…or assign directly"},
     statuses:{
@@ -487,6 +493,9 @@
     var rows=DATA.applications;
     document.getElementById("aEmpty").classList.toggle("hide",rows.length>0);
     document.getElementById("aList").innerHTML=rows.map(function(r){
+      var roleOpts=["photographer","caterer","staff","florist","driver"];
+      var defaultRole=(roleOpts.indexOf(r.role_wanted)!==-1)?r.role_wanted:"photographer";
+      var pending=(r.status==="pending");
       return '<div class="card2 st-'+esc(r.status)+'"><div class="c-top"><span class="c-name">'+esc(r.full_name)+'</span><span class="c-date">'+esc(fmtDate(r.created_at))+' · <span class="pill st-'+esc(r.status)+'">'+esc(ts(r.status))+'</span></span></div>'
         +'<div class="c-meta">'
         +'<div><span class="lbl">'+esc(t("roleWanted"))+'</span>'+esc(r.role_wanted||"—")+'</div>'
@@ -494,12 +503,43 @@
         +'<div><span class="lbl">'+esc(t("phone"))+'</span>'+(r.phone?'<a href="tel:'+esc(r.phone)+'">'+esc(r.phone)+'</a>':'—')+'</div>'
         +(r.portfolio?('<div><span class="lbl">'+esc(t("portfolio"))+'</span><a href="'+esc(r.portfolio)+'" target="_blank" rel="noopener">'+esc(t("link"))+'</a></div>'):'')+'</div>'
         +(r.experience?('<div class="c-msg">'+esc(r.experience)+'</div>'):'')
-        +'<div class="c-actions"><select data-aid="'+esc(r.id)+'" data-f="status">'+ASTAT.map(function(s){return '<option value="'+s+'"'+(r.status===s?' selected':'')+'>'+esc(ts(s))+'</option>';}).join('')+'</select>'
-        +'<input type="text" data-aid="'+esc(r.id)+'" data-f="notes" placeholder="'+esc(t("notes"))+'" value="'+esc(r.notes||"")+'" style="flex:1;min-width:160px">'
-        +'<span style="font-size:.8rem;color:var(--ink-soft)">'+esc(t("approveHint"))+'</span><span class="saved" data-saved="'+esc(r.id)+'">✓</span></div></div>';
+        + (pending
+            ? ('<div class="c-msg" style="background:#faf6ee">'+esc(t("approveHint"))+'</div>'
+               +'<div class="c-actions">'
+               +'<select data-arole="'+esc(r.id)+'">'+roleOpts.map(function(ro){return '<option value="'+ro+'"'+(ro===defaultRole?' selected':'')+'>'+esc(ro)+'</option>';}).join('')+'</select>'
+               +'<input type="text" data-apass="'+esc(r.id)+'" placeholder="'+esc(t("tempPass"))+'" style="width:180px">'
+               +'<button class="btn btn--solid tbtn" data-approve="'+esc(r.id)+'">'+esc(t("approveCreate"))+'</button>'
+               +'<button class="btn btn--ghost tbtn" data-decline="'+esc(r.id)+'">'+esc(ts("declined"))+'</button>'
+               +'<input type="text" data-aid="'+esc(r.id)+'" data-f="notes" placeholder="'+esc(t("notes"))+'" value="'+esc(r.notes||"")+'" style="flex:1;min-width:140px">'
+               +'<span class="saved" data-saved="'+esc(r.id)+'">✓</span></div>')
+            : ('<div class="c-actions"><select data-aid="'+esc(r.id)+'" data-f="status">'+ASTAT.map(function(s){return '<option value="'+s+'"'+(r.status===s?' selected':'')+'>'+esc(ts(s))+'</option>';}).join('')+'</select>'
+               +'<input type="text" data-aid="'+esc(r.id)+'" data-f="notes" placeholder="'+esc(t("notes"))+'" value="'+esc(r.notes||"")+'" style="flex:1;min-width:160px">'
+               +'<span class="saved" data-saved="'+esc(r.id)+'">✓</span></div>') )
+        +'</div>';
     }).join('');
+    // notes/status edits
     document.querySelectorAll("[data-aid]").forEach(function(el){ el.addEventListener("change", function(){ var p={}; p[el.getAttribute("data-f")]=el.value; sb.from("applications").update(p).eq("id",el.getAttribute("data-aid")).then(function(res){ if(res.error){alert(res.error.message);return;} flash(el.getAttribute("data-aid")); var row=DATA.applications.filter(function(x){return String(x.id)===String(el.getAttribute("data-aid"));})[0]; if(row) row[el.getAttribute("data-f")]=el.value; }); }); });
+    // decline
+    document.querySelectorAll("[data-decline]").forEach(function(b){ b.addEventListener("click", function(){ var id=b.getAttribute("data-decline"); sb.from("applications").update({status:"declined"}).eq("id",id).then(function(res){ if(res.error){alert(res.error.message);return;} loadAll(); }); }); });
+    // approve & create login (calls Edge Function)
+    document.querySelectorAll("[data-approve]").forEach(function(b){ b.addEventListener("click", function(){
+      var id=b.getAttribute("data-approve");
+      var role=(document.querySelector('[data-arole="'+id+'"]')||{}).value;
+      var pass=(document.querySelector('[data-apass="'+id+'"]')||{}).value||"";
+      if(pass.length<8){ alert(LANG==="fr"?"Mot de passe d'au moins 8 caractères.":"Password must be at least 8 characters."); return; }
+      if(!confirm(t("approveConfirm"))) return;
+      var orig=b.textContent; b.disabled=true; b.textContent=t("working");
+      sb.functions.invoke("approve-applicant", { body:{ application_id:id, role:role, temp_password:pass } })
+        .then(function(res){
+          b.disabled=false; b.textContent=orig;
+          if(res.error){ alert("Erreur / Error: "+(res.error.message||res.error)); return; }
+          if(res.data && res.data.error){ alert("Erreur / Error: "+res.data.error); return; }
+          alert(t("approveDone"));
+          loadAll();
+        }, function(err){ b.disabled=false; b.textContent=orig; alert("Erreur / Error: "+err); });
+    }); });
   }
+
 
   function flash(id){ var b=document.querySelector('[data-saved="'+id+'"]'); if(b){ b.classList.add("show"); setTimeout(function(){b.classList.remove("show");},1500); } }
 

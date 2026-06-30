@@ -201,8 +201,6 @@
     nobody:{fr:"Personne pour l'instant.",en:"Nobody yet."},
     addAccountsHint:{fr:"Ajoutez des comptes dans Supabase → Authentication, puis attribuez un rôle.",en:"Add accounts in Supabase → Authentication, then assign a role."},
     roleWanted:{fr:"Rôle souhaité",en:"Desired role"},
-    portfolio:{fr:"Portfolio",en:"Portfolio"},
-    link:{fr:"lien",en:"link"},
     noApps:{fr:"Aucune candidature.",en:"No applications."},
     approveHint:{fr:"Approuver crée le compte avec le mot de passe temporaire ci-dessous.",en:"Approving creates the account with the temp password below."},
     approveCreate:{fr:"Approuver & créer le compte",en:"Approve & create login"},
@@ -501,7 +499,8 @@
         +'<div><span class="lbl">'+esc(t("roleWanted"))+'</span>'+esc(r.role_wanted||"—")+'</div>'
         +'<div><span class="lbl">'+esc(t("email"))+'</span><a href="mailto:'+esc(r.email)+'">'+esc(r.email)+'</a></div>'
         +'<div><span class="lbl">'+esc(t("phone"))+'</span>'+(r.phone?'<a href="tel:'+esc(r.phone)+'">'+esc(r.phone)+'</a>':'—')+'</div>'
-        +(r.portfolio?('<div><span class="lbl">'+esc(t("portfolio"))+'</span><a href="'+esc(r.portfolio)+'" target="_blank" rel="noopener">'+esc(t("link"))+'</a></div>'):'')+'</div>'
+        + socialLinks(r)
+        +'</div>'
         +(r.experience?('<div class="c-msg">'+esc(r.experience)+'</div>'):'')
         + (pending
             ? ('<div class="c-msg" style="background:#faf6ee">'+esc(t("approveHint"))+'</div>'
@@ -542,6 +541,17 @@
 
 
   function flash(id){ var b=document.querySelector('[data-saved="'+id+'"]'); if(b){ b.classList.add("show"); setTimeout(function(){b.classList.remove("show");},1500); } }
+
+  // Build safe social links from sanitized handles (defense-in-depth: re-clean here).
+  function safeHandle(v){ if(!v) return ""; var s=String(v).replace(/^@/,""); return /^[A-Za-z0-9._-]{1,40}$/.test(s)?s:""; }
+  function socialLinks(r){
+    var out="";
+    var ig=safeHandle(r.ig_handle), fb=safeHandle(r.fb_handle), tt=safeHandle(r.tt_handle);
+    if(ig) out+='<div><span class="lbl">Instagram</span><a href="https://instagram.com/'+encodeURIComponent(ig)+'" target="_blank" rel="noopener noreferrer">@'+esc(ig)+'</a></div>';
+    if(fb) out+='<div><span class="lbl">Facebook</span><a href="https://facebook.com/'+encodeURIComponent(fb)+'" target="_blank" rel="noopener noreferrer">'+esc(fb)+'</a></div>';
+    if(tt) out+='<div><span class="lbl">TikTok</span><a href="https://tiktok.com/@'+encodeURIComponent(tt)+'" target="_blank" rel="noopener noreferrer">@'+esc(tt)+'</a></div>';
+    return out;
+  }
 
   setLang(LANG);
   sb.auth.getSession().then(function(res){ if(res.data&&res.data.session) boot(); else showLogin(); });

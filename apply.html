@@ -118,6 +118,21 @@
           <label><span data-lang="fr">Expérience pertinente</span><span data-lang="en">Relevant experience</span></label>
           <textarea name="experience"></textarea>
         </div>
+        <div class="field">
+          <label><span data-lang="fr">Réseaux sociaux (nom d'utilisateur seulement)</span><span data-lang="en">Social media (username only)</span></label>
+          <div class="field-row" style="margin-bottom:12px">
+            <div style="display:flex;align-items:center;gap:8px"><span style="color:var(--ink-soft);font-size:.9rem;min-width:78px">Instagram</span><input type="text" name="ig" placeholder="@nom_utilisateur" autocomplete="off"></div>
+            <div style="display:flex;align-items:center;gap:8px"><span style="color:var(--ink-soft);font-size:.9rem;min-width:78px">Facebook</span><input type="text" name="fb" placeholder="nom.utilisateur" autocomplete="off"></div>
+          </div>
+          <div class="field-row">
+            <div style="display:flex;align-items:center;gap:8px"><span style="color:var(--ink-soft);font-size:.9rem;min-width:78px">TikTok</span><input type="text" name="tt" placeholder="@nom_utilisateur" autocomplete="off"></div>
+            <div></div>
+          </div>
+          <span class="field-error" data-for="social">
+            <span data-lang="fr">Entrez seulement le nom d'utilisateur, sans lien ni « http ».</span>
+            <span data-lang="en">Enter the username only — no links or "http".</span>
+          </span>
+        </div>
         <button class="btn btn--solid" type="submit"><span data-lang="fr">Envoyer ma candidature</span><span data-lang="en">Submit application</span></button>
         <p class="form-msg" style="display:none;margin-top:18px;color:var(--gold-deep)">
           <span data-lang="fr">Merci ! Votre candidature a été reçue. Nous vous contacterons après examen.</span>

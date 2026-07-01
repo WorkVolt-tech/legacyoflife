@@ -145,6 +145,7 @@
 </div>
 
 <script src="assets/config.js"></script>
+<script src="assets/intake-guide.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
@@ -254,6 +255,21 @@
     noArchive:{fr:"Aucun élément archivé.",en:"No archived items."},
     restoreConfirm:{fr:"Restaurer cet élément dans les listes actives ?",en:"Restore this item to the active lists?"},
     viewData:{fr:"Voir les données",en:"View data"},
+    coordination:{fr:"Dossiers familles",en:"Family files"},
+    newFile:{fr:"+ Nouveau dossier",en:"+ New file"},
+    familyName:{fr:"Nom de famille",en:"Family name"},
+    primaryContact:{fr:"Contact principal",en:"Primary contact"},
+    openFile:{fr:"Ouvrir le dossier",en:"Open file"},
+    backToFiles:{fr:"← Retour aux dossiers",en:"← Back to files"},
+    whatToSay:{fr:"Ce qu'il faut dire",en:"What to say"},
+    sectionNotes:{fr:"Notes de cette section",en:"Notes for this section"},
+    markSectionDone:{fr:"Section complétée",en:"Section complete"},
+    saveFile:{fr:"Enregistrer",en:"Save"},
+    fileSaved:{fr:"Enregistré",en:"Saved"},
+    intakeProgress:{fr:"Progression de l'entrevue",en:"Interview progress"},
+    noFiles:{fr:"Aucun dossier. Créez-en un pour commencer une entrevue familiale.",en:"No files. Create one to start a family interview."},
+    canManageIntake:{fr:"Peut gérer les entrevues",en:"Can manage intake"},
+    yes:{fr:"Oui",en:"Yes"}, no:{fr:"Non",en:"No"},
     postGroupOnly:{fr:"Ouvrir au groupe (selon les cases ci-dessus)",en:"Open to group (per checkboxes above)"},
     orAssign:{fr:"…ou assigner directement",en:"…or assign directly"},
     statuses:{
@@ -279,7 +295,8 @@
   var loginView=document.getElementById("loginView");
   var hubView=document.getElementById("hubView");
   var ME={id:null,role:"none",name:""};
-  var DATA={inquiries:[],jobs:[],roster:[],applications:[],checklist:[],archive:[]};
+  var DATA={inquiries:[],jobs:[],roster:[],applications:[],checklist:[],archive:[],coordination:[]};
+  var openFileId=null;  // which coordination file is open
   var current="overview";
 
   function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
@@ -317,9 +334,9 @@
     sb.auth.getSession().then(function(res){
       if(!res.data||!res.data.session){ showLogin(); return; }
       ME.id=res.data.session.user.id;
-      sb.from("profiles").select("role, full_name").eq("id",ME.id).single().then(function(p){
-        if(p.error||!p.data){ ME.role="none"; ME.name=res.data.session.user.email; }
-        else { ME.role=p.data.role; ME.name=p.data.full_name||res.data.session.user.email; }
+      sb.from("profiles").select("role, full_name, can_manage_intake").eq("id",ME.id).single().then(function(p){
+        if(p.error||!p.data){ ME.role="none"; ME.name=res.data.session.user.email; ME.can_manage_intake=false; }
+        else { ME.role=p.data.role; ME.name=p.data.full_name||res.data.session.user.email; ME.can_manage_intake=p.data.can_manage_intake===true; }
         showHub(); buildNav(); loadAll();
       });
     });
@@ -328,6 +345,7 @@
   function menuItems(){
     var items=[["overview",t("overview")]];
     if(seesInquiries()) items.push(["inquiries",t("inquiries")]);
+    if(isAdmin()||isStaff()) items.push(["coordination",t("coordination")]);
     items.push(["jobs", isWorker()?t("myJobs"):t("jobs")]);
     if(isAdmin()||isStaff()){ items.push(["photographers",t("photographers")]); items.push(["caterers",t("caterers")]); }
     if(isAdmin()){ items.push(["staff",t("staff")]); items.push(["applications",t("applications")]); items.push(["archive",t("archive")]); }
@@ -356,10 +374,12 @@
     q.push(isAdmin()? sb.from("applications").select("*").order("created_at",{ascending:false}) : Promise.resolve({data:[]}));
     q.push((isAdmin()||isStaff())? sb.from("job_checklist_items").select("*").order("position",{ascending:true}) : Promise.resolve({data:[]}));
     q.push(isAdmin()? sb.from("archive").select("*").order("archived_at",{ascending:false}) : Promise.resolve({data:[]}));
+    q.push((isAdmin()||isStaff())? sb.from("coordination_files").select("*").order("created_at",{ascending:false}) : Promise.resolve({data:[]}));
     Promise.all(q).then(function(r){
       DATA.inquiries=(r[0]&&r[0].data)||[]; DATA.jobs=(r[1]&&r[1].data)||[];
       DATA.roster=(r[2]&&r[2].data)||[]; DATA.applications=(r[3]&&r[3].data)||[];
       DATA.checklist=(r[4]&&r[4].data)||[]; DATA.archive=(r[5]&&r[5].data)||[];
+      DATA.coordination=(r[6]&&r[6].data)||[];
       buildNav(); render();
     });
   }
@@ -374,6 +394,7 @@
     if(current==="staff") return renderRoster(m,null,t("staff"));
     if(current==="applications") return renderApplications(m);
     if(current==="archive") return renderArchive(m);
+    if(current==="coordination") return renderCoordination(m);
   }
 
   function renderOverview(m){
@@ -464,7 +485,7 @@
         '<label><input type="checkbox" id="pt_cater"> '+esc(t("caterers"))+'</label>'+
       '</div></div>'+
       '<div class="full"><label>'+esc(t("orAssign"))+'</label><select id="jf_assign"><option value="">'+esc(t("postGroupOnly"))+'</option>'+
-        DATA.roster.map(function(p){return '<option value="'+esc(p.id)+'|'+esc(p.full_name||"")+'|'+esc(p.role)+'">'+esc(p.full_name||"—")+' — '+esc(p.role)+'</option>';}).join('')+'</select></div>'+
+        DATA.roster.filter(function(p){return p.role==="photographer"||p.role==="caterer";}).map(function(p){return '<option value="'+esc(p.id)+'|'+esc(p.full_name||"")+'|'+esc(p.role)+'">'+esc(p.full_name||"—")+' — '+esc(p.role)+'</option>';}).join('')+'</select></div>'+
       '</div><div style="margin-top:16px;display:flex;gap:10px;"><button class="btn btn--solid tbtn" id="jobSaveBtn">'+esc(t("create"))+'</button><button class="btn btn--ghost tbtn" id="jobCancelBtn">'+esc(t("cancel"))+'</button></div>'+
       '<p id="jobFormErr" style="color:#a8402d;font-size:.85rem;margin-top:10px;display:none"></p></div>';
   }
@@ -602,14 +623,18 @@
 
   function renderRoster(m, roleFilter, title){
     var rows=DATA.roster.filter(function(p){ return roleFilter? p.role===roleFilter : true; });
+    var showPerm=(current==="staff"); // only on the Staff page
     m.innerHTML='<h2 class="module-title">'+esc(title)+'</h2>'+
-      (rows.length? '<table class="roster"><thead><tr><th>'+esc(t("name"))+'</th><th>'+esc(t("email"))+'</th><th>'+esc(t("role"))+'</th><th>'+esc(t("jobsCol"))+'</th>'+(isAdmin()?'<th></th>':'')+'</tr></thead><tbody>'+
+      (rows.length? '<table class="roster"><thead><tr><th>'+esc(t("name"))+'</th><th>'+esc(t("email"))+'</th><th>'+esc(t("role"))+'</th>'+(showPerm?'<th>'+esc(t("canManageIntake"))+'</th>':'')+'<th>'+esc(t("jobsCol"))+'</th>'+(isAdmin()?'<th></th>':'')+'</tr></thead><tbody>'+
         rows.map(function(p){ var acc=DATA.jobs.filter(function(j){return j.assigned_to===p.id;}).length; var done=DATA.jobs.filter(function(j){return j.assigned_to===p.id&&j.status==="done";}).length;
-          return '<tr><td>'+esc(p.full_name||"—")+'</td><td>'+(p.email?'<a href="mailto:'+esc(p.email)+'">'+esc(p.email)+'</a>':"—")+'</td><td><span class="rolechip">'+esc(p.role)+'</span></td><td>'+acc+' '+esc(t("accepted"))+' · '+done+' '+esc(t("completed"))+'</td>'
+          return '<tr><td>'+esc(p.full_name||"—")+'</td><td>'+(p.email?'<a href="mailto:'+esc(p.email)+'">'+esc(p.email)+'</a>':"—")+'</td><td><span class="rolechip">'+esc(p.role)+'</span></td>'
+            +(showPerm?('<td>'+(isAdmin()&&p.role!=='admin'?'<input type="checkbox" data-perm-intake="'+esc(p.id)+'"'+(p.can_manage_intake?' checked':'')+' style="width:17px;height:17px;accent-color:var(--gold)">':(p.can_manage_intake||p.role==='admin'?esc(t("yes")):esc(t("no"))))+'</td>'):'')
+            +'<td>'+acc+' '+esc(t("accepted"))+' · '+done+' '+esc(t("completed"))+'</td>'
             +(isAdmin()&&p.id!==ME.id?'<td><button class="btn btn--ghost tbtn" data-rm-staff="'+esc(p.id)+'" style="color:#a8402d">'+esc(t("remove"))+'</button></td>':(isAdmin()?'<td></td>':''))
             +'</tr>'; }).join('')+'</tbody></table>'
        : '<div class="empty">'+esc(t("nobody"))+'<br><span style="font-size:.85rem">'+esc(t("addAccountsHint"))+'</span></div>');
     document.querySelectorAll("[data-rm-staff]").forEach(function(b){ b.addEventListener("click", function(){ var id=b.getAttribute("data-rm-staff"); var row=DATA.roster.filter(function(x){return String(x.id)===String(id);})[0]; archiveAndRemove("profiles", id, row?row.full_name:""); }); });
+    document.querySelectorAll("[data-perm-intake]").forEach(function(cb){ cb.addEventListener("change", function(){ var id=cb.getAttribute("data-perm-intake"); sb.from("profiles").update({can_manage_intake:cb.checked}).eq("id",id).then(function(res){ if(res.error){ alert(res.error.message); cb.checked=!cb.checked; return; } var row=DATA.roster.filter(function(x){return String(x.id)===String(id);})[0]; if(row) row.can_manage_intake=cb.checked; }); }); });
   }
 
   function renderApplications(m){
@@ -672,6 +697,121 @@
 
 
   function flash(id){ var b=document.querySelector('[data-saved="'+id+'"]'); if(b){ b.classList.add("show"); setTimeout(function(){b.classList.remove("show");},1500); } }
+
+  // ================= COORDINATION FILES + GUIDED INTAKE =================
+  function canIntake(){ return isAdmin() || (ME.can_manage_intake===true); }
+
+  function renderCoordination(m){
+    if(openFileId){ return renderIntake(m, openFileId); }
+    var rows=DATA.coordination||[];
+    m.innerHTML='<h2 class="module-title">'+esc(t("coordination"))+'</h2>'+
+      '<div class="controls">'+(canIntake()?'<button class="btn btn--solid tbtn" id="newFileBtn">'+esc(t("newFile"))+'</button>':'')+'<span class="count">'+rows.length+'</span></div>'+
+      '<div class="job-form" id="fileForm"><h3>'+esc(t("newFile"))+'</h3><div class="jf-grid">'+
+        '<div><label>'+esc(t("familyName"))+'</label><input type="text" id="ff_family"></div>'+
+        '<div><label>'+esc(t("primaryContact"))+'</label><input type="text" id="ff_contact"></div>'+
+        '<div><label>'+esc(t("phone"))+'</label><input type="text" id="ff_phone"></div>'+
+        '<div><label>'+esc(t("email"))+'</label><input type="text" id="ff_email"></div>'+
+        '<div><label>'+esc(t("package"))+'</label><select id="ff_package"><option value="">—</option><option value="essentiel">Essentiel</option><option value="serenite">Sérénité</option><option value="heritage">Héritage</option></select></div>'+
+      '</div><div style="margin-top:14px;display:flex;gap:10px"><button class="btn btn--solid tbtn" id="ff_save">'+esc(t("create"))+'</button><button class="btn btn--ghost tbtn" id="ff_cancel">'+esc(t("cancel"))+'</button></div></div>'+
+      '<div class="sub-list" id="fileList"></div><div class="empty hide" id="fileEmpty">'+esc(t("noFiles"))+'</div>';
+
+    if(canIntake()){
+      document.getElementById("newFileBtn").addEventListener("click",function(){ document.getElementById("fileForm").classList.add("open"); });
+      document.getElementById("ff_cancel").addEventListener("click",function(){ document.getElementById("fileForm").classList.remove("open"); });
+      document.getElementById("ff_save").addEventListener("click",function(){
+        var fam=document.getElementById("ff_family").value.trim(); if(!fam){ alert(t("familyName")); return; }
+        var rec={ family_name:fam, primary_contact:document.getElementById("ff_contact").value.trim()||null, phone:document.getElementById("ff_phone").value.trim()||null, email:document.getElementById("ff_email").value.trim()||null, package_key:document.getElementById("ff_package").value||null, intake:{}, intake_notes:{}, intake_progress:{} };
+        sb.from("coordination_files").insert(rec).then(function(res){ if(res.error){ alert(res.error.message); return; } loadAll(); });
+      });
+    }
+    document.getElementById("fileEmpty").classList.toggle("hide",rows.length>0);
+    document.getElementById("fileList").innerHTML=rows.map(function(f){
+      var prog=intakePct(f);
+      return '<div class="card2"><div class="c-top"><span class="c-name">'+esc(f.family_name)+'</span><span class="c-date">'+esc(fmtDate(f.created_at))+'</span></div>'
+        +'<div class="c-meta">'
+        +'<div><span class="lbl">'+esc(t("primaryContact"))+'</span>'+esc(f.primary_contact||"—")+'</div>'
+        +'<div><span class="lbl">'+esc(t("phone"))+'</span>'+esc(f.phone||"—")+'</div>'
+        +'<div><span class="lbl">'+esc(t("package"))+'</span>'+esc(f.package_key||"—")+'</div>'
+        +'</div>'
+        +'<div class="progress-wrap" style="margin:8px 0 14px"><div class="progress-bar"><div class="progress-fill" style="width:'+prog+'%"></div></div><span class="progress-pct">'+prog+'%</span></div>'
+        +'<div class="c-actions"><button class="btn btn--solid tbtn" data-openfile="'+esc(f.id)+'">'+esc(t("openFile"))+'</button>'
+        +(isAdmin()?'<button class="btn btn--ghost tbtn" data-rm-file="'+esc(f.id)+'" style="color:#a8402d">'+esc(t("remove"))+'</button>':'')+'</div></div>';
+    }).join('');
+    document.querySelectorAll("[data-openfile]").forEach(function(b){ b.addEventListener("click",function(){ openFileId=b.getAttribute("data-openfile"); render(); }); });
+    document.querySelectorAll("[data-rm-file]").forEach(function(b){ b.addEventListener("click",function(){ var id=b.getAttribute("data-rm-file"); if(!confirm(t("removeArchiveConfirm")))return; sb.from("coordination_files").delete().eq("id",id).then(function(res){ if(res.error){alert(res.error.message);return;} loadAll(); }); }); });
+  }
+
+  function intakePct(f){
+    var prog=f.intake_progress||{}; var total=window.HDV_INTAKE.length;
+    var done=window.HDV_INTAKE.filter(function(s){ return prog[s.key]; }).length;
+    return total? Math.round(done*100/total):0;
+  }
+
+  function renderIntake(m, fileId){
+    var f=(DATA.coordination||[]).filter(function(x){return String(x.id)===String(fileId);})[0];
+    if(!f){ openFileId=null; return renderCoordination(m); }
+    var editable=canIntake();
+    var answers=f.intake||{}, notes=f.intake_notes||{}, prog=f.intake_progress||{};
+    var pct=intakePct(f);
+    var html='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">'
+      +'<button class="clist-toggle" id="backFiles">'+esc(t("backToFiles"))+'</button>'
+      +(editable?'<button class="btn btn--solid tbtn" id="saveIntake">'+esc(t("saveFile"))+' <span class="saved" id="intakeSaved">✓</span></button>':'')+'</div>'
+      +'<h2 class="module-title" style="margin-top:10px">'+esc(f.family_name)+'</h2>'
+      +'<div class="progress-wrap" style="margin-bottom:22px"><span style="font-size:.82rem;color:var(--ink-soft)">'+esc(t("intakeProgress"))+'</span><div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%"></div></div><span class="progress-pct">'+pct+'%</span></div>';
+
+    window.HDV_INTAKE.forEach(function(sec){
+      var secDone=!!prog[sec.key];
+      html+='<div class="card2" style="margin-bottom:16px'+(secDone?';border-left-color:#8aa17c':'')+'">'
+        +'<div class="c-top"><span class="c-name" style="font-size:1.2rem">'+esc(sec.title[LANG]||sec.title.fr)+'</span>'
+        +(secDone?'<span class="pill st-approved">✓</span>':'')+'</div>';
+      // script
+      if(sec.script){
+        html+='<div style="background:#faf6ee;border-left:3px solid var(--gold);border-radius:6px;padding:12px 14px;margin:10px 0;font-size:.92rem;color:var(--ink);white-space:pre-wrap"><b style="display:block;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:6px">'+esc(t("whatToSay"))+'</b>'+esc(sec.script[LANG]||sec.script.fr)+'</div>';
+      }
+      // fields
+      sec.fields.forEach(function(fl){
+        var val=answers[fl.key]||"";
+        var lab=esc(fl.label[LANG]||fl.label.fr);
+        html+='<div style="margin:10px 0"><label style="display:block;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:5px">'+lab+'</label>';
+        if(fl.type==="textarea"){
+          html+='<textarea data-intake="'+esc(fl.key)+'" rows="2" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:var(--radius);font-family:var(--sans);font-size:.9rem"'+(editable?"":" disabled")+'>'+esc(val)+'</textarea>';
+        } else if(fl.type==="select"||fl.type==="radio"){
+          html+='<select data-intake="'+esc(fl.key)+'" style="padding:9px 11px;border:1px solid var(--line);border-radius:var(--radius);font-family:var(--sans);font-size:.9rem;min-width:200px"'+(editable?"":" disabled")+'><option value="">—</option>'+
+            fl.options.map(function(o){return '<option value="'+esc(o.v)+'"'+(val===o.v?' selected':'')+'>'+esc(o[LANG]||o.fr)+'</option>';}).join('')+'</select>';
+        } else {
+          html+='<input type="'+(fl.type==="date"?"date":"text")+'" data-intake="'+esc(fl.key)+'" value="'+esc(val)+'" style="width:100%;max-width:420px;padding:9px 11px;border:1px solid var(--line);border-radius:var(--radius);font-family:var(--sans);font-size:.9rem"'+(editable?"":" disabled")+'>';
+        }
+        html+='</div>';
+      });
+      // notes
+      html+='<div style="margin:12px 0 6px"><label style="display:block;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:5px">'+esc(t("sectionNotes"))+'</label>'
+        +'<textarea data-note="'+esc(sec.key)+'" rows="2" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:var(--radius);font-family:var(--sans);font-size:.9rem"'+(editable?"":" disabled")+'>'+esc(notes[sec.key]||"")+'</textarea></div>';
+      // mark done
+      if(editable){
+        html+='<label class="check" style="margin-top:6px"><input type="checkbox" data-secdone="'+esc(sec.key)+'"'+(secDone?' checked':'')+'> <span>'+esc(t("markSectionDone"))+'</span></label>';
+      }
+      html+='</div>';
+    });
+    m.innerHTML=html;
+
+    document.getElementById("backFiles").addEventListener("click",function(){ openFileId=null; render(); });
+    if(editable){
+      document.getElementById("saveIntake").addEventListener("click",function(){ saveIntake(fileId); });
+    }
+  }
+
+  function saveIntake(fileId){
+    var answers={}, notes={}, prog={};
+    document.querySelectorAll("[data-intake]").forEach(function(el){ var v=el.value.trim(); if(v) answers[el.getAttribute("data-intake")]=v; });
+    document.querySelectorAll("[data-note]").forEach(function(el){ var v=el.value.trim(); if(v) notes[el.getAttribute("data-note")]=v; });
+    document.querySelectorAll("[data-secdone]").forEach(function(el){ if(el.checked) prog[el.getAttribute("data-secdone")]=true; });
+    sb.from("coordination_files").update({ intake:answers, intake_notes:notes, intake_progress:prog }).eq("id",fileId).then(function(res){
+      if(res.error){ alert("Erreur / Error: "+res.error.message); return; }
+      var f=(DATA.coordination||[]).filter(function(x){return String(x.id)===String(fileId);})[0];
+      if(f){ f.intake=answers; f.intake_notes=notes; f.intake_progress=prog; }
+      var s=document.getElementById("intakeSaved"); if(s){ s.classList.add("show"); setTimeout(function(){s.classList.remove("show");},1500); }
+    });
+  }
 
   // ---- ARCHIVE (admin only) ----
   var SRC_LABEL={ contact_submissions:{fr:"Demande",en:"Inquiry"}, jobs:{fr:"Mandat",en:"Job"}, profiles:{fr:"Personnel",en:"Staff"}, applications:{fr:"Candidature",en:"Application"} };

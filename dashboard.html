@@ -239,6 +239,9 @@
     removeStep:{fr:"Retirer",en:"Remove"},
     removeStepConfirm:{fr:"Retirer cette étape ?",en:"Remove this step?"},
     noChecklist:{fr:"Aucune liste. Choisissez un forfait pour la générer, ou ajoutez des étapes.",en:"No checklist. Pick a package to generate one, or add steps."},
+    remove:{fr:"Retirer",en:"Remove"},
+    removeArchiveConfirm:{fr:"Retirer et archiver cet élément ? Il quittera la liste active mais restera récupérable dans les archives.",en:"Remove and archive this item? It leaves the active list but stays recoverable in the archive."},
+    removed:{fr:"Retiré et archivé.",en:"Removed and archived."},
     postGroupOnly:{fr:"Ouvrir au groupe (selon les cases ci-dessus)",en:"Open to group (per checkboxes above)"},
     orAssign:{fr:"…ou assigner directement",en:"…or assign directly"},
     statuses:{
@@ -398,10 +401,12 @@
           +'<input type="text" data-iid="'+esc(r.id)+'" data-f="assigned_to" placeholder="'+esc(t("assignedTo"))+'" value="'+esc(r.assigned_to||"")+'" style="width:150px">'
           +'<input type="text" data-iid="'+esc(r.id)+'" data-f="staff_notes" placeholder="'+esc(t("notes"))+'" value="'+esc(r.staff_notes||"")+'" style="flex:1;min-width:140px">'
           +'<button class="btn btn--ghost tbtn" data-convert="'+esc(r.id)+'">'+esc(t("makeJob"))+'</button>'
+          +(isAdmin()?'<button class="btn btn--ghost tbtn" data-rm-inq="'+esc(r.id)+'" style="color:#a8402d">'+esc(t("remove"))+'</button>':'')
           +'<span class="saved" data-saved="'+esc(r.id)+'">✓</span></div></div>';
       }).join('');
       document.querySelectorAll("[data-iid]").forEach(function(el){ el.addEventListener("change", function(){ updateInquiry(el.getAttribute("data-iid"),el.getAttribute("data-f"),el.value); }); });
       document.querySelectorAll("[data-convert]").forEach(function(b){ b.addEventListener("click", function(){ convertToJob(b.getAttribute("data-convert")); }); });
+      document.querySelectorAll("[data-rm-inq]").forEach(function(b){ b.addEventListener("click", function(){ var id=b.getAttribute("data-rm-inq"); var row=DATA.inquiries.filter(function(x){return String(x.id)===String(id);})[0]; archiveAndRemove("contact_submissions", id, row?row.name:""); }); });
     }
     document.getElementById("fStatus").addEventListener("change",draw);
     document.getElementById("fSearch").addEventListener("input",draw);
@@ -572,13 +577,25 @@
   function setJob(id,patch){ sb.from("jobs").update(patch).eq("id",id).then(function(res){ if(res.error){alert(res.error.message);return;} flash(id); loadAll(); }); }
   function delJob(id){ sb.from("jobs").delete().eq("id",id).then(function(res){ if(res.error){alert(res.error.message);return;} loadAll(); }); }
 
+  // Remove a record: archive it (via RPC) then reload. Admin only.
+  function archiveAndRemove(table, id, label){
+    if(!confirm(t("removeArchiveConfirm"))) return;
+    sb.rpc("archive_and_remove", { p_table:table, p_id:id, p_label:label||"" }).then(function(res){
+      if(res.error){ alert("Erreur / Error: "+res.error.message); return; }
+      loadAll();
+    });
+  }
+
   function renderRoster(m, roleFilter, title){
     var rows=DATA.roster.filter(function(p){ return roleFilter? p.role===roleFilter : true; });
     m.innerHTML='<h2 class="module-title">'+esc(title)+'</h2>'+
-      (rows.length? '<table class="roster"><thead><tr><th>'+esc(t("name"))+'</th><th>'+esc(t("email"))+'</th><th>'+esc(t("role"))+'</th><th>'+esc(t("jobsCol"))+'</th></tr></thead><tbody>'+
+      (rows.length? '<table class="roster"><thead><tr><th>'+esc(t("name"))+'</th><th>'+esc(t("email"))+'</th><th>'+esc(t("role"))+'</th><th>'+esc(t("jobsCol"))+'</th>'+(isAdmin()?'<th></th>':'')+'</tr></thead><tbody>'+
         rows.map(function(p){ var acc=DATA.jobs.filter(function(j){return j.assigned_to===p.id;}).length; var done=DATA.jobs.filter(function(j){return j.assigned_to===p.id&&j.status==="done";}).length;
-          return '<tr><td>'+esc(p.full_name||"—")+'</td><td>'+(p.email?'<a href="mailto:'+esc(p.email)+'">'+esc(p.email)+'</a>':"—")+'</td><td><span class="rolechip">'+esc(p.role)+'</span></td><td>'+acc+' '+esc(t("accepted"))+' · '+done+' '+esc(t("completed"))+'</td></tr>'; }).join('')+'</tbody></table>'
+          return '<tr><td>'+esc(p.full_name||"—")+'</td><td>'+(p.email?'<a href="mailto:'+esc(p.email)+'">'+esc(p.email)+'</a>':"—")+'</td><td><span class="rolechip">'+esc(p.role)+'</span></td><td>'+acc+' '+esc(t("accepted"))+' · '+done+' '+esc(t("completed"))+'</td>'
+            +(isAdmin()&&p.id!==ME.id?'<td><button class="btn btn--ghost tbtn" data-rm-staff="'+esc(p.id)+'" style="color:#a8402d">'+esc(t("remove"))+'</button></td>':(isAdmin()?'<td></td>':''))
+            +'</tr>'; }).join('')+'</tbody></table>'
        : '<div class="empty">'+esc(t("nobody"))+'<br><span style="font-size:.85rem">'+esc(t("addAccountsHint"))+'</span></div>');
+    document.querySelectorAll("[data-rm-staff]").forEach(function(b){ b.addEventListener("click", function(){ var id=b.getAttribute("data-rm-staff"); var row=DATA.roster.filter(function(x){return String(x.id)===String(id);})[0]; archiveAndRemove("profiles", id, row?row.full_name:""); }); });
   }
 
   function renderApplications(m){
@@ -608,6 +625,7 @@
                +'<span class="saved" data-saved="'+esc(r.id)+'">✓</span></div>')
             : ('<div class="c-actions"><select data-aid="'+esc(r.id)+'" data-f="status">'+ASTAT.map(function(s){return '<option value="'+s+'"'+(r.status===s?' selected':'')+'>'+esc(ts(s))+'</option>';}).join('')+'</select>'
                +'<input type="text" data-aid="'+esc(r.id)+'" data-f="notes" placeholder="'+esc(t("notes"))+'" value="'+esc(r.notes||"")+'" style="flex:1;min-width:160px">'
+               +'<button class="btn btn--ghost tbtn" data-rm-app="'+esc(r.id)+'" style="color:#a8402d">'+esc(t("remove"))+'</button>'
                +'<span class="saved" data-saved="'+esc(r.id)+'">✓</span></div>') )
         +'</div>';
     }).join('');
@@ -615,6 +633,7 @@
     document.querySelectorAll("[data-aid]").forEach(function(el){ el.addEventListener("change", function(){ var p={}; p[el.getAttribute("data-f")]=el.value; sb.from("applications").update(p).eq("id",el.getAttribute("data-aid")).then(function(res){ if(res.error){alert(res.error.message);return;} flash(el.getAttribute("data-aid")); var row=DATA.applications.filter(function(x){return String(x.id)===String(el.getAttribute("data-aid"));})[0]; if(row) row[el.getAttribute("data-f")]=el.value; }); }); });
     // decline
     document.querySelectorAll("[data-decline]").forEach(function(b){ b.addEventListener("click", function(){ var id=b.getAttribute("data-decline"); sb.from("applications").update({status:"declined"}).eq("id",id).then(function(res){ if(res.error){alert(res.error.message);return;} loadAll(); }); }); });
+    document.querySelectorAll("[data-rm-app]").forEach(function(b){ b.addEventListener("click", function(){ var id=b.getAttribute("data-rm-app"); var row=DATA.applications.filter(function(x){return String(x.id)===String(id);})[0]; archiveAndRemove("applications", id, row?row.full_name:""); }); });
     // approve & create login (calls Edge Function)
     document.querySelectorAll("[data-approve]").forEach(function(b){ b.addEventListener("click", function(){
       var id=b.getAttribute("data-approve");

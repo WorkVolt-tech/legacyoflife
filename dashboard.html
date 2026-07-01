@@ -846,12 +846,27 @@
     document.querySelectorAll("[data-exp1]").forEach(function(b){ b.addEventListener("click", function(){ var r=rows.filter(function(x){return String(x.id)===String(b.getAttribute("data-exp1"));})[0]; if(r) exportRows([r], "archive_"+(r.label||"item")); }); });
     // restore
     document.querySelectorAll("[data-restore]").forEach(function(b){ b.addEventListener("click", function(){ if(!confirm(t("restoreConfirm"))) return; restoreRow(b.getAttribute("data-restore")); }); });
-    // delete forever (exports first)
+    // delete forever (logs to shared Google Sheet first)
     document.querySelectorAll("[data-delforever]").forEach(function(b){ b.addEventListener("click", function(){
       if(!confirm(t("deleteForeverConfirm"))) return;
       var id=b.getAttribute("data-delforever"); var r=rows.filter(function(x){return String(x.id)===String(id);})[0];
-      if(r) exportRows([r], "deleted_"+(r.label||"item"));  // export before delete
-      sb.from("archive").delete().eq("id",id).then(function(res){ if(res.error){ alert(res.error.message); return; } loadAll(); });
+      if(!r){ return; }
+      // Build one flat row for the sheet: when, by, type, label, then the data as JSON.
+      var sheetRow=[ new Date().toISOString(), ME.name||"", r.source_table||"", r.label||"", JSON.stringify(r.data||{}) ];
+      b.disabled=true;
+      sb.functions.invoke("log-deletion", { body:{ row: sheetRow } }).then(function(res){
+        if(res.error || (res.data && res.data.error)){
+          // Sheet logging failed — fall back to Excel download so nothing is lost, and warn.
+          exportRows([r], "deleted_"+(r.label||"item"));
+          alert((LANG==="fr"?"Journalisation Google Sheet échouée — un fichier Excel a été téléchargé à la place. Erreur : ":"Google Sheet logging failed — an Excel file was downloaded instead. Error: ")+((res.error&&(res.error.message||res.error))||(res.data&&res.data.error)));
+        }
+        // Proceed to delete regardless (the record is safe: in the sheet or the Excel fallback).
+        sb.from("archive").delete().eq("id",id).then(function(res2){ b.disabled=false; if(res2.error){ alert(res2.error.message); return; } loadAll(); });
+      }, function(err){
+        exportRows([r], "deleted_"+(r.label||"item"));
+        alert((LANG==="fr"?"Journalisation échouée — fichier Excel téléchargé. ":"Logging failed — Excel file downloaded. ")+err);
+        sb.from("archive").delete().eq("id",id).then(function(){ b.disabled=false; loadAll(); });
+      });
     }); });
   }
 

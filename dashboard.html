@@ -146,6 +146,7 @@
 
 <script src="assets/config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 (function () {
   var cfg = window.HDV_CONFIG || {};
@@ -242,6 +243,17 @@
     remove:{fr:"Retirer",en:"Remove"},
     removeArchiveConfirm:{fr:"Retirer et archiver cet élément ? Il quittera la liste active mais restera récupérable dans les archives.",en:"Remove and archive this item? It leaves the active list but stays recoverable in the archive."},
     removed:{fr:"Retiré et archivé.",en:"Removed and archived."},
+    archive:{fr:"Archives",en:"Archive"},
+    archivedOn:{fr:"Archivé le",en:"Archived on"},
+    archivedBy:{fr:"Par",en:"By"},
+    source:{fr:"Type",en:"Type"},
+    exportExcel:{fr:"Exporter en Excel",en:"Export to Excel"},
+    restore:{fr:"Restaurer",en:"Restore"},
+    deleteForever:{fr:"Supprimer définitivement",en:"Delete permanently"},
+    deleteForeverConfirm:{fr:"Supprimer DÉFINITIVEMENT cet élément des archives ? Un fichier Excel sera téléchargé d'abord.",en:"PERMANENTLY delete this item from the archive? An Excel file downloads first."},
+    noArchive:{fr:"Aucun élément archivé.",en:"No archived items."},
+    restoreConfirm:{fr:"Restaurer cet élément dans les listes actives ?",en:"Restore this item to the active lists?"},
+    viewData:{fr:"Voir les données",en:"View data"},
     postGroupOnly:{fr:"Ouvrir au groupe (selon les cases ci-dessus)",en:"Open to group (per checkboxes above)"},
     orAssign:{fr:"…ou assigner directement",en:"…or assign directly"},
     statuses:{
@@ -267,7 +279,7 @@
   var loginView=document.getElementById("loginView");
   var hubView=document.getElementById("hubView");
   var ME={id:null,role:"none",name:""};
-  var DATA={inquiries:[],jobs:[],roster:[],applications:[],checklist:[]};
+  var DATA={inquiries:[],jobs:[],roster:[],applications:[],checklist:[],archive:[]};
   var current="overview";
 
   function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
@@ -318,7 +330,7 @@
     if(seesInquiries()) items.push(["inquiries",t("inquiries")]);
     items.push(["jobs", isWorker()?t("myJobs"):t("jobs")]);
     if(isAdmin()||isStaff()){ items.push(["photographers",t("photographers")]); items.push(["caterers",t("caterers")]); }
-    if(isAdmin()){ items.push(["staff",t("staff")]); items.push(["applications",t("applications")]); }
+    if(isAdmin()){ items.push(["staff",t("staff")]); items.push(["applications",t("applications")]); items.push(["archive",t("archive")]); }
     return items;
   }
   function buildNav(){
@@ -343,10 +355,11 @@
     q.push((isAdmin()||isStaff())? sb.from("roster").select("*") : Promise.resolve({data:[]}));
     q.push(isAdmin()? sb.from("applications").select("*").order("created_at",{ascending:false}) : Promise.resolve({data:[]}));
     q.push((isAdmin()||isStaff())? sb.from("job_checklist_items").select("*").order("position",{ascending:true}) : Promise.resolve({data:[]}));
+    q.push(isAdmin()? sb.from("archive").select("*").order("archived_at",{ascending:false}) : Promise.resolve({data:[]}));
     Promise.all(q).then(function(r){
       DATA.inquiries=(r[0]&&r[0].data)||[]; DATA.jobs=(r[1]&&r[1].data)||[];
       DATA.roster=(r[2]&&r[2].data)||[]; DATA.applications=(r[3]&&r[3].data)||[];
-      DATA.checklist=(r[4]&&r[4].data)||[];
+      DATA.checklist=(r[4]&&r[4].data)||[]; DATA.archive=(r[5]&&r[5].data)||[];
       buildNav(); render();
     });
   }
@@ -360,6 +373,7 @@
     if(current==="caterers") return renderRoster(m,"caterer",t("caterers"));
     if(current==="staff") return renderRoster(m,null,t("staff"));
     if(current==="applications") return renderApplications(m);
+    if(current==="archive") return renderArchive(m);
   }
 
   function renderOverview(m){
@@ -658,6 +672,73 @@
 
 
   function flash(id){ var b=document.querySelector('[data-saved="'+id+'"]'); if(b){ b.classList.add("show"); setTimeout(function(){b.classList.remove("show");},1500); } }
+
+  // ---- ARCHIVE (admin only) ----
+  var SRC_LABEL={ contact_submissions:{fr:"Demande",en:"Inquiry"}, jobs:{fr:"Mandat",en:"Job"}, profiles:{fr:"Personnel",en:"Staff"}, applications:{fr:"Candidature",en:"Application"} };
+  function srcLabel(s){ var e=SRC_LABEL[s]; return e?(e[LANG]||e.fr):s; }
+
+  function renderArchive(m){
+    var rows=DATA.archive||[];
+    m.innerHTML='<h2 class="module-title">'+esc(t("archive"))+'</h2>'+
+      '<div class="controls">'+
+        (rows.length?'<button class="btn btn--solid tbtn" id="expAll">'+esc(t("exportExcel"))+'</button>':'')+
+        '<span class="count">'+rows.length+'</span></div>'+
+      '<div class="sub-list" id="arcList"></div><div class="empty hide" id="arcEmpty">'+esc(t("noArchive"))+'</div>';
+    document.getElementById("arcEmpty").classList.toggle("hide",rows.length>0);
+    document.getElementById("arcList").innerHTML=rows.map(function(r){
+      return '<div class="card2"><div class="c-top"><span class="c-name">'+esc(r.label||"—")+'</span>'
+        +'<span class="c-date"><span class="pill">'+esc(srcLabel(r.source_table))+'</span></span></div>'
+        +'<div class="c-meta">'
+        +'<div><span class="lbl">'+esc(t("archivedOn"))+'</span>'+esc(fmtDate(r.archived_at))+'</div>'
+        +'<div><span class="lbl">'+esc(t("archivedBy"))+'</span>'+esc(r.archived_by||"—")+'</div>'
+        +'</div>'
+        +'<details style="margin:6px 0 10px"><summary style="cursor:pointer;color:var(--gold-deep);font-size:.85rem">'+esc(t("viewData"))+'</summary><div class="c-msg" style="margin-top:8px">'+esc(JSON.stringify(r.data,null,2))+'</div></details>'
+        +'<div class="c-actions">'
+        +'<button class="btn btn--ghost tbtn" data-exp1="'+esc(r.id)+'">'+esc(t("exportExcel"))+'</button>'
+        +'<button class="btn btn--ghost tbtn" data-restore="'+esc(r.id)+'">'+esc(t("restore"))+'</button>'
+        +'<button class="btn btn--ghost tbtn" data-delforever="'+esc(r.id)+'" style="color:#a8402d">'+esc(t("deleteForever"))+'</button>'
+        +'</div></div>';
+    }).join('');
+    // export all
+    var expAll=document.getElementById("expAll");
+    if(expAll) expAll.addEventListener("click", function(){ exportRows(rows, "archive"); });
+    // per-row export
+    document.querySelectorAll("[data-exp1]").forEach(function(b){ b.addEventListener("click", function(){ var r=rows.filter(function(x){return String(x.id)===String(b.getAttribute("data-exp1"));})[0]; if(r) exportRows([r], "archive_"+(r.label||"item")); }); });
+    // restore
+    document.querySelectorAll("[data-restore]").forEach(function(b){ b.addEventListener("click", function(){ if(!confirm(t("restoreConfirm"))) return; restoreRow(b.getAttribute("data-restore")); }); });
+    // delete forever (exports first)
+    document.querySelectorAll("[data-delforever]").forEach(function(b){ b.addEventListener("click", function(){
+      if(!confirm(t("deleteForeverConfirm"))) return;
+      var id=b.getAttribute("data-delforever"); var r=rows.filter(function(x){return String(x.id)===String(id);})[0];
+      if(r) exportRows([r], "deleted_"+(r.label||"item"));  // export before delete
+      sb.from("archive").delete().eq("id",id).then(function(res){ if(res.error){ alert(res.error.message); return; } loadAll(); });
+    }); });
+  }
+
+  function exportRows(rows, filename){
+    try{
+      // flatten each archived record's data into a row
+      var flat=rows.map(function(r){
+        var base={ _type:r.source_table, _label:r.label, _archived_at:r.archived_at, _archived_by:r.archived_by };
+        var d=r.data||{};
+        Object.keys(d).forEach(function(k){ var v=d[k]; base[k]=(v&&typeof v==="object")?JSON.stringify(v):v; });
+        return base;
+      });
+      var ws=XLSX.utils.json_to_sheet(flat);
+      var wb=XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Archive");
+      XLSX.writeFile(wb, (filename||"archive")+".xlsx");
+    }catch(e){ alert("Export error: "+e); }
+  }
+
+  function restoreRow(id){
+    var r=(DATA.archive||[]).filter(function(x){return String(x.id)===String(id);})[0]; if(!r) return;
+    // insert the data back into its source table, then remove from archive
+    sb.from(r.source_table).insert(r.data).then(function(res){
+      if(res.error){ alert("Restore error: "+res.error.message); return; }
+      sb.from("archive").delete().eq("id",id).then(function(){ loadAll(); });
+    });
+  }
 
   // Build safe social links from sanitized handles (defense-in-depth: re-clean here).
   function safeHandle(v){ if(!v) return ""; var s=String(v).replace(/^@/,""); return /^[A-Za-z0-9._-]{1,40}$/.test(s)?s:""; }

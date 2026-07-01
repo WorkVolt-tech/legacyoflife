@@ -270,6 +270,14 @@
     noFiles:{fr:"Aucun dossier. Créez-en un pour commencer une entrevue familiale.",en:"No files. Create one to start a family interview."},
     canManageIntake:{fr:"Peut gérer les entrevues",en:"Can manage intake"},
     yes:{fr:"Oui",en:"Yes"}, no:{fr:"Non",en:"No"},
+    notesThread:{fr:"Notes de l'équipe",en:"Team notes"},
+    addNote:{fr:"Ajouter une note",en:"Add a note"},
+    yourNote:{fr:"Votre note…",en:"Your note…"},
+    postNote:{fr:"Publier",en:"Post"},
+    editNote:{fr:"Modifier",en:"Edit"},
+    saveNote:{fr:"Enregistrer",en:"Save"},
+    noNotesYet:{fr:"Aucune note pour l'instant.",en:"No notes yet."},
+    lockedNote:{fr:"(vous ne pouvez pas modifier les notes des autres)",en:"(you can't edit others' notes)"},
     postGroupOnly:{fr:"Ouvrir au groupe (selon les cases ci-dessus)",en:"Open to group (per checkboxes above)"},
     orAssign:{fr:"…ou assigner directement",en:"…or assign directly"},
     statuses:{
@@ -295,7 +303,7 @@
   var loginView=document.getElementById("loginView");
   var hubView=document.getElementById("hubView");
   var ME={id:null,role:"none",name:""};
-  var DATA={inquiries:[],jobs:[],roster:[],applications:[],checklist:[],archive:[],coordination:[]};
+  var DATA={inquiries:[],jobs:[],roster:[],applications:[],checklist:[],archive:[],coordination:[],notes:[]};
   var openFileId=null;  // which coordination file is open
   var current="overview";
 
@@ -375,11 +383,12 @@
     q.push((isAdmin()||isStaff())? sb.from("job_checklist_items").select("*").order("position",{ascending:true}) : Promise.resolve({data:[]}));
     q.push(isAdmin()? sb.from("archive").select("*").order("archived_at",{ascending:false}) : Promise.resolve({data:[]}));
     q.push((isAdmin()||isStaff())? sb.from("coordination_files").select("*").order("created_at",{ascending:false}) : Promise.resolve({data:[]}));
+    q.push((isAdmin()||isStaff())? sb.from("notes").select("*").order("created_at",{ascending:true}) : Promise.resolve({data:[]}));
     Promise.all(q).then(function(r){
       DATA.inquiries=(r[0]&&r[0].data)||[]; DATA.jobs=(r[1]&&r[1].data)||[];
       DATA.roster=(r[2]&&r[2].data)||[]; DATA.applications=(r[3]&&r[3].data)||[];
       DATA.checklist=(r[4]&&r[4].data)||[]; DATA.archive=(r[5]&&r[5].data)||[];
-      DATA.coordination=(r[6]&&r[6].data)||[];
+      DATA.coordination=(r[6]&&r[6].data)||[]; DATA.notes=(r[7]&&r[7].data)||[];
       buildNav(); render();
     });
   }
@@ -434,14 +443,16 @@
           +(r.message?'<div class="c-msg">'+esc(r.message)+'</div>':'')
           +'<div class="c-actions"><select data-iid="'+esc(r.id)+'" data-f="status">'+ISTAT.map(function(s){return '<option value="'+s+'"'+(r.status===s?' selected':'')+'>'+esc(ts(s))+'</option>';}).join('')+'</select>'
           +'<input type="text" data-iid="'+esc(r.id)+'" data-f="assigned_to" placeholder="'+esc(t("assignedTo"))+'" value="'+esc(r.assigned_to||"")+'" style="width:150px">'
-          +'<input type="text" data-iid="'+esc(r.id)+'" data-f="staff_notes" placeholder="'+esc(t("notes"))+'" value="'+esc(r.staff_notes||"")+'" style="flex:1;min-width:140px">'
           +'<button class="btn btn--ghost tbtn" data-convert="'+esc(r.id)+'">'+esc(t("makeJob"))+'</button>'
           +(isAdmin()?'<button class="btn btn--ghost tbtn" data-rm-inq="'+esc(r.id)+'" style="color:#a8402d">'+esc(t("remove"))+'</button>':'')
-          +'<span class="saved" data-saved="'+esc(r.id)+'">✓</span></div></div>';
+          +'<span class="saved" data-saved="'+esc(r.id)+'">✓</span></div>'
+          + noteThreadHTML("inquiry", r.id, null)
+          +'</div>';
       }).join('');
       document.querySelectorAll("[data-iid]").forEach(function(el){ el.addEventListener("change", function(){ updateInquiry(el.getAttribute("data-iid"),el.getAttribute("data-f"),el.value); }); });
       document.querySelectorAll("[data-convert]").forEach(function(b){ b.addEventListener("click", function(){ convertToJob(b.getAttribute("data-convert")); }); });
       document.querySelectorAll("[data-rm-inq]").forEach(function(b){ b.addEventListener("click", function(){ var id=b.getAttribute("data-rm-inq"); var row=DATA.inquiries.filter(function(x){return String(x.id)===String(id);})[0]; archiveAndRemove("contact_submissions", id, row?row.name:""); }); });
+      wireNoteThreads();
     }
     document.getElementById("fStatus").addEventListener("change",draw);
     document.getElementById("fSearch").addEventListener("input",draw);
@@ -666,8 +677,10 @@
                +'<input type="text" data-aid="'+esc(r.id)+'" data-f="notes" placeholder="'+esc(t("notes"))+'" value="'+esc(r.notes||"")+'" style="flex:1;min-width:160px">'
                +'<button class="btn btn--ghost tbtn" data-rm-app="'+esc(r.id)+'" style="color:#a8402d">'+esc(t("remove"))+'</button>'
                +'<span class="saved" data-saved="'+esc(r.id)+'">✓</span></div>') )
+        + noteThreadHTML("application", r.id, null)
         +'</div>';
     }).join('');
+    wireNoteThreads();
     // notes/status edits
     document.querySelectorAll("[data-aid]").forEach(function(el){ el.addEventListener("change", function(){ var p={}; p[el.getAttribute("data-f")]=el.value; sb.from("applications").update(p).eq("id",el.getAttribute("data-aid")).then(function(res){ if(res.error){alert(res.error.message);return;} flash(el.getAttribute("data-aid")); var row=DATA.applications.filter(function(x){return String(x.id)===String(el.getAttribute("data-aid"));})[0]; if(row) row[el.getAttribute("data-f")]=el.value; }); }); });
     // decline
@@ -697,6 +710,54 @@
 
 
   function flash(id){ var b=document.querySelector('[data-saved="'+id+'"]'); if(b){ b.classList.add("show"); setTimeout(function(){b.classList.remove("show");},1500); } }
+
+  // ---- AUTHORED NOTE THREADS (locked to author) ----
+  function notesFor(parentType, parentId, sectionKey){
+    return (DATA.notes||[]).filter(function(n){
+      if(n.parent_type!==parentType) return false;
+      if(String(n.parent_id)!==String(parentId)) return false;
+      if(sectionKey!=null && n.section_key!==sectionKey) return false;
+      if(sectionKey==null && n.section_key) return false;
+      return true;
+    });
+  }
+  function noteThreadHTML(parentType, parentId, sectionKey){
+    var list=notesFor(parentType, parentId, sectionKey);
+    var uid=(parentType+"_"+parentId+"_"+(sectionKey||"")).replace(/[^A-Za-z0-9_]/g,"");
+    var h='<div class="clist" style="margin-top:12px"><h4>'+esc(t("notesThread"))+'</h4>';
+    if(list.length){
+      h+=list.map(function(n){
+        var mine=(n.author_id===ME.id);
+        return '<div style="padding:8px 0;border-bottom:1px solid var(--cream-deep)">'
+          +'<div style="font-size:.72rem;color:var(--gold-deep);margin-bottom:3px"><b>'+esc(n.author_name||"—")+'</b> · '+esc(fmtDate(n.created_at))+(n.updated_at&&n.updated_at!==n.created_at?' ('+esc(LANG==="fr"?"modifié":"edited")+')':'')+'</div>'
+          +(mine
+              ? '<textarea data-editnote="'+esc(n.id)+'" rows="2" style="width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:var(--radius);font-family:var(--sans);font-size:.9rem">'+esc(n.body)+'</textarea><button class="btn btn--ghost tbtn" data-savenote="'+esc(n.id)+'" style="margin-top:5px">'+esc(t("saveNote"))+'</button>'
+              : '<div style="font-size:.92rem;color:var(--ink)">'+esc(n.body)+'</div>')
+          +'</div>';
+      }).join('');
+    } else {
+      h+='<div style="font-size:.85rem;color:var(--ink-soft);padding:4px 0">'+esc(t("noNotesYet"))+'</div>';
+    }
+    // add new
+    h+='<div class="clist-add" style="margin-top:10px"><input type="text" data-newnote="'+esc(uid)+'" placeholder="'+esc(t("yourNote"))+'"><button class="btn btn--ghost tbtn" data-newnotebtn="'+esc(uid)+'" data-pt="'+esc(parentType)+'" data-pid="'+esc(parentId)+'" data-sk="'+esc(sectionKey||"")+'">'+esc(t("postNote"))+'</button></div>';
+    h+='</div>';
+    return h;
+  }
+  function wireNoteThreads(){
+    // edit own note
+    document.querySelectorAll("[data-savenote]").forEach(function(b){ b.addEventListener("click", function(){
+      var id=b.getAttribute("data-savenote"); var ta=document.querySelector('[data-editnote="'+id+'"]'); if(!ta) return;
+      var body=ta.value.trim(); if(!body) return;
+      sb.from("notes").update({ body:body }).eq("id",id).then(function(res){ if(res.error){ alert(res.error.message); return; } loadAll(); });
+    }); });
+    // add new note
+    document.querySelectorAll("[data-newnotebtn]").forEach(function(b){ b.addEventListener("click", function(){
+      var uid=b.getAttribute("data-newnotebtn"); var input=document.querySelector('[data-newnote="'+uid+'"]'); if(!input) return;
+      var body=input.value.trim(); if(!body) return;
+      var rec={ parent_type:b.getAttribute("data-pt"), parent_id:b.getAttribute("data-pid"), section_key:b.getAttribute("data-sk")||null, author_id:ME.id, author_name:ME.name, body:body };
+      sb.from("notes").insert(rec).then(function(res){ if(res.error){ alert(res.error.message); return; } loadAll(); });
+    }); });
+  }
 
   // ================= COORDINATION FILES + GUIDED INTAKE =================
   function canIntake(){ return isAdmin() || (ME.can_manage_intake===true); }
@@ -790,6 +851,7 @@
       if(editable){
         html+='<label class="check" style="margin-top:6px"><input type="checkbox" data-secdone="'+esc(sec.key)+'"'+(secDone?' checked':'')+'> <span>'+esc(t("markSectionDone"))+'</span></label>';
       }
+      html+= noteThreadHTML("coordination", fileId, sec.key);
       html+='</div>';
     });
     m.innerHTML=html;
@@ -798,6 +860,7 @@
     if(editable){
       document.getElementById("saveIntake").addEventListener("click",function(){ saveIntake(fileId); });
     }
+    wireNoteThreads();
   }
 
   function saveIntake(fileId){

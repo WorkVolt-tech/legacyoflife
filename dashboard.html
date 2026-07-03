@@ -356,9 +356,40 @@
       sb.from("profiles").select("role, full_name, can_manage_intake").eq("id",ME.id).single().then(function(p){
         if(p.error||!p.data){ ME.role="none"; ME.name=res.data.session.user.email; ME.can_manage_intake=false; }
         else { ME.role=p.data.role; ME.name=p.data.full_name||res.data.session.user.email; ME.can_manage_intake=p.data.can_manage_intake===true; }
-        showHub(); buildNav(); loadAll();
+        showHub(); buildNav(); loadAll(); startRealtime();
       });
     });
+  }
+
+  // ---- LIVE UPDATES: quietly reload data when the database changes ----
+  var _rtChannel=null, _rtTimer=null;
+  function isEditing(){
+    var a=document.activeElement;
+    if(!a) return false;
+    var tag=(a.tagName||"").toLowerCase();
+    return tag==="input" || tag==="textarea" || tag==="select";
+  }
+  function scheduleReload(){
+    // debounce bursts of changes; don't interrupt someone mid-typing
+    if(_rtTimer) clearTimeout(_rtTimer);
+    _rtTimer=setTimeout(function reload(){
+      if(isEditing()){ _rtTimer=setTimeout(reload, 4000); return; } // wait until they finish
+      loadAllQuiet();
+    }, 1200);
+  }
+  function startRealtime(){
+    if(!sb.channel){ return; } // older SDKs: silently skip
+    try{
+      if(_rtChannel){ sb.removeChannel(_rtChannel); _rtChannel=null; }
+      _rtChannel=sb.channel("hdv-live")
+        .on("postgres_changes",{event:"*",schema:"public",table:"contact_submissions"},scheduleReload)
+        .on("postgres_changes",{event:"*",schema:"public",table:"jobs"},scheduleReload)
+        .on("postgres_changes",{event:"*",schema:"public",table:"applications"},scheduleReload)
+        .on("postgres_changes",{event:"*",schema:"public",table:"coordination_files"},scheduleReload)
+        .on("postgres_changes",{event:"*",schema:"public",table:"reviews"},scheduleReload)
+        .on("postgres_changes",{event:"*",schema:"public",table:"notes"},scheduleReload)
+        .subscribe();
+    }catch(e){ /* realtime optional; ignore */ }
   }
 
   function menuItems(){
@@ -384,7 +415,9 @@
     document.querySelectorAll(".side [data-ll]").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-ll")===LANG); });
   }
 
-  function loadAll(){
+  function loadAll(){ _doLoad(false); }
+  function loadAllQuiet(){ _doLoad(true); }
+  function _doLoad(quiet){
     var jobs_src=isAdmin()?"jobs":"jobs_safe";
     var q=[];
     q.push(seesInquiries()? sb.from("contact_submissions").select("*").order("created_at",{ascending:false}) : Promise.resolve({data:[]}));
@@ -402,7 +435,15 @@
       DATA.checklist=(r[4]&&r[4].data)||[]; DATA.archive=(r[5]&&r[5].data)||[];
       DATA.coordination=(r[6]&&r[6].data)||[]; DATA.notes=(r[7]&&r[7].data)||[];
       DATA.reviews=(r[8]&&r[8].data)||[];
-      buildNav(); render();
+      if(quiet){
+        // Don't yank someone out of an open intake file or mid-edit.
+        if(openFileId || isEditing()){ buildNav(); return; }
+        var y=window.scrollY;
+        buildNav(); render();
+        window.scrollTo(0,y);
+      } else {
+        buildNav(); render();
+      }
     });
   }
 

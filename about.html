@@ -123,6 +123,19 @@
   </div>
 </section>
 
+<!-- REVIEWS PREVIEW -->
+<section class="block alt" id="reviewsBlock">
+  <div class="wrap">
+    <h2 style="text-align:center" data-lang="fr">Ce que disent les familles</h2>
+    <h2 style="text-align:center" data-lang="en">What families say</h2>
+    <div id="reviewsPreview" style="display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin:28px 0"></div>
+    <div style="text-align:center">
+      <a class="btn btn--ghost" href="reviews.html" id="allReviewsLink"><span data-lang="fr">Voir tous les avis</span><span data-lang="en">See all reviews</span></a>
+      <a class="btn btn--solid" href="reviews.html#leave" style="margin-left:8px"><span data-lang="fr">Laisser un avis</span><span data-lang="en">Leave a review</span></a>
+    </div>
+  </div>
+</section>
+
 <!-- CTA -->
 <section class="block dark cta-strip" style="background-image:linear-gradient(rgba(35,33,30,.82),rgba(35,33,30,.86)),url('assets/cta.webp');background-size:cover;background-position:center">
   <div class="wrap">
@@ -166,6 +179,9 @@
   </div>
 </footer>
 
+<script src="assets/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="assets/site.js"></script>
+<script src="assets/reviews.js"></script>
 </body>
 </html>

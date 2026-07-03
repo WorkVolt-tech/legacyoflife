@@ -788,10 +788,12 @@
         +'<div class="c-actions">'
         +(r.status!=="approved"?'<button class="btn btn--solid tbtn" data-rev-approve="'+esc(r.id)+'">'+esc(t("approve"))+'</button>':'')
         +(r.status!=="hidden"?'<button class="btn btn--ghost tbtn" data-rev-hide="'+esc(r.id)+'">'+esc(t("hide"))+'</button>':'')
+        +'<button class="btn btn--ghost tbtn" data-rev-remove="'+esc(r.id)+'" style="color:#a8402d">'+esc(t("remove"))+'</button>'
         +'</div></div>';
     }).join('');
     document.querySelectorAll("[data-rev-approve]").forEach(function(b){ b.addEventListener("click",function(){ setReview(b.getAttribute("data-rev-approve"),{status:"approved"}); }); });
     document.querySelectorAll("[data-rev-hide]").forEach(function(b){ b.addEventListener("click",function(){ setReview(b.getAttribute("data-rev-hide"),{status:"hidden"}); }); });
+    document.querySelectorAll("[data-rev-remove]").forEach(function(b){ b.addEventListener("click",function(){ var id=b.getAttribute("data-rev-remove"); var row=DATA.reviews.filter(function(x){return String(x.id)===String(id);})[0]; archiveAndRemove("reviews", id, row?(row.reviewer_name+" ("+row.rating+"★)"):""); }); });
     document.querySelectorAll("[data-savereply]").forEach(function(b){ b.addEventListener("click",function(){ var id=b.getAttribute("data-savereply"); var ta=document.querySelector('[data-reply="'+id+'"]'); setReview(id,{reply:(ta.value.trim()||null), reply_at:new Date().toISOString()}); }); });
   }
   function setReview(id, patch){
@@ -966,7 +968,7 @@
   }
 
   // ---- ARCHIVE (admin only) ----
-  var SRC_LABEL={ contact_submissions:{fr:"Demande",en:"Inquiry"}, jobs:{fr:"Mandat",en:"Job"}, profiles:{fr:"Personnel",en:"Staff"}, applications:{fr:"Candidature",en:"Application"} };
+  var SRC_LABEL={ contact_submissions:{fr:"Demande",en:"Inquiry"}, jobs:{fr:"Mandat",en:"Job"}, profiles:{fr:"Personnel",en:"Staff"}, applications:{fr:"Candidature",en:"Application"}, reviews:{fr:"Avis",en:"Review"}, coordination_files:{fr:"Dossier famille",en:"Family file"} };
   function srcLabel(s){ var e=SRC_LABEL[s]; return e?(e[LANG]||e.fr):s; }
 
   function renderArchive(m){

@@ -61,6 +61,14 @@
       starWrap.addEventListener("mouseleave",function(){ paint(picked); });
     }
     document.getElementById("reviewSubmit").addEventListener("click",function(){
+      // Honeypot: real people never fill this hidden field; bots do. Silently drop.
+      var hp=form.querySelector('[name=rwebsite]');
+      if(hp && hp.value.trim()!==""){
+        // Pretend success so bots don't learn they were caught.
+        var L0=lang(); msg.style.display="block"; msg.style.color="#4a7a48";
+        msg.textContent=L0==="fr"?"Merci ! Votre avis sera publié après vérification.":"Thank you! Your review will appear after verification.";
+        return;
+      }
       var name=(form.querySelector('[name=rname]')&&form.querySelector('[name=rname]').value||"").trim();
       var email=(form.querySelector('[name=remail]')&&form.querySelector('[name=remail]').value||"").trim();
       var body=(form.querySelector('[name=rbody]')&&form.querySelector('[name=rbody]').value||"").trim();

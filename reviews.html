@@ -52,22 +52,22 @@
     <h2 style="text-align:center" data-lang="en">Leave a review</h2>
     <p style="text-align:center;color:#6a6459;margin-bottom:8px" data-lang="fr">Votre avis sera publié après vérification.</p>
     <p style="text-align:center;color:#6a6459;margin-bottom:8px" data-lang="en">Your review will appear after verification.</p>
-    <div id="reviewForm" class="form">
-      <div class="field">
-        <label><span data-lang="fr">Votre note</span><span data-lang="en">Your rating</span></label>
-        <div id="starPick" style="font-size:1.8rem;color:#c9a227;letter-spacing:4px;user-select:none"><span>☆</span><span>☆</span><span>☆</span><span>☆</span><span>☆</span></div>
+    <div id="reviewForm" style="max-width:520px;margin:0 auto">
+      <div style="margin-bottom:18px">
+        <label style="display:block;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;color:#6a6459;margin-bottom:8px"><span data-lang="fr">Votre note</span><span data-lang="en">Your rating</span></label>
+        <div id="starPick" style="font-size:2rem;color:#c9a227;letter-spacing:6px;user-select:none"><span>☆</span><span>☆</span><span>☆</span><span>☆</span><span>☆</span></div>
       </div>
-      <div class="field">
-        <label><span data-lang="fr">Votre nom</span><span data-lang="en">Your name</span></label>
-        <input type="text" name="rname" autocomplete="name">
+      <div style="margin-bottom:18px">
+        <label style="display:block;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;color:#6a6459;margin-bottom:8px"><span data-lang="fr">Votre nom</span><span data-lang="en">Your name</span></label>
+        <input type="text" name="rname" autocomplete="name" style="width:100%;padding:13px 15px;border:1px solid #d8d0c2;border-radius:8px;font-family:inherit;font-size:1rem;box-sizing:border-box">
       </div>
-      <div class="field">
-        <label><span data-lang="fr">Courriel (pour vérification, non publié)</span><span data-lang="en">Email (for verification, not published)</span></label>
-        <input type="email" name="remail" autocomplete="email">
+      <div style="margin-bottom:18px">
+        <label style="display:block;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;color:#6a6459;margin-bottom:8px"><span data-lang="fr">Courriel (pour vérification, non publié)</span><span data-lang="en">Email (for verification, not published)</span></label>
+        <input type="email" name="remail" autocomplete="email" style="width:100%;padding:13px 15px;border:1px solid #d8d0c2;border-radius:8px;font-family:inherit;font-size:1rem;box-sizing:border-box">
       </div>
-      <div class="field">
-        <label><span data-lang="fr">Votre commentaire</span><span data-lang="en">Your comment</span></label>
-        <textarea name="rbody" rows="4"></textarea>
+      <div style="margin-bottom:18px">
+        <label style="display:block;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;color:#6a6459;margin-bottom:8px"><span data-lang="fr">Votre commentaire</span><span data-lang="en">Your comment</span></label>
+        <textarea name="rbody" rows="6" style="width:100%;padding:13px 15px;border:1px solid #d8d0c2;border-radius:8px;font-family:inherit;font-size:1rem;min-height:150px;resize:vertical;box-sizing:border-box"></textarea>
       </div>
       <div style="position:absolute;left:-9999px;top:-9999px" aria-hidden="true">
         <label>Website (leave blank)</label>

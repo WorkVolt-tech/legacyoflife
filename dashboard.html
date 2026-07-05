@@ -305,6 +305,32 @@
     payments:{fr:"Paiements",en:"Payments"},
     cash:{fr:"Comptant",en:"Cash"}, cheque:{fr:"Chèque",en:"Cheque"}, transfer:{fr:"Virement",en:"Transfer"}, card:{fr:"Carte",en:"Card"}, other:{fr:"Autre",en:"Other"},
     st_draft:{fr:"Brouillon",en:"Draft"}, st_sent:{fr:"Envoyée",en:"Sent"}, st_paid:{fr:"Payée",en:"Paid"}, st_partial:{fr:"Partielle",en:"Partial"}, st_overdue:{fr:"En retard",en:"Overdue"}, st_cancelled:{fr:"Annulée",en:"Cancelled"},
+    tabInvoices:{fr:"Factures",en:"Invoices"},
+    tabExpenses:{fr:"Dépenses",en:"Expenses"},
+    newExpense:{fr:"+ Nouvelle dépense",en:"+ New expense"},
+    vendor:{fr:"Fournisseur / Payé à",en:"Vendor / Paid to"},
+    category:{fr:"Catégorie",en:"Category"},
+    spentOn:{fr:"Date",en:"Date"},
+    linkedClient:{fr:"Client lié (optionnel)",en:"Linked client (optional)"},
+    saveExpense:{fr:"Enregistrer",en:"Save"},
+    noExpenses:{fr:"Aucune dépense.",en:"No expenses yet."},
+    totalExpenses:{fr:"Total des dépenses",en:"Total expenses"},
+    cat_flowers:{fr:"Fleurs",en:"Flowers"}, cat_catering:{fr:"Traiteur",en:"Catering"}, cat_transport:{fr:"Transport",en:"Transport"}, cat_printing:{fr:"Impression",en:"Printing"}, cat_supplies:{fr:"Fournitures",en:"Supplies"}, cat_fees:{fr:"Frais",en:"Fees"}, cat_other:{fr:"Autre",en:"Other"},
+    tabOverview:{fr:"Aperçu",en:"Overview"},
+    period:{fr:"Période",en:"Period"},
+    thisMonth:{fr:"Ce mois-ci",en:"This month"},
+    thisYear:{fr:"Cette année",en:"This year"},
+    allTime:{fr:"Depuis le début",en:"All time"},
+    custom:{fr:"Personnalisée",en:"Custom"},
+    from:{fr:"Du",en:"From"},
+    to:{fr:"Au",en:"To"},
+    income:{fr:"Revenus (encaissés)",en:"Income (received)"},
+    expensesTotal:{fr:"Dépenses",en:"Expenses"},
+    net:{fr:"Bénéfice net",en:"Net profit"},
+    outstanding:{fr:"À recevoir (impayé)",en:"Outstanding (unpaid)"},
+    byCategory:{fr:"Dépenses par catégorie",en:"Expenses by category"},
+    exportOverview:{fr:"Exporter en Excel",en:"Export to Excel"},
+    noData:{fr:"Aucune donnée pour cette période.",en:"No data for this period."},
     yes:{fr:"Oui",en:"Yes"}, no:{fr:"Non",en:"No"},
     notesThread:{fr:"Notes de l'équipe",en:"Team notes"},
     addNote:{fr:"Ajouter une note",en:"Add a note"},
@@ -360,8 +386,10 @@
   var loginView=document.getElementById("loginView");
   var hubView=document.getElementById("hubView");
   var ME={id:null,role:"none",name:""};
-  var DATA={inquiries:[],jobs:[],roster:[],applications:[],checklist:[],archive:[],coordination:[],notes:[],reviews:[],templates:[],invoices:[],invoiceItems:[],payments:[]};
+  var DATA={inquiries:[],jobs:[],roster:[],applications:[],checklist:[],archive:[],coordination:[],notes:[],reviews:[],templates:[],invoices:[],invoiceItems:[],payments:[],expenses:[]};
   var openInvoiceId=null;
+  var financeTab="invoices";
+  var finPeriod="month"; var finFrom=null, finTo=null;
   var openFileId=null;  // which coordination file is open
   var current="overview";
 
@@ -491,6 +519,7 @@
     q.push(canFinances()? sb.from("invoices").select("*").order("created_at",{ascending:false}) : Promise.resolve({data:[]}));
     q.push(canFinances()? sb.from("invoice_items").select("*").order("position",{ascending:true}) : Promise.resolve({data:[]}));
     q.push(canFinances()? sb.from("payments").select("*").order("paid_at",{ascending:true}) : Promise.resolve({data:[]}));
+    q.push(canFinances()? sb.from("expenses").select("*").order("spent_on",{ascending:false}) : Promise.resolve({data:[]}));
     Promise.all(q).then(function(r){
       DATA.inquiries=(r[0]&&r[0].data)||[]; DATA.jobs=(r[1]&&r[1].data)||[];
       DATA.roster=(r[2]&&r[2].data)||[]; DATA.applications=(r[3]&&r[3].data)||[];
@@ -498,6 +527,7 @@
       DATA.coordination=(r[6]&&r[6].data)||[]; DATA.notes=(r[7]&&r[7].data)||[];
       DATA.reviews=(r[8]&&r[8].data)||[]; DATA.templates=(r[9]&&r[9].data)||[];
       DATA.invoices=(r[10]&&r[10].data)||[]; DATA.invoiceItems=(r[11]&&r[11].data)||[]; DATA.payments=(r[12]&&r[12].data)||[];
+      DATA.expenses=(r[13]&&r[13].data)||[];
       if(quiet){
         // Don't yank someone out of an open intake file or mid-edit.
         if(openFileId || isEditing()){ buildNav(); return; }
@@ -901,8 +931,15 @@
 
   function renderFinances(m){
     if(openInvoiceId){ return renderInvoiceEditor(m, openInvoiceId); }
+    var tabs='<div style="display:flex;gap:8px;margin-bottom:18px">'
+      +'<button class="btn '+(financeTab==="invoices"?"btn--solid":"btn--ghost")+' tbtn" data-ftab="invoices">'+esc(t("tabInvoices"))+'</button>'
+      +'<button class="btn '+(financeTab==="expenses"?"btn--solid":"btn--ghost")+' tbtn" data-ftab="expenses">'+esc(t("tabExpenses"))+'</button>'
+      +'<button class="btn '+(financeTab==="overview"?"btn--solid":"btn--ghost")+' tbtn" data-ftab="overview">'+esc(t("tabOverview"))+'</button>'
+      +'</div>';
+    if(financeTab==="expenses"){ return renderExpenses(m, tabs); }
+    if(financeTab==="overview"){ return renderOverview(m, tabs); }
     var rows=DATA.invoices||[];
-    m.innerHTML='<h2 class="module-title">'+esc(t("invoices"))+'</h2>'
+    m.innerHTML='<h2 class="module-title">'+esc(t("finances"))+'</h2>'+tabs
       +'<div class="controls"><button class="btn btn--solid tbtn" id="newInvBtn">'+esc(t("newInvoice"))+'</button><span class="count">'+rows.length+'</span></div>'
       +'<div class="sub-list" id="invList"></div><div class="empty hide" id="invEmpty">'+esc(t("noInvoices"))+'</div>';
     document.getElementById("invEmpty").classList.toggle("hide",rows.length>0);
@@ -920,10 +957,51 @@
         +'<button class="btn btn--ghost tbtn" data-printinv="'+esc(inv.id)+'">'+esc(t("viewPrint"))+'</button>'
         +'<button class="btn btn--ghost tbtn" data-delinv="'+esc(inv.id)+'" style="color:#a8402d">'+esc(t("remove"))+'</button></div></div>';
     }).join('');
+    document.querySelectorAll("[data-ftab]").forEach(function(b){ b.addEventListener("click",function(){ financeTab=b.getAttribute("data-ftab"); render(); }); });
     document.getElementById("newInvBtn").addEventListener("click", createInvoice);
     document.querySelectorAll("[data-openinv]").forEach(function(b){ b.addEventListener("click",function(){ openInvoiceId=b.getAttribute("data-openinv"); render(); }); });
     document.querySelectorAll("[data-printinv]").forEach(function(b){ b.addEventListener("click",function(){ printInvoice(b.getAttribute("data-printinv")); }); });
     document.querySelectorAll("[data-delinv]").forEach(function(b){ b.addEventListener("click",function(){ if(!confirm(t("delConfirm")))return; sb.from("invoices").delete().eq("id",b.getAttribute("data-delinv")).then(function(res){ if(res.error){alert(res.error.message);return;} loadAll(); }); }); });
+  }
+
+  var EXP_CATS=["flowers","catering","transport","printing","supplies","fees","other"];
+  function renderExpenses(m, tabs){
+    var rows=DATA.expenses||[];
+    var total=rows.reduce(function(s,e){ return s+(Number(e.amount)||0); },0);
+    var clientOpts=(DATA.coordination||[]).map(function(f){ return '<option value="'+esc(f.id)+'">'+esc(f.family_name)+'</option>'; }).join('');
+    var catOpts=EXP_CATS.map(function(c){ return '<option value="'+c+'">'+esc(t("cat_"+c))+'</option>'; }).join('');
+    m.innerHTML='<h2 class="module-title">'+esc(t("finances"))+'</h2>'+tabs
+      +'<div class="controls"><button class="btn btn--solid tbtn" id="newExpBtn">'+esc(t("newExpense"))+'</button><span class="count">'+esc(t("totalExpenses"))+': '+money(total)+'</span></div>'
+      +'<div class="job-form" id="expForm"><h3>'+esc(t("newExpense"))+'</h3><div class="jf-grid">'
+        +'<div><label>'+esc(t("spentOn"))+'</label><input type="date" id="ex_date" value="'+new Date().toISOString().slice(0,10)+'"></div>'
+        +'<div><label>'+esc(t("vendor"))+'</label><input type="text" id="ex_vendor"></div>'
+        +'<div><label>'+esc(t("category"))+'</label><select id="ex_cat">'+catOpts+'</select></div>'
+        +'<div><label>'+esc(t("amount"))+'</label><input type="number" step="0.01" id="ex_amount"></div>'
+        +'<div><label>'+esc(t("method"))+'</label><select id="ex_method"><option value="cash">'+esc(t("cash"))+'</option><option value="cheque">'+esc(t("cheque"))+'</option><option value="transfer">'+esc(t("transfer"))+'</option><option value="card">'+esc(t("card"))+'</option><option value="other">'+esc(t("other"))+'</option></select></div>'
+        +'<div><label>'+esc(t("linkedClient"))+'</label><select id="ex_client"><option value="">—</option>'+clientOpts+'</select></div>'
+        +'<div class="full"><label>'+esc(t("description"))+'</label><input type="text" id="ex_desc"></div>'
+      +'</div><div style="margin-top:12px;display:flex;gap:10px"><button class="btn btn--solid tbtn" id="ex_save">'+esc(t("saveExpense"))+'</button><button class="btn btn--ghost tbtn" id="ex_cancel">'+esc(t("cancel"))+'</button></div></div>'
+      +'<div class="sub-list" id="expList"></div><div class="empty hide" id="expEmpty">'+esc(t("noExpenses"))+'</div>';
+    document.getElementById("expEmpty").classList.toggle("hide",rows.length>0);
+    document.getElementById("expList").innerHTML=rows.map(function(e){
+      return '<div class="card2"><div class="c-top"><span class="c-name">'+esc(e.vendor||"—")+' — '+money(e.amount)+'</span><span class="c-date">'+esc(fmtDate(e.spent_on))+' · <span class="pill">'+esc(t("cat_"+(e.category||"other"))||e.category)+'</span></span></div>'
+        +'<div class="c-meta">'
+        +(e.description?'<div>'+esc(e.description)+'</div>':'')
+        +(e.client_name?'<div><span class="lbl">'+esc(t("client"))+'</span>'+esc(e.client_name)+'</div>':'')
+        +(e.method?'<div><span class="lbl">'+esc(t("method"))+'</span>'+esc(t(e.method)||e.method)+'</div>':'')
+        +'</div>'
+        +'<div class="c-actions"><button class="btn btn--ghost tbtn" data-delexp="'+esc(e.id)+'" style="color:#a8402d">'+esc(t("remove"))+'</button></div></div>';
+    }).join('');
+    document.querySelectorAll("[data-ftab]").forEach(function(b){ b.addEventListener("click",function(){ financeTab=b.getAttribute("data-ftab"); render(); }); });
+    document.getElementById("newExpBtn").addEventListener("click",function(){ document.getElementById("expForm").classList.add("open"); });
+    document.getElementById("ex_cancel").addEventListener("click",function(){ document.getElementById("expForm").classList.remove("open"); });
+    document.getElementById("ex_save").addEventListener("click",function(){
+      var amt=parseFloat(document.getElementById("ex_amount").value); if(!amt||amt<=0){ alert(t("amount")); return; }
+      var cid=document.getElementById("ex_client").value||null;
+      var cf=(DATA.coordination||[]).filter(function(x){return String(x.id)===String(cid);})[0];
+      sb.from("expenses").insert({ spent_on:document.getElementById("ex_date").value||null, vendor:document.getElementById("ex_vendor").value.trim()||null, category:document.getElementById("ex_cat").value, amount:amt, method:document.getElementById("ex_method").value, coordination_id:cid, client_name:cf?cf.family_name:null, description:document.getElementById("ex_desc").value.trim()||null, recorded_by:ME.name }).then(function(res){ if(res.error){alert(res.error.message);return;} loadAll(); });
+    });
+    document.querySelectorAll("[data-delexp]").forEach(function(b){ b.addEventListener("click",function(){ if(!confirm(t("delConfirm")))return; sb.from("expenses").delete().eq("id",b.getAttribute("data-delexp")).then(function(){ loadAll(); }); }); });
   }
 
   function createInvoice(){
@@ -1049,6 +1127,82 @@
       +'<p class="muted" style="margin-top:30px;text-align:center">'+(L==="fr"?"Merci de votre confiance.":"Thank you for your trust.")+'</p>'
       +'<script>window.onload=function(){window.print();}<\/script></body></html>';
     win.document.write(doc); win.document.close();
+  }
+
+  function periodRange(){
+    var now=new Date(); var y=now.getFullYear();
+    if(finPeriod==="month"){ var f=new Date(y,now.getMonth(),1); return [f.toISOString().slice(0,10), new Date(y,now.getMonth()+1,0).toISOString().slice(0,10)]; }
+    if(finPeriod==="year"){ return [y+"-01-01", y+"-12-31"]; }
+    if(finPeriod==="custom"){ return [finFrom||"1900-01-01", finTo||"2999-12-31"]; }
+    return ["1900-01-01","2999-12-31"]; // all time
+  }
+  function inRange(d, lo, hi){ if(!d) return false; var s=String(d).slice(0,10); return s>=lo && s<=hi; }
+
+  function renderOverview(m, tabs){
+    var r=periodRange(), lo=r[0], hi=r[1];
+    // income = payments received in range
+    var income=(DATA.payments||[]).filter(function(p){return inRange(p.paid_at,lo,hi);}).reduce(function(s,p){return s+(Number(p.amount)||0);},0);
+    // expenses in range
+    var exps=(DATA.expenses||[]).filter(function(e){return inRange(e.spent_on,lo,hi);});
+    var expTotal=exps.reduce(function(s,e){return s+(Number(e.amount)||0);},0);
+    var net=income-expTotal;
+    // outstanding = unpaid balance across all invoices (not period-bound)
+    var outstanding=(DATA.invoices||[]).reduce(function(s,inv){ var tt=invTotals(inv); return s + (tt.balance>0?tt.balance:0); },0);
+    // expenses by category
+    var byCat={};
+    exps.forEach(function(e){ var c=e.category||"other"; byCat[c]=(byCat[c]||0)+(Number(e.amount)||0); });
+
+    var periodSel='<select id="fin_period">'
+      +'<option value="month"'+(finPeriod==="month"?" selected":"")+'>'+esc(t("thisMonth"))+'</option>'
+      +'<option value="year"'+(finPeriod==="year"?" selected":"")+'>'+esc(t("thisYear"))+'</option>'
+      +'<option value="all"'+(finPeriod==="all"?" selected":"")+'>'+esc(t("allTime"))+'</option>'
+      +'<option value="custom"'+(finPeriod==="custom"?" selected":"")+'>'+esc(t("custom"))+'</option>'
+      +'</select>';
+    var customRange = finPeriod==="custom"
+      ? '<span style="margin-left:10px">'+esc(t("from"))+' <input type="date" id="fin_from" value="'+esc(finFrom||"")+'"> '+esc(t("to"))+' <input type="date" id="fin_to" value="'+esc(finTo||"")+'"></span>'
+      : '';
+
+    function statCard(label, val, color){
+      return '<div style="flex:1;min-width:170px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 18px">'
+        +'<div style="font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px">'+esc(label)+'</div>'
+        +'<div style="font-family:var(--serif);font-size:1.7rem;color:'+(color||"var(--ink)")+'">'+money(val)+'</div></div>';
+    }
+
+    var catRows=Object.keys(byCat).sort(function(a,b){return byCat[b]-byCat[a];}).map(function(c){
+      var pct= expTotal>0? Math.round(byCat[c]*100/expTotal):0;
+      return '<div style="margin:6px 0"><div style="display:flex;justify-content:space-between;font-size:.88rem"><span>'+esc(t("cat_"+c)||c)+'</span><span>'+money(byCat[c])+' ('+pct+'%)</span></div>'
+        +'<div style="height:8px;background:var(--cream-deep);border-radius:20px;overflow:hidden;margin-top:3px"><div style="height:100%;width:'+pct+'%;background:var(--gold)"></div></div></div>';
+    }).join('') || '<div style="font-size:.85rem;color:var(--ink-soft)">'+esc(t("noData"))+'</div>';
+
+    m.innerHTML='<h2 class="module-title">'+esc(t("finances"))+'</h2>'+tabs
+      +'<div class="controls"><label style="font-size:.85rem;color:var(--ink-soft);margin-right:8px">'+esc(t("period"))+'</label>'+periodSel+customRange
+      +'<button class="btn btn--ghost tbtn" id="ovExport" style="margin-left:auto">'+esc(t("exportOverview"))+'</button></div>'
+      +'<div style="display:flex;gap:14px;flex-wrap:wrap;margin:8px 0 22px">'
+        +statCard(t("income"), income, "#5a7448")
+        +statCard(t("expensesTotal"), expTotal, "#a8402d")
+        +statCard(t("net"), net, net>=0?"#5a7448":"#a8402d")
+        +statCard(t("outstanding"), outstanding, "#8a6d1f")
+      +'</div>'
+      +'<div style="background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px 20px;max-width:520px"><h4 style="margin:0 0 12px">'+esc(t("byCategory"))+'</h4>'+catRows+'</div>';
+
+    document.querySelectorAll("[data-ftab]").forEach(function(b){ b.addEventListener("click",function(){ financeTab=b.getAttribute("data-ftab"); render(); }); });
+    document.getElementById("fin_period").addEventListener("change",function(e){ finPeriod=e.target.value; render(); });
+    var ff=document.getElementById("fin_from"); if(ff) ff.addEventListener("change",function(e){ finFrom=e.target.value; render(); });
+    var ft=document.getElementById("fin_to"); if(ft) ft.addEventListener("change",function(e){ finTo=e.target.value; render(); });
+    document.getElementById("ovExport").addEventListener("click",function(){
+      try{
+        var rowsData=[
+          { Poste:t("income"), Montant:income },
+          { Poste:t("expensesTotal"), Montant:expTotal },
+          { Poste:t("net"), Montant:net },
+          { Poste:t("outstanding"), Montant:outstanding }
+        ];
+        Object.keys(byCat).forEach(function(c){ rowsData.push({ Poste:(t("cat_"+c)||c), Montant:byCat[c] }); });
+        var ws=XLSX.utils.json_to_sheet(rowsData);
+        var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"Overview");
+        XLSX.writeFile(wb, "finances_"+lo+"_"+hi+".xlsx");
+      }catch(e){ alert("Export: "+e); }
+    });
   }
 
   // ---- PACKAGE TEMPLATE EDITOR (admin) ----

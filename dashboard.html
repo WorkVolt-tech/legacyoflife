@@ -268,7 +268,14 @@
     fileSaved:{fr:"Enregistré",en:"Saved"},
     intakeProgress:{fr:"Progression de l'entrevue",en:"Interview progress"},
     noFiles:{fr:"Aucun dossier. Créez-en un pour commencer une entrevue familiale.",en:"No files. Create one to start a family interview."},
-    canManageIntake:{fr:"Peut gérer les entrevues",en:"Can manage intake"},
+    canManageIntake:{fr:"Entrevues",en:"Intake"},
+    canManageFinances:{fr:"Finances",en:"Finances"},
+    canManageReviews:{fr:"Avis",en:"Reviews"},
+    canManageStaff:{fr:"Personnel",en:"Staff mgmt"},
+    addStaff:{fr:"+ Ajouter un membre",en:"+ Add staff member"},
+    createStaff:{fr:"Créer le compte",en:"Create login"},
+    staffCreated:{fr:"Compte créé. Transmettez ces identifiants :",en:"Login created. Share these credentials:"},
+    permissions:{fr:"Permissions",en:"Permissions"},
     yes:{fr:"Oui",en:"Yes"}, no:{fr:"Non",en:"No"},
     notesThread:{fr:"Notes de l'équipe",en:"Team notes"},
     addNote:{fr:"Ajouter une note",en:"Add a note"},
@@ -289,6 +296,16 @@
     pending:{fr:"En attente",en:"Pending"},
     approved:{fr:"Approuvé",en:"Approved"},
     hidden:{fr:"Masqué",en:"Hidden"},
+    templates:{fr:"Modèles de forfaits",en:"Package templates"},
+    templatesHint:{fr:"Modifiez les listes de tâches par forfait. Glissez pour réordonner. Ces changements s'appliquent aux futurs clients.",en:"Edit the task lists per package. Drag to reorder. Changes apply to future clients."},
+    addMasterStep:{fr:"Ajouter une étape au modèle",en:"Add a step to the template"},
+    saveOrder:{fr:"Enregistrer l'ordre",en:"Save order"},
+    orderSaved:{fr:"Ordre enregistré",en:"Order saved"},
+    dragHint:{fr:"⠿ glisser",en:"⠿ drag"},
+    addToClient:{fr:"Ajouter l'étape",en:"Add step"},
+    justThisClient:{fr:"Ce client seulement",en:"This client only"},
+    alsoMaster:{fr:"Aussi au modèle (futurs clients)",en:"Also to template (future clients)"},
+    addWhere:{fr:"Ajouter où ?",en:"Add where?"},
     postGroupOnly:{fr:"Ouvrir au groupe (selon les cases ci-dessus)",en:"Open to group (per checkboxes above)"},
     orAssign:{fr:"…ou assigner directement",en:"…or assign directly"},
     statuses:{
@@ -314,7 +331,7 @@
   var loginView=document.getElementById("loginView");
   var hubView=document.getElementById("hubView");
   var ME={id:null,role:"none",name:""};
-  var DATA={inquiries:[],jobs:[],roster:[],applications:[],checklist:[],archive:[],coordination:[],notes:[],reviews:[]};
+  var DATA={inquiries:[],jobs:[],roster:[],applications:[],checklist:[],archive:[],coordination:[],notes:[],reviews:[],templates:[]};
   var openFileId=null;  // which coordination file is open
   var current="overview";
 
@@ -347,15 +364,22 @@
   function isStaff(){ return ME.role==="staff"; }
   function isWorker(){ return ["photographer","caterer","florist","driver"].indexOf(ME.role)!==-1; }
   function seesInquiries(){ return isAdmin()||isStaff(); }
+  function canFinances(){ return isAdmin() || ME.can_manage_finances===true; }
+  function canReviews(){ return isAdmin() || ME.can_manage_reviews===true; }
+  function canStaff(){ return isAdmin() || ME.can_manage_staff===true; }
   function seesPay(){ return !isStaff(); }
 
   function boot(){
     sb.auth.getSession().then(function(res){
       if(!res.data||!res.data.session){ showLogin(); return; }
       ME.id=res.data.session.user.id;
-      sb.from("profiles").select("role, full_name, can_manage_intake").eq("id",ME.id).single().then(function(p){
+      sb.from("profiles").select("role, full_name, can_manage_intake, can_manage_finances, can_manage_reviews, can_manage_staff").eq("id",ME.id).single().then(function(p){
         if(p.error||!p.data){ ME.role="none"; ME.name=res.data.session.user.email; ME.can_manage_intake=false; }
-        else { ME.role=p.data.role; ME.name=p.data.full_name||res.data.session.user.email; ME.can_manage_intake=p.data.can_manage_intake===true; }
+        else { ME.role=p.data.role; ME.name=p.data.full_name||res.data.session.user.email;
+               ME.can_manage_intake=p.data.can_manage_intake===true;
+               ME.can_manage_finances=p.data.can_manage_finances===true;
+               ME.can_manage_reviews=p.data.can_manage_reviews===true;
+               ME.can_manage_staff=p.data.can_manage_staff===true; }
         showHub(); buildNav(); loadAll(); startRealtime();
       });
     });
@@ -398,7 +422,10 @@
     if(isAdmin()||isStaff()) items.push(["coordination",t("coordination")]);
     items.push(["jobs", isWorker()?t("myJobs"):t("jobs")]);
     if(isAdmin()||isStaff()){ items.push(["photographers",t("photographers")]); items.push(["caterers",t("caterers")]); }
-    if(isAdmin()){ items.push(["staff",t("staff")]); items.push(["applications",t("applications")]); items.push(["reviews",t("reviews")]); items.push(["archive",t("archive")]); }
+    if(canStaff()){ items.push(["staff",t("staff")]); }
+    if(isAdmin()){ items.push(["applications",t("applications")]); }
+    if(canReviews()){ items.push(["reviews",t("reviews")]); }
+    if(isAdmin()){ items.push(["templates",t("templates")]); items.push(["archive",t("archive")]); }
     return items;
   }
   function buildNav(){
@@ -428,13 +455,14 @@
     q.push(isAdmin()? sb.from("archive").select("*").order("archived_at",{ascending:false}) : Promise.resolve({data:[]}));
     q.push((isAdmin()||isStaff())? sb.from("coordination_files").select("*").order("created_at",{ascending:false}) : Promise.resolve({data:[]}));
     q.push((isAdmin()||isStaff())? sb.from("notes").select("*").order("created_at",{ascending:true}) : Promise.resolve({data:[]}));
-    q.push(isAdmin()? sb.from("reviews").select("*").order("created_at",{ascending:false}) : Promise.resolve({data:[]}));
+    q.push(canReviews()? sb.from("reviews").select("*").order("created_at",{ascending:false}) : Promise.resolve({data:[]}));
+    q.push((isAdmin()||isStaff())? sb.from("package_templates").select("*").order("position",{ascending:true}) : Promise.resolve({data:[]}));
     Promise.all(q).then(function(r){
       DATA.inquiries=(r[0]&&r[0].data)||[]; DATA.jobs=(r[1]&&r[1].data)||[];
       DATA.roster=(r[2]&&r[2].data)||[]; DATA.applications=(r[3]&&r[3].data)||[];
       DATA.checklist=(r[4]&&r[4].data)||[]; DATA.archive=(r[5]&&r[5].data)||[];
       DATA.coordination=(r[6]&&r[6].data)||[]; DATA.notes=(r[7]&&r[7].data)||[];
-      DATA.reviews=(r[8]&&r[8].data)||[];
+      DATA.reviews=(r[8]&&r[8].data)||[]; DATA.templates=(r[9]&&r[9].data)||[];
       if(quiet){
         // Don't yank someone out of an open intake file or mid-edit.
         if(openFileId || isEditing()){ buildNav(); return; }
@@ -459,6 +487,7 @@
     if(current==="archive") return renderArchive(m);
     if(current==="coordination") return renderCoordination(m);
     if(current==="reviews") return renderReviews(m);
+    if(current==="templates") return renderTemplates(m);
   }
 
   function renderOverview(m){
@@ -638,7 +667,8 @@
       body+='<div style="font-size:.85rem;color:var(--ink-soft);margin-bottom:8px">'+esc(t("noChecklist"))+'</div>';
     }
     if(isAdmin()||isStaff()){
-      body+='<div class="clist-add"><input type="text" data-addstep="'+esc(r.id)+'" placeholder="'+esc(t("newStepPlaceholder"))+'"><button class="btn btn--ghost tbtn" data-addstepbtn="'+esc(r.id)+'">'+esc(t("add"))+'</button></div>';
+      var pkgSel = (isAdmin() && r.package_key) ? '<select data-addscope="'+esc(r.id)+'" style="padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:.82rem"><option value="client">'+esc(t("justThisClient"))+'</option><option value="master">'+esc(t("alsoMaster"))+'</option></select>' : '';
+      body+='<div class="clist-add"><input type="text" data-addstep="'+esc(r.id)+'" placeholder="'+esc(t("newStepPlaceholder"))+'">'+pkgSel+'<button class="btn btn--ghost tbtn" data-addstepbtn="'+esc(r.id)+'">'+esc(t("add"))+'</button></div>';
     }
     body+='</div>';
     return body;
@@ -656,14 +686,24 @@
         });
       });
     });
-    // add step (to this client's job)
+    // add step (to this client's job, optionally also to the master template)
     function addStepFor(jobId){
       var input=document.querySelector('[data-addstep="'+jobId+'"]'); if(!input) return;
       var text=input.value.trim(); if(!text) return;
+      var scopeSel=document.querySelector('[data-addscope="'+jobId+'"]');
+      var alsoMaster = scopeSel && scopeSel.value==="master";
+      var job=DATA.jobs.filter(function(x){return String(x.id)===String(jobId);})[0];
       var items=jobItems(jobId); var nextPos=items.length? Math.max.apply(null,items.map(function(i){return i.position||0;}))+1 : 1;
       sb.from("job_checklist_items").insert({ job_id:jobId, position:nextPos, task_fr:text, task_en:text, done:false }).then(function(res){
         if(res.error){ alert(res.error.message); return; }
-        loadAll();
+        // Also add to the package master template, if chosen and job has a package.
+        if(alsoMaster && job && job.package_key){
+          var tItems=(DATA.templates||[]).filter(function(x){return x.package_key===job.package_key;});
+          var maxPos=tItems.length?Math.max.apply(null,tItems.map(function(i){return i.position||0;})):0;
+          sb.from("package_templates").insert({package_key:job.package_key,position:maxPos+1,task_fr:text,task_en:text}).then(function(){ loadAll(); });
+        } else {
+          loadAll();
+        }
       });
     }
     document.querySelectorAll("[data-addstepbtn]").forEach(function(b){ b.addEventListener("click", function(){ addStepFor(b.getAttribute("data-addstepbtn")); }); });
@@ -690,17 +730,62 @@
   function renderRoster(m, roleFilter, title){
     var rows=DATA.roster.filter(function(p){ return roleFilter? p.role===roleFilter : true; });
     var showPerm=(current==="staff"); // only on the Staff page
-    m.innerHTML='<h2 class="module-title">'+esc(title)+'</h2>'+
-      (rows.length? '<table class="roster"><thead><tr><th>'+esc(t("name"))+'</th><th>'+esc(t("email"))+'</th><th>'+esc(t("role"))+'</th>'+(showPerm?'<th>'+esc(t("canManageIntake"))+'</th>':'')+'<th>'+esc(t("jobsCol"))+'</th>'+(isAdmin()?'<th></th>':'')+'</tr></thead><tbody>'+
+    var addForm = (current==="staff" && (isAdmin()||canStaff())) ?
+      ('<div class="controls"><button class="btn btn--solid tbtn" id="addStaffBtn">'+esc(t("addStaff"))+'</button></div>'
+       +'<div class="job-form" id="staffForm"><h3>'+esc(t("addStaff"))+'</h3><div class="jf-grid">'
+       +'<div><label>'+esc(t("name"))+'</label><input type="text" id="sf_name"></div>'
+       +'<div><label>'+esc(t("email"))+'</label><input type="text" id="sf_email"></div>'
+       +'<div><label>'+esc(t("role"))+'</label><select id="sf_role"><option value="staff">staff</option><option value="photographer">photographer</option><option value="caterer">caterer</option><option value="florist">florist</option><option value="driver">driver</option><option value="admin">admin</option></select></div>'
+       +'<div><label>'+esc(t("tempPass"))+'</label><input type="text" id="sf_pass" placeholder="8+ car."></div>'
+       +'</div><div style="margin-top:12px;display:flex;gap:10px"><button class="btn btn--solid tbtn" id="sf_save">'+esc(t("createStaff"))+'</button><button class="btn btn--ghost tbtn" id="sf_cancel">'+esc(t("cancel"))+'</button></div></div>')
+      : '';
+    m.innerHTML='<h2 class="module-title">'+esc(title)+'</h2>'+ addForm +
+      (rows.length? '<table class="roster"><thead><tr><th>'+esc(t("name"))+'</th><th>'+esc(t("email"))+'</th><th>'+esc(t("role"))+'</th>'+(showPerm?'<th>'+esc(t("permissions"))+'</th>':'')+'<th>'+esc(t("jobsCol"))+'</th>'+(isAdmin()?'<th></th>':'')+'</tr></thead><tbody>'+
         rows.map(function(p){ var acc=DATA.jobs.filter(function(j){return j.assigned_to===p.id;}).length; var done=DATA.jobs.filter(function(j){return j.assigned_to===p.id&&j.status==="done";}).length;
+          var permCell="";
+          if(showPerm){
+            if(isAdmin() && p.role!=='admin'){
+              permCell='<td style="font-size:.8rem">'
+                +permToggle(p,"can_manage_intake",t("canManageIntake"))
+                +permToggle(p,"can_manage_finances",t("canManageFinances"))
+                +permToggle(p,"can_manage_reviews",t("canManageReviews"))
+                +permToggle(p,"can_manage_staff",t("canManageStaff"))
+                +'</td>';
+            } else {
+              permCell='<td style="font-size:.78rem;color:var(--ink-soft)">'+(p.role==='admin'?esc(t("yes")):'—')+'</td>';
+            }
+          }
           return '<tr><td>'+esc(p.full_name||"—")+'</td><td>'+(p.email?'<a href="mailto:'+esc(p.email)+'">'+esc(p.email)+'</a>':"—")+'</td><td><span class="rolechip">'+esc(p.role)+'</span></td>'
-            +(showPerm?('<td>'+(isAdmin()&&p.role!=='admin'?'<input type="checkbox" data-perm-intake="'+esc(p.id)+'"'+(p.can_manage_intake?' checked':'')+' style="width:17px;height:17px;accent-color:var(--gold)">':(p.can_manage_intake||p.role==='admin'?esc(t("yes")):esc(t("no"))))+'</td>'):'')
+            +permCell
             +'<td>'+acc+' '+esc(t("accepted"))+' · '+done+' '+esc(t("completed"))+'</td>'
             +(isAdmin()&&p.id!==ME.id?'<td><button class="btn btn--ghost tbtn" data-rm-staff="'+esc(p.id)+'" style="color:#a8402d">'+esc(t("remove"))+'</button></td>':(isAdmin()?'<td></td>':''))
             +'</tr>'; }).join('')+'</tbody></table>'
        : '<div class="empty">'+esc(t("nobody"))+'<br><span style="font-size:.85rem">'+esc(t("addAccountsHint"))+'</span></div>');
     document.querySelectorAll("[data-rm-staff]").forEach(function(b){ b.addEventListener("click", function(){ var id=b.getAttribute("data-rm-staff"); var row=DATA.roster.filter(function(x){return String(x.id)===String(id);})[0]; archiveAndRemove("profiles", id, row?row.full_name:""); }); });
-    document.querySelectorAll("[data-perm-intake]").forEach(function(cb){ cb.addEventListener("change", function(){ var id=cb.getAttribute("data-perm-intake"); sb.from("profiles").update({can_manage_intake:cb.checked}).eq("id",id).then(function(res){ if(res.error){ alert(res.error.message); cb.checked=!cb.checked; return; } var row=DATA.roster.filter(function(x){return String(x.id)===String(id);})[0]; if(row) row.can_manage_intake=cb.checked; }); }); });
+    document.querySelectorAll("[data-perm]").forEach(function(cb){ cb.addEventListener("change", function(){ var id=cb.getAttribute("data-perm-id"); var field=cb.getAttribute("data-perm"); var patch={}; patch[field]=cb.checked; sb.from("profiles").update(patch).eq("id",id).then(function(res){ if(res.error){ alert(res.error.message); cb.checked=!cb.checked; return; } var row=DATA.roster.filter(function(x){return String(x.id)===String(id);})[0]; if(row) row[field]=cb.checked; }); }); });
+    // add-staff form
+    if(current==="staff" && (isAdmin()||canStaff())){
+      document.getElementById("addStaffBtn").addEventListener("click",function(){ document.getElementById("staffForm").classList.add("open"); });
+      document.getElementById("sf_cancel").addEventListener("click",function(){ document.getElementById("staffForm").classList.remove("open"); });
+      document.getElementById("sf_save").addEventListener("click",function(){
+        var name=document.getElementById("sf_name").value.trim();
+        var email=document.getElementById("sf_email").value.trim();
+        var role=document.getElementById("sf_role").value;
+        var pass=document.getElementById("sf_pass").value||"";
+        if(!name||!email){ alert(t("name")+" / "+t("email")); return; }
+        if(pass.length<8){ alert(LANG==="fr"?"Mot de passe d'au moins 8 caractères.":"Password must be at least 8 characters."); return; }
+        var btn=document.getElementById("sf_save"); btn.disabled=true; btn.textContent=t("working");
+        sb.functions.invoke("add-staff",{ body:{ full_name:name, email:email, role:role, temp_password:pass, perms:{} } }).then(function(res){
+          btn.disabled=false; btn.textContent=t("createStaff");
+          if(res.error||(res.data&&res.data.error)){ alert("Erreur / Error: "+((res.error&&(res.error.message||res.error))||res.data.error)); return; }
+          alert(t("staffCreated")+"\n\n"+(LANG==="fr"?"Courriel : ":"Email: ")+email+"\n"+(LANG==="fr"?"Mot de passe : ":"Password: ")+pass);
+          loadAll();
+        }, function(err){ btn.disabled=false; btn.textContent=t("createStaff"); alert("Erreur / Error: "+err); });
+      });
+    }
+  }
+  function permToggle(p, field, label){
+    return '<label style="display:inline-flex;align-items:center;gap:4px;margin:2px 8px 2px 0"><input type="checkbox" data-perm="'+field+'" data-perm-id="'+esc(p.id)+'"'+(p[field]?' checked':'')+' style="width:14px;height:14px;accent-color:var(--gold)"> '+esc(label)+'</label>';
   }
 
   function renderApplications(m){
@@ -763,6 +848,71 @@
     }); });
   }
 
+
+  // ---- PACKAGE TEMPLATE EDITOR (admin) ----
+  var TPL_PACKAGES=[["essentiel","Essentiel"],["serenite","Sérénité"],["heritage","Héritage"]];
+  var tplActive="essentiel";
+  function renderTemplates(m){
+    var tabs=TPL_PACKAGES.map(function(p){ return '<button class="btn '+(tplActive===p[0]?"btn--solid":"btn--ghost")+' tbtn" data-tpl-tab="'+p[0]+'">'+esc(p[1])+'</button>'; }).join(" ");
+    var items=(DATA.templates||[]).filter(function(x){return x.package_key===tplActive;}).sort(function(a,b){return (a.position||0)-(b.position||0);});
+    m.innerHTML='<h2 class="module-title">'+esc(t("templates"))+'</h2>'
+      +'<p style="color:var(--ink-soft);font-size:.9rem;margin-bottom:14px">'+esc(t("templatesHint"))+'</p>'
+      +'<div style="display:flex;gap:8px;margin-bottom:18px">'+tabs+'</div>'
+      +'<div id="tplList"></div>'
+      +'<div class="clist-add" style="margin-top:14px;max-width:640px"><input type="text" id="tplNew" placeholder="'+esc(t("newStepPlaceholder"))+'"><button class="btn btn--solid tbtn" id="tplAddBtn">'+esc(t("addMasterStep"))+'</button></div>';
+    var list=document.getElementById("tplList");
+    list.innerHTML=items.map(function(it){
+      return '<div class="tpl-row" draggable="true" data-tplid="'+esc(it.id)+'" style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:8px">'
+        +'<span class="tpl-grip" style="cursor:grab;color:var(--ink-soft);font-size:1.1rem">⠿</span>'
+        +'<input type="text" data-tpl-fr="'+esc(it.id)+'" value="'+esc(it.task_fr||"")+'" placeholder="FR" style="flex:1;padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:.9rem">'
+        +'<input type="text" data-tpl-en="'+esc(it.id)+'" value="'+esc(it.task_en||"")+'" placeholder="EN" style="flex:1;padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:.9rem">'
+        +'<button class="btn btn--ghost tbtn" data-tpl-save="'+esc(it.id)+'">'+esc(t("saveNote"))+'</button>'
+        +'<span class="cx" data-tpl-del="'+esc(it.id)+'" title="'+esc(t("removeStep"))+'" style="color:#b08a8a;cursor:pointer">✕</span>'
+        +'</div>';
+    }).join('') || '<div class="empty">'+esc(t("noChecklist"))+'</div>';
+
+    // tabs
+    document.querySelectorAll("[data-tpl-tab]").forEach(function(b){ b.addEventListener("click",function(){ tplActive=b.getAttribute("data-tpl-tab"); render(); }); });
+    // edit wording
+    document.querySelectorAll("[data-tpl-save]").forEach(function(b){ b.addEventListener("click",function(){
+      var id=b.getAttribute("data-tpl-save");
+      var fr=(document.querySelector('[data-tpl-fr="'+id+'"]')||{}).value||"";
+      var en=(document.querySelector('[data-tpl-en="'+id+'"]')||{}).value||"";
+      sb.from("package_templates").update({task_fr:fr,task_en:en}).eq("id",id).then(function(res){ if(res.error){alert(res.error.message);return;} var it=DATA.templates.filter(function(x){return String(x.id)===String(id);})[0]; if(it){it.task_fr=fr;it.task_en=en;} flashMsg(t("orderSaved")); }); }); });
+    // delete
+    document.querySelectorAll("[data-tpl-del]").forEach(function(x){ x.addEventListener("click",function(){ if(!confirm(t("removeStepConfirm")))return; var id=x.getAttribute("data-tpl-del"); sb.from("package_templates").delete().eq("id",id).then(function(res){ if(res.error){alert(res.error.message);return;} loadAll(); }); }); });
+    // add
+    document.getElementById("tplAddBtn").addEventListener("click",function(){
+      var input=document.getElementById("tplNew"); var text=input.value.trim(); if(!text)return;
+      var maxPos=items.length?Math.max.apply(null,items.map(function(i){return i.position||0;})):0;
+      sb.from("package_templates").insert({package_key:tplActive,position:maxPos+1,task_fr:text,task_en:text}).then(function(res){ if(res.error){alert(res.error.message);return;} loadAll(); }); });
+
+    // drag and drop reorder
+    var dragEl=null;
+    list.querySelectorAll(".tpl-row").forEach(function(row){
+      row.addEventListener("dragstart",function(){ dragEl=row; row.style.opacity="0.4"; });
+      row.addEventListener("dragend",function(){ row.style.opacity="1"; persistOrder(); });
+      row.addEventListener("dragover",function(e){ e.preventDefault(); var after=getDragAfter(list,e.clientY); if(after==null){ list.appendChild(dragEl); } else { list.insertBefore(dragEl,after); } });
+    });
+    function getDragAfter(container,y){
+      var els=[].slice.call(container.querySelectorAll(".tpl-row:not([style*='opacity: 0.4'])"));
+      return els.reduce(function(closest,child){ var box=child.getBoundingClientRect(); var offset=y-box.top-box.height/2; if(offset<0&&offset>closest.offset){ return {offset:offset,element:child}; } else { return closest; } },{offset:-Infinity}).element;
+    }
+    function persistOrder(){
+      var ids=[].slice.call(list.querySelectorAll(".tpl-row")).map(function(r){return r.getAttribute("data-tplid");});
+      // write new positions
+      var updates=ids.map(function(id,i){ return sb.from("package_templates").update({position:i+1}).eq("id",id); });
+      Promise.all(updates).then(function(){ ids.forEach(function(id,i){ var it=DATA.templates.filter(function(x){return String(x.id)===String(id);})[0]; if(it) it.position=i+1; }); flashMsg(t("orderSaved")); });
+    }
+  }
+
+  function flashMsg(txt){
+    var d=document.createElement("div");
+    d.textContent=txt;
+    d.style.cssText="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:8px;font-size:.85rem;z-index:9999;opacity:0;transition:opacity .2s";
+    document.body.appendChild(d); requestAnimationFrame(function(){ d.style.opacity="1"; });
+    setTimeout(function(){ d.style.opacity="0"; setTimeout(function(){ d.remove(); },300); },1500);
+  }
 
   // ---- REVIEWS (admin only) ----
   function starStr(n){ n=Math.max(0,Math.min(5,n|0)); var s=""; for(var i=0;i<5;i++) s+= i<n?"★":"☆"; return s; }

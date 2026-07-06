@@ -265,6 +265,12 @@
     whatToSay:{fr:"Ce qu'il faut dire",en:"What to say"},
     sectionNotes:{fr:"Notes de cette section",en:"Notes for this section"},
     markSectionDone:{fr:"Section complétée",en:"Section complete"},
+    generateJobs:{fr:"Générer les mandats",en:"Generate jobs"},
+    noServicesChecked:{fr:"Aucun service marqué « requis » dans la section Services requis.",en:"No services marked 'needed' in the Services Needed section."},
+    confirmJobsIntro:{fr:"Créer un mandat pour chaque service coché ? Décochez ceux à exclure :",en:"Create a job for each checked service? Uncheck any to exclude:"},
+    createSelectedJobs:{fr:"Créer les mandats sélectionnés",en:"Create selected jobs"},
+    jobsCreated:{fr:"mandat(s) créé(s)",en:"job(s) created"},
+    alreadyHasJobs:{fr:"Des mandats existent déjà pour cette famille. En créer d'autres ?",en:"Jobs already exist for this family. Create more anyway?"},
     saveFile:{fr:"Enregistrer",en:"Save"},
     fileSaved:{fr:"Enregistré",en:"Saved"},
     intakeProgress:{fr:"Progression de l'entrevue",en:"Interview progress"},
@@ -1429,7 +1435,7 @@
     var pct=intakePct(f);
     var html='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">'
       +'<button class="clist-toggle" id="backFiles">'+esc(t("backToFiles"))+'</button>'
-      +(editable?'<button class="btn btn--solid tbtn" id="saveIntake">'+esc(t("saveFile"))+' <span class="saved" id="intakeSaved">✓</span></button>':'')+'</div>'
+      +(editable?'<button class="btn btn--solid tbtn" id="saveIntake">'+esc(t("saveFile"))+' <span class="saved" id="intakeSaved">✓</span></button>'+(isAdmin()||isStaff()?'<button class="btn btn--ghost tbtn" id="genJobs" style="margin-left:8px">'+esc(t("generateJobs"))+'</button>':''):'')+'</div>'
       +'<h2 class="module-title" style="margin-top:10px">'+esc(f.family_name)+'</h2>'
       +'<div class="progress-wrap" style="margin-bottom:22px"><span style="font-size:.82rem;color:var(--ink-soft)">'+esc(t("intakeProgress"))+'</span><div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%"></div></div><span class="progress-pct">'+pct+'%</span></div>';
 
@@ -1473,6 +1479,8 @@
     if(editable){
       document.getElementById("saveIntake").addEventListener("click",function(){ saveIntake(fileId); });
     }
+    var gj=document.getElementById("genJobs");
+    if(gj){ gj.addEventListener("click",function(){ generateJobsFromIntake(fileId); }); }
     wireNoteThreads();
   }
 
@@ -1486,6 +1494,68 @@
       var f=(DATA.coordination||[]).filter(function(x){return String(x.id)===String(fileId);})[0];
       if(f){ f.intake=answers; f.intake_notes=notes; f.intake_progress=prog; }
       var s=document.getElementById("intakeSaved"); if(s){ s.classList.add("show"); setTimeout(function(){s.classList.remove("show");},1500); }
+    });
+  }
+
+  // ---- Generate jobs from the intake "Services needed" answers ----
+  var SERVICE_JOBS=[
+    { key:"svc_photographer", job_type:"photographer", title:{fr:"Photographie",en:"Photography"} },
+    { key:"svc_caterer",      job_type:"caterer",      title:{fr:"Traiteur",en:"Catering"} },
+    { key:"svc_flowers",      job_type:"coordination", title:{fr:"Fleurs",en:"Flowers"} },
+    { key:"svc_church",       job_type:"coordination", title:{fr:"Église / lieu de culte",en:"Church / place of worship"} },
+    { key:"svc_transport",    job_type:"coordination", title:{fr:"Transport",en:"Transportation"} },
+    { key:"svc_livestream",   job_type:"coordination", title:{fr:"Diffusion en direct",en:"Livestream"} },
+    { key:"svc_programs",     job_type:"coordination", title:{fr:"Programmes imprimés",en:"Printed programs"} },
+    { key:"svc_memorial",     job_type:"coordination", title:{fr:"Produits commémoratifs",en:"Memorial products"} },
+    { key:"svc_reception",    job_type:"coordination", title:{fr:"Réception",en:"Reception"} },
+    { key:"svc_obituary",     job_type:"coordination", title:{fr:"Nécrologie",en:"Obituary"} }
+  ];
+  function generateJobsFromIntake(fileId){
+    // Read current on-screen answers (so unsaved checks count too).
+    var answers={};
+    document.querySelectorAll("[data-intake]").forEach(function(el){ var v=el.value.trim(); if(v) answers[el.getAttribute("data-intake")]=v; });
+    var f=(DATA.coordination||[]).filter(function(x){return String(x.id)===String(fileId);})[0];
+    var fam=f?f.family_name:"";
+    var pkg=f?f.package_key:null;
+    var wanted=SERVICE_JOBS.filter(function(s){ return answers[s.key]==="yes"; });
+    if(!wanted.length){ alert(t("noServicesChecked")); return; }
+    // warn if this family already has jobs
+    var existing=(DATA.jobs||[]).filter(function(j){ return j.family_name===fam; });
+    if(existing.length && !confirm(t("alreadyHasJobs"))) return;
+
+    // Build a confirmation modal with a checkbox per wanted service.
+    var ov=document.createElement("div");
+    ov.style.cssText="position:fixed;inset:0;background:rgba(35,33,30,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px";
+    ov.innerHTML='<div style="background:#fff;border-radius:12px;max-width:440px;width:100%;padding:24px;max-height:80vh;overflow:auto">'
+      +'<h3 style="margin:0 0 6px">'+esc(t("generateJobs"))+'</h3>'
+      +'<p style="font-size:.9rem;color:var(--ink-soft);margin:0 0 14px">'+esc(t("confirmJobsIntro"))+'</p>'
+      +wanted.map(function(s){ return '<label class="check" style="display:flex;align-items:center;gap:8px;padding:6px 0"><input type="checkbox" data-gensvc="'+esc(s.key)+'" checked> <span>'+esc(s.title[LANG]||s.title.fr)+' <span style="color:var(--ink-soft);font-size:.8rem">('+esc(s.job_type)+')</span></span></label>'; }).join('')
+      +'<div style="display:flex;gap:10px;margin-top:18px"><button class="btn btn--solid tbtn" id="genConfirm">'+esc(t("createSelectedJobs"))+'</button><button class="btn btn--ghost tbtn" id="genCancel">'+esc(t("cancel"))+'</button></div>'
+      +'</div>';
+    document.body.appendChild(ov);
+    document.getElementById("genCancel").addEventListener("click",function(){ ov.remove(); });
+    document.getElementById("genConfirm").addEventListener("click",function(){
+      var picked=[];
+      ov.querySelectorAll("[data-gensvc]").forEach(function(cb){ if(cb.checked){ var s=SERVICE_JOBS.filter(function(x){return x.key===cb.getAttribute("data-gensvc");})[0]; if(s) picked.push(s); } });
+      if(!picked.length){ ov.remove(); return; }
+      var inserts=picked.map(function(s){
+        return sb.from("jobs").insert({
+          job_type:s.job_type,
+          title:(s.title[LANG]||s.title.fr),
+          family_name:fam,
+          package_key:pkg,
+          coordination_id:fileId,
+          status:"open",
+          details:(LANG==="fr"?"Généré depuis le dossier familial.":"Generated from the family file.")
+        });
+      });
+      Promise.all(inserts).then(function(results){
+        var errs=results.filter(function(r){return r.error;});
+        ov.remove();
+        if(errs.length){ alert("Erreur / Error: "+errs[0].error.message); }
+        else { flashMsg(picked.length+" "+t("jobsCreated")); }
+        loadAll();
+      });
     });
   }
 

@@ -6,8 +6,8 @@ window.HDV_INTAKE = [
     key: "intro",
     title: { fr: "Introduction", en: "Introduction" },
     script: {
-      fr: "D'abord et avant tout, au nom de toute l'équipe d'Héritage de Vie, je tiens à vous offrir nos plus sincères condoléances, à vous et à votre famille. Nous comprenons à quel point ce moment est difficile, et nous sommes profondément désolés pour votre perte.\n\n(Faites une pause. Laissez la personne parler. Ne précipitez rien.)\n\n« Avant de commencer, sachez que mon rôle est de rendre ce processus aussi simple que possible pour vous. Je vous guiderai à chaque étape, répondrai à vos questions et coordonnerai les arrangements en votre nom, afin que vous n'ayez pas à tout gérer seul(e). »",
-      en: "First and foremost, on behalf of everyone at Héritage de Vie, I would like to offer our deepest condolences to you and your family. We understand this is an incredibly difficult time, and we're truly sorry for your loss.\n\n(Pause. Let them speak. Don't rush.)\n\n\"Before we begin, I want you to know that my role is to make this process as easy as possible for you. I'll guide you through each step, answer your questions, and coordinate the arrangements on your behalf so you don't have to manage everything alone.\""
+      fr: "D'abord et avant tout, au nom de toute l'équipe d'Héritage de Vie, je tiens à vous offrir nos plus sincères condoléances, à vous et à votre famille. Nous comprenons à quel point ce moment est difficile, et nous sommes profondément désolés pour votre perte.\n\n(Faites une pause. Laissez la personne parler. Ne précipitez rien.)\n\n« Avant de commencer, sachez que mon rôle est de rendre ce processus aussi simple que possible pour vous. Je vous guiderai à chaque étape, répondrai à vos questions et coordonnerai les arrangements en votre nom, afin que vous n'ayez pas à tout gérer seul(e). »\n\n« La conversation d'aujourd'hui sert simplement à comprendre les souhaits de votre famille et à recueillir les informations nécessaires pour commencer. Si vous ne connaissez pas certaines réponses aujourd'hui, ce n'est pas grave. Nous pourrons y revenir plus tard. »",
+      en: "First and foremost, on behalf of everyone at Héritage de Vie, I would like to offer our deepest condolences to you and your family. We understand this is an incredibly difficult time, and we're truly sorry for your loss.\n\n(Pause. Let them speak. Don't rush.)\n\n\"Before we begin, I want you to know that my role is to make this process as easy as possible for you. I'll guide you through each step, answer your questions, and coordinate the arrangements on your behalf so you don't have to manage everything alone.\"\n\n\"Today's conversation is simply to understand your family's wishes and gather the information we'll need to begin planning. If there are any questions you don't know the answer to today, that's completely okay. We can always come back to them later.\""
     },
     fields: []
   },
@@ -49,6 +49,8 @@ window.HDV_INTAKE = [
       { key:"deathplace", type:"text", label:{fr:"Lieu du décès",en:"Place of death"} },
       { key:"gender", type:"text", label:{fr:"Genre",en:"Gender"} },
       { key:"marital", type:"select", label:{fr:"État civil",en:"Marital status"}, options:[{v:"single",fr:"Célibataire",en:"Single"},{v:"married",fr:"Marié(e)",en:"Married"},{v:"widowed",fr:"Veuf/Veuve",en:"Widowed"},{v:"divorced",fr:"Divorcé(e)",en:"Divorced"}] },
+      { key:"marriage_date", type:"date", label:{fr:"Date du mariage (si marié(e))",en:"Date of marriage (if married)"} },
+      { key:"separation_date", type:"date", label:{fr:"Date de séparation/divorce (si applicable)",en:"Date of separation/divorce (if applicable)"} },
       { key:"mother_name", type:"text", label:{fr:"Nom complet de la mère",en:"Mother's full name"} },
       { key:"father_name", type:"text", label:{fr:"Nom complet du père",en:"Father's full name"} },
       { key:"ramq", type:"text", label:{fr:"Numéro d'assurance maladie (RAMQ) — optionnel",en:"Health insurance number (RAMQ) — optional"} },
@@ -172,6 +174,24 @@ window.HDV_INTAKE = [
       { key:"made_smile", type:"textarea", label:{fr:"Qu'est-ce qui les faisait sourire ?",en:"What made them smile?"} },
       { key:"memory", type:"textarea", label:{fr:"Un souvenir que la famille aimerait que tous retiennent",en:"One memory the family would like everyone to remember"} },
       { key:"unique", type:"textarea", label:{fr:"Quelque chose d'unique à leur sujet",en:"Anything unique about them"} }
+    ]
+  },
+  {
+    key: "documents",
+    title: { fr: "11. Documents à rassembler", en: "11. Documents to Gather" },
+    script: {
+      fr: "Ne demandez pas les documents de façon abrupte. Dites plutôt :\n\n« Au cours des prochains jours, nous rassemblerons ensemble quelques documents importants. Quand vous serez prêt(e), vous pourrez nous les transmettre. »\n\n(Cochez ce qui a été reçu. La famille n'a pas à tout fournir aujourd'hui.)",
+      en: "Don't ask for documents abruptly. Instead say:\n\n\"Over the next few days, we'll work together to gather a few important documents. Whenever you're ready, you can send them to us.\"\n\n(Check off what's been received. The family doesn't have to provide everything today.)"
+    },
+    fields: [
+      { key:"doc_death_cert", type:"radio", label:{fr:"Certificat de décès (si disponible)",en:"Death certificate (if available)"}, options:[{v:"received",fr:"Reçu",en:"Received"},{v:"pending",fr:"À venir",en:"Pending"}] },
+      { key:"doc_will", type:"radio", label:{fr:"Testament",en:"Will"}, options:[{v:"received",fr:"Reçu",en:"Received"},{v:"pending",fr:"À venir",en:"Pending"},{v:"na",fr:"S/O",en:"N/A"}] },
+      { key:"doc_contract", type:"radio", label:{fr:"Contrat funéraire préarrangé",en:"Pre-arranged funeral contract"}, options:[{v:"received",fr:"Reçu",en:"Received"},{v:"pending",fr:"À venir",en:"Pending"},{v:"na",fr:"S/O",en:"N/A"}] },
+      { key:"doc_photo", type:"radio", label:{fr:"Photographie récente",en:"Recent photograph"}, options:[{v:"received",fr:"Reçue",en:"Received"},{v:"pending",fr:"À venir",en:"Pending"}] },
+      { key:"doc_id", type:"radio", label:{fr:"Pièce d'identité gouvernementale",en:"Government identification"}, options:[{v:"received",fr:"Reçue",en:"Received"},{v:"pending",fr:"À venir",en:"Pending"}] },
+      { key:"doc_marriage", type:"radio", label:{fr:"Certificat de mariage (optionnel)",en:"Marriage certificate (optional)"}, options:[{v:"received",fr:"Reçu",en:"Received"},{v:"pending",fr:"À venir",en:"Pending"},{v:"na",fr:"S/O",en:"N/A"}] },
+      { key:"doc_military", type:"radio", label:{fr:"Papiers militaires (optionnel)",en:"Military papers (optional)"}, options:[{v:"received",fr:"Reçus",en:"Received"},{v:"pending",fr:"À venir",en:"Pending"},{v:"na",fr:"S/O",en:"N/A"}] },
+      { key:"doc_notes", type:"textarea", label:{fr:"Notes sur les documents",en:"Notes on documents"} }
     ]
   },
   {

@@ -243,6 +243,7 @@
     noChecklist:{fr:"Aucune liste. Choisissez un forfait pour la générer, ou ajoutez des étapes.",en:"No checklist. Pick a package to generate one, or add steps."},
     remove:{fr:"Retirer",en:"Remove"},
     removeArchiveConfirm:{fr:"Retirer et archiver cet élément ? Il quittera la liste active mais restera récupérable dans les archives.",en:"Remove and archive this item? It leaves the active list but stays recoverable in the archive."},
+    removeStaffConfirm:{fr:"Retirer ce membre ? Son profil sera archivé (récupérable) ET son compte de connexion sera supprimé définitivement.",en:"Remove this member? Their profile is archived (recoverable) AND their login is permanently deleted."},
     removed:{fr:"Retiré et archivé.",en:"Removed and archived."},
     archive:{fr:"Archives",en:"Archive"},
     archivedOn:{fr:"Archivé le",en:"Archived on"},
@@ -793,6 +794,21 @@
     });
   }
 
+  // Remove a staff member: archive the profile, then delete their login too.
+  function removeStaffFully(id, label){
+    if(!confirm(t("removeStaffConfirm"))) return;
+    sb.rpc("archive_and_remove", { p_table:"profiles", p_id:id, p_label:label||"" }).then(function(res){
+      if(res.error){ alert("Erreur / Error: "+res.error.message); return; }
+      // Now delete their auth login (best-effort; profile is already archived).
+      sb.functions.invoke("delete-staff-login", { body:{ user_id:id } }).then(function(r2){
+        if(r2.error || (r2.data && r2.data.error)){
+          alert((LANG==="fr"?"Profil retiré, mais la suppression du compte a échoué : ":"Profile removed, but login deletion failed: ")+((r2.error&&(r2.error.message||r2.error))||(r2.data&&r2.data.error)));
+        }
+        loadAll();
+      }, function(err){ alert((LANG==="fr"?"Profil retiré; suppression du compte échouée : ":"Profile removed; login deletion failed: ")+err); loadAll(); });
+    });
+  }
+
   function renderRoster(m, roleFilter, title){
     var rows=DATA.roster.filter(function(p){ return roleFilter? p.role===roleFilter : true; });
     var showPerm=(current==="staff"); // only on the Staff page
@@ -827,7 +843,7 @@
             +(isAdmin()&&p.id!==ME.id&&p.role!=='admin'?'<td><button class="btn btn--ghost tbtn" data-rm-staff="'+esc(p.id)+'" style="color:#a8402d">'+esc(t("remove"))+'</button></td>':(isAdmin()?'<td></td>':''))
             +'</tr>'; }).join('')+'</tbody></table>'
        : '<div class="empty">'+esc(t("nobody"))+'<br><span style="font-size:.85rem">'+esc(t("addAccountsHint"))+'</span></div>');
-    document.querySelectorAll("[data-rm-staff]").forEach(function(b){ b.addEventListener("click", function(){ var id=b.getAttribute("data-rm-staff"); var row=DATA.roster.filter(function(x){return String(x.id)===String(id);})[0]; archiveAndRemove("profiles", id, row?row.full_name:""); }); });
+    document.querySelectorAll("[data-rm-staff]").forEach(function(b){ b.addEventListener("click", function(){ var id=b.getAttribute("data-rm-staff"); var row=DATA.roster.filter(function(x){return String(x.id)===String(id);})[0]; removeStaffFully(id, row?row.full_name:""); }); });
     document.querySelectorAll("[data-perm]").forEach(function(cb){ cb.addEventListener("change", function(){ var id=cb.getAttribute("data-perm-id"); var field=cb.getAttribute("data-perm"); var patch={}; patch[field]=cb.checked; sb.from("profiles").update(patch).eq("id",id).then(function(res){ if(res.error){ alert(res.error.message); cb.checked=!cb.checked; return; } var row=DATA.roster.filter(function(x){return String(x.id)===String(id);})[0]; if(row) row[field]=cb.checked; }); }); });
     // add-staff form
     if(current==="staff" && (isAdmin()||canStaff())){

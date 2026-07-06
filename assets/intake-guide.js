@@ -195,6 +195,26 @@ window.HDV_INTAKE = [
     ]
   },
   {
+    key: "services_needed",
+    title: { fr: "12. Services requis", en: "12. Services Needed" },
+    script: {
+      fr: "Cochez les services à coordonner pour cette famille. Après l'entrevue, vous pourrez générer automatiquement un mandat pour chaque service coché.",
+      en: "Check the services to coordinate for this family. After the interview, you can auto-generate a job for each checked service."
+    },
+    fields: [
+      { key:"svc_photographer", type:"radio", label:{fr:"Photographe",en:"Photographer"}, options:[{v:"yes",fr:"Requis",en:"Needed"},{v:"no",fr:"Non",en:"No"}] },
+      { key:"svc_caterer", type:"radio", label:{fr:"Traiteur",en:"Caterer"}, options:[{v:"yes",fr:"Requis",en:"Needed"},{v:"no",fr:"Non",en:"No"}] },
+      { key:"svc_flowers", type:"radio", label:{fr:"Fleurs",en:"Flowers"}, options:[{v:"yes",fr:"Requis",en:"Needed"},{v:"no",fr:"Non",en:"No"}] },
+      { key:"svc_church", type:"radio", label:{fr:"Église / lieu de culte",en:"Church / place of worship"}, options:[{v:"yes",fr:"Requis",en:"Needed"},{v:"no",fr:"Non",en:"No"}] },
+      { key:"svc_transport", type:"radio", label:{fr:"Transport",en:"Transportation"}, options:[{v:"yes",fr:"Requis",en:"Needed"},{v:"no",fr:"Non",en:"No"}] },
+      { key:"svc_livestream", type:"radio", label:{fr:"Diffusion en direct",en:"Livestream"}, options:[{v:"yes",fr:"Requis",en:"Needed"},{v:"no",fr:"Non",en:"No"}] },
+      { key:"svc_programs", type:"radio", label:{fr:"Programmes imprimés",en:"Printed programs"}, options:[{v:"yes",fr:"Requis",en:"Needed"},{v:"no",fr:"Non",en:"No"}] },
+      { key:"svc_memorial", type:"radio", label:{fr:"Produits commémoratifs",en:"Memorial products"}, options:[{v:"yes",fr:"Requis",en:"Needed"},{v:"no",fr:"Non",en:"No"}] },
+      { key:"svc_reception", type:"radio", label:{fr:"Réception",en:"Reception"}, options:[{v:"yes",fr:"Requis",en:"Needed"},{v:"no",fr:"Non",en:"No"}] },
+      { key:"svc_obituary", type:"radio", label:{fr:"Nécrologie",en:"Obituary"}, options:[{v:"yes",fr:"Requis",en:"Needed"},{v:"no",fr:"Non",en:"No"}] }
+    ]
+  },
+  {
     key: "closing",
     title: { fr: "Conclusion", en: "Closing" },
     script: {

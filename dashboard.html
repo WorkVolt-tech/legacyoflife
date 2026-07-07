@@ -192,6 +192,8 @@
     notes:{fr:"Notes",en:"Notes"},
     assignedTo:{fr:"Assigné à",en:"Assigned to"},
     makeJob:{fr:"→ Créer un mandat",en:"→ Make a job"},
+    makeFamilyFile:{fr:"→ Créer un dossier famille",en:"→ Create family file"},
+    familyFileCreated:{fr:"Dossier famille créé. Ouverture de l'entrevue…",en:"Family file created. Opening the interview…"},
     noInquiries:{fr:"Aucune demande.",en:"No inquiries."},
     newJob:{fr:"+ Nouveau mandat",en:"+ New job"},
     type:{fr:"Type",en:"Type"},
@@ -600,6 +602,7 @@
           +(r.message?'<div class="c-msg">'+esc(r.message)+'</div>':'')
           +'<div class="c-actions"><select data-iid="'+esc(r.id)+'" data-f="status">'+ISTAT.map(function(s){return '<option value="'+s+'"'+(r.status===s?' selected':'')+'>'+esc(ts(s))+'</option>';}).join('')+'</select>'
           +'<input type="text" data-iid="'+esc(r.id)+'" data-f="assigned_to" placeholder="'+esc(t("assignedTo"))+'" value="'+esc(r.assigned_to||"")+'" style="width:150px">'
+          +'<button class="btn btn--solid tbtn" data-tofile="'+esc(r.id)+'">'+esc(t("makeFamilyFile"))+'</button>'
           +'<button class="btn btn--ghost tbtn" data-convert="'+esc(r.id)+'">'+esc(t("makeJob"))+'</button>'
           +(isAdmin()?'<button class="btn btn--ghost tbtn" data-rm-inq="'+esc(r.id)+'" style="color:#a8402d">'+esc(t("remove"))+'</button>':'')
           +'<span class="saved" data-saved="'+esc(r.id)+'">✓</span></div>'
@@ -608,6 +611,7 @@
       }).join('');
       document.querySelectorAll("[data-iid]").forEach(function(el){ el.addEventListener("change", function(){ updateInquiry(el.getAttribute("data-iid"),el.getAttribute("data-f"),el.value); }); });
       document.querySelectorAll("[data-convert]").forEach(function(b){ b.addEventListener("click", function(){ convertToJob(b.getAttribute("data-convert")); }); });
+      document.querySelectorAll("[data-tofile]").forEach(function(b){ b.addEventListener("click", function(){ inquiryToFamilyFile(b.getAttribute("data-tofile")); }); });
       document.querySelectorAll("[data-rm-inq]").forEach(function(b){ b.addEventListener("click", function(){ var id=b.getAttribute("data-rm-inq"); var row=DATA.inquiries.filter(function(x){return String(x.id)===String(id);})[0]; archiveAndRemove("contact_submissions", id, row?row.name:""); }); });
       wireNoteThreads();
     }
@@ -623,6 +627,28 @@
       var ti=document.getElementById("jf_title"); if(ti) ti.value=(LANG==="fr"?"Mandat — ":"Job — ")+(inq.name||"");
       var fa=document.getElementById("jf_family"); if(fa) fa.value=inq.name||"";
       var sr=document.getElementById("jf_source"); if(sr) sr.value=inq.id; },60);
+  }
+
+  function inquiryToFamilyFile(inqId){
+    var inq=DATA.inquiries.filter(function(r){return String(r.id)===String(inqId);})[0]; if(!inq) return;
+    // Pre-fill the intake contact section from the inquiry.
+    var intake={};
+    if(inq.name) intake.contact_name=inq.name;
+    if(inq.phone) intake.contact_phone=inq.phone;
+    if(inq.email) intake.contact_email=inq.email;
+    if(inq.lang){ intake.contact_language = (inq.lang==="fr"?"fr":inq.lang==="en"?"en":"other"); }
+    if(inq.message) intake.contact_notes_from_inquiry=inq.message; // preserved for reference
+    var rec={ family_name:inq.name||"—", primary_contact:inq.name||null, phone:inq.phone||null, email:inq.email||null,
+              source_submission:inq.id, status:"active", intake:intake };
+    sb.from("coordination_files").insert(rec).select().single().then(function(res){
+      if(res.error){ alert("Erreur / Error: "+res.error.message); return; }
+      // mark the inquiry as in progress
+      sb.from("contact_submissions").update({status:"in_progress"}).eq("id",inq.id).then(function(){});
+      flashMsg(t("familyFileCreated"));
+      // jump to the new family file's intake
+      DATA.coordination.unshift(res.data);
+      current="coordination"; openFileId=res.data.id; buildNav(); render();
+    });
   }
 
   function renderJobs(m){

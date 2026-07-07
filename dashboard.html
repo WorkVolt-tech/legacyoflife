@@ -581,8 +581,14 @@
       cards.map(function(c){return '<div class="scard"><div class="n">'+c[0]+'</div><div class="l">'+esc(c[1])+'</div></div>';}).join('')+'</div>';
   }
 
+  function staffNamesDatalist(){
+    var names=(DATA.roster||[]).filter(function(p){ return p.role==="admin"||p.role==="staff"; }).map(function(p){ return p.full_name; }).filter(Boolean);
+    // de-dupe
+    var seen={}; names=names.filter(function(n){ if(seen[n])return false; seen[n]=1; return true; });
+    return '<datalist id="staffNames">'+names.map(function(n){ return '<option value="'+esc(n)+'">'; }).join('')+'</datalist>';
+  }
   function renderInquiries(m){
-    m.innerHTML='<h2 class="module-title">'+esc(t("inquiries"))+'</h2>'+
+    m.innerHTML=staffNamesDatalist()+'<h2 class="module-title">'+esc(t("inquiries"))+'</h2>'+
       '<div class="controls"><select id="fStatus"><option value="">'+esc(t("all"))+'</option>'+ISTAT.map(function(s){return '<option value="'+s+'">'+esc(ts(s))+'</option>';}).join('')+'</select>'+
       '<input type="search" id="fSearch" placeholder="'+esc(t("search"))+'" style="min-width:220px"><span class="count" id="iCount"></span></div>'+
       '<div class="sub-list" id="iList"></div><div class="empty hide" id="iEmpty">'+esc(t("noInquiries"))+'</div>';
@@ -601,7 +607,7 @@
           +'<div><span class="lbl">'+esc(t("language"))+'</span>'+esc((r.lang||"").toUpperCase())+'</div></div>'
           +(r.message?'<div class="c-msg">'+esc(r.message)+'</div>':'')
           +'<div class="c-actions"><select data-iid="'+esc(r.id)+'" data-f="status">'+ISTAT.map(function(s){return '<option value="'+s+'"'+(r.status===s?' selected':'')+'>'+esc(ts(s))+'</option>';}).join('')+'</select>'
-          +'<input type="text" data-iid="'+esc(r.id)+'" data-f="assigned_to" placeholder="'+esc(t("assignedTo"))+'" value="'+esc(r.assigned_to||"")+'" style="width:150px">'
+          +'<input type="text" list="staffNames" data-iid="'+esc(r.id)+'" data-f="assigned_to" placeholder="'+esc(t("assignedTo"))+'" value="'+esc(r.assigned_to||"")+'" style="width:150px">'
           +'<button class="btn btn--solid tbtn" data-tofile="'+esc(r.id)+'">'+esc(t("makeFamilyFile"))+'</button>'
           +'<button class="btn btn--ghost tbtn" data-convert="'+esc(r.id)+'">'+esc(t("makeJob"))+'</button>'
           +(isAdmin()?'<button class="btn btn--ghost tbtn" data-rm-inq="'+esc(r.id)+'" style="color:#a8402d">'+esc(t("remove"))+'</button>':'')

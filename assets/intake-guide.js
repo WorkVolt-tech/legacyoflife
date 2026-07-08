@@ -20,7 +20,7 @@ window.HDV_INTAKE = [
     },
     fields: [
       { key:"contact_name", type:"text", label:{fr:"Nom du contact principal",en:"Primary contact full name"} },
-      { key:"contact_relationship", type:"text", label:{fr:"Lien avec le défunt",en:"Relationship to the deceased"} },
+      { key:"contact_relationship", type:"text", label:{fr:"Lien avec la personne décédée",en:"Relationship to the deceased"} },
       { key:"contact_phone", type:"text", label:{fr:"Téléphone",en:"Phone number"} },
       { key:"contact_email", type:"text", label:{fr:"Courriel",en:"Email address"} },
       { key:"contact_method", type:"select", label:{fr:"Méthode de contact préférée",en:"Preferred contact method"}, options:[{v:"phone",fr:"Téléphone",en:"Phone"},{v:"email",fr:"Courriel",en:"Email"},{v:"text",fr:"Texto",en:"Text"}] },
@@ -34,7 +34,7 @@ window.HDV_INTAKE = [
   },
   {
     key: "deceased",
-    title: { fr: "2. Renseignements sur le défunt", en: "2. About the Deceased" },
+    title: { fr: "2. Renseignements sur la personne décédée", en: "2. About the Deceased" },
     script: {
       fr: "Plutôt que de demander immédiatement des documents :\n\n« Pourriez-vous me parler un peu de votre proche ? »\n\n(Laissez la personne parler. Écoutez.)\n\nEnsuite : « Merci de partager cela avec moi. »",
       en: "Instead of immediately asking for paperwork:\n\n\"Could you tell me a little bit about your loved one?\"\n\n(Let them talk. Listen.)\n\nAfterwards: \"Thank you for sharing that with me.\""

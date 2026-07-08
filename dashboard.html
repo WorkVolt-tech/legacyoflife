@@ -268,6 +268,24 @@
     sectionNotes:{fr:"Notes de cette section",en:"Notes for this section"},
     markSectionDone:{fr:"Section complétée",en:"Section complete"},
     generateJobs:{fr:"Générer les mandats",en:"Generate jobs"},
+    uploadDoc:{fr:"Téléverser un document",en:"Upload a document"},
+    documentLinks:{fr:"Liens vers les documents (Drive)",en:"Document links (Drive)"},
+    documentLinksHint:{fr:"Le client envoie les documents par courriel. Déposez-les dans Google Drive, puis collez le lien ici.",en:"The client emails the documents. Put them in Google Drive, then paste the link here."},
+    docLabelOptional:{fr:"Étiquette (optionnel)",en:"Label (optional)"},
+    pasteDriveLink:{fr:"Coller le lien Google Drive",en:"Paste Google Drive link"},
+    addLink:{fr:"Ajouter le lien",en:"Add link"},
+    openDrive:{fr:"Ouvrir dans Drive",en:"Open in Drive"},
+    noDocLinks:{fr:"Aucun lien de document.",en:"No document links yet."},
+    invalidLink:{fr:"Lien invalide (doit commencer par http).",en:"Invalid link (must start with http)."},
+    removeLinkConfirm:{fr:"Retirer ce lien ?",en:"Remove this link?"},
+    dt_death_certificate:{fr:"Certificat de décès",en:"Death certificate"},
+    dt_will:{fr:"Testament",en:"Will"},
+    dt_contract:{fr:"Contrat funéraire",en:"Funeral contract"},
+    dt_photo:{fr:"Photographie",en:"Photograph"},
+    dt_id:{fr:"Pièce d'identité",en:"Identification"},
+    dt_marriage:{fr:"Certificat de mariage",en:"Marriage certificate"},
+    dt_military:{fr:"Papiers militaires",en:"Military papers"},
+    dt_other:{fr:"Autre",en:"Other"},
     noServicesChecked:{fr:"Aucun service marqué « requis » dans la section Services requis.",en:"No services marked 'needed' in the Services Needed section."},
     confirmJobsIntro:{fr:"Créer un mandat pour chaque service coché ? Décochez ceux à exclure :",en:"Create a job for each checked service? Uncheck any to exclude:"},
     createSelectedJobs:{fr:"Créer les mandats sélectionnés",en:"Create selected jobs"},
@@ -395,7 +413,7 @@
   var loginView=document.getElementById("loginView");
   var hubView=document.getElementById("hubView");
   var ME={id:null,role:"none",name:""};
-  var DATA={inquiries:[],jobs:[],roster:[],applications:[],checklist:[],archive:[],coordination:[],notes:[],reviews:[],templates:[],invoices:[],invoiceItems:[],payments:[],expenses:[]};
+  var DATA={inquiries:[],jobs:[],roster:[],applications:[],checklist:[],archive:[],coordination:[],notes:[],reviews:[],templates:[],invoices:[],invoiceItems:[],payments:[],expenses:[],documents:[]};
   var openInvoiceId=null;
   var financeTab="invoices";
   var finPeriod="month"; var finFrom=null, finTo=null;
@@ -529,6 +547,7 @@
     q.push(canFinances()? sb.from("invoice_items").select("*").order("position",{ascending:true}) : Promise.resolve({data:[]}));
     q.push(canFinances()? sb.from("payments").select("*").order("paid_at",{ascending:true}) : Promise.resolve({data:[]}));
     q.push(canFinances()? sb.from("expenses").select("*").order("spent_on",{ascending:false}) : Promise.resolve({data:[]}));
+    q.push((isAdmin()||isStaff())? sb.from("family_documents").select("*").order("created_at",{ascending:false}) : Promise.resolve({data:[]}));
     Promise.all(q).then(function(r){
       DATA.inquiries=(r[0]&&r[0].data)||[]; DATA.jobs=(r[1]&&r[1].data)||[];
       DATA.roster=(r[2]&&r[2].data)||[]; DATA.applications=(r[3]&&r[3].data)||[];
@@ -536,7 +555,7 @@
       DATA.coordination=(r[6]&&r[6].data)||[]; DATA.notes=(r[7]&&r[7].data)||[];
       DATA.reviews=(r[8]&&r[8].data)||[]; DATA.templates=(r[9]&&r[9].data)||[];
       DATA.invoices=(r[10]&&r[10].data)||[]; DATA.invoiceItems=(r[11]&&r[11].data)||[]; DATA.payments=(r[12]&&r[12].data)||[];
-      DATA.expenses=(r[13]&&r[13].data)||[];
+      DATA.expenses=(r[13]&&r[13].data)||[]; DATA.documents=(r[14]&&r[14].data)||[];
       if(quiet){
         // Don't yank someone out of an open intake file or mid-edit.
         if(openFileId || isEditing()){ buildNav(); return; }
@@ -1505,6 +1524,8 @@
       html+= noteThreadHTML("coordination", fileId, sec.key);
       html+='</div>';
     });
+    // ---- Documents upload panel ----
+    html+= documentsPanelHTML(fileId, editable);
     m.innerHTML=html;
 
     document.getElementById("backFiles").addEventListener("click",function(){ openFileId=null; render(); });
@@ -1513,7 +1534,49 @@
     }
     var gj=document.getElementById("genJobs");
     if(gj){ gj.addEventListener("click",function(){ generateJobsFromIntake(fileId); }); }
+    wireDocuments(fileId);
     wireNoteThreads();
+  }
+
+  var DOC_TYPES=["death_certificate","will","contract","photo","id","marriage","military","other"];
+  function documentsPanelHTML(fileId, editable){
+    var docs=(DATA.documents||[]).filter(function(d){ return String(d.coordination_id)===String(fileId); });
+    var typeOpts=DOC_TYPES.map(function(dt){ return '<option value="'+dt+'">'+esc(t("dt_"+dt))+'</option>'; }).join('');
+    var h='<div class="intake-section" style="margin-top:10px"><h3>📄 '+esc(t("documentLinks"))+'</h3>'
+      +'<p style="font-size:.85rem;color:var(--ink-soft);margin:0 0 12px">'+esc(t("documentLinksHint"))+'</p>';
+    if(editable){
+      h+='<div class="clist-add" style="flex-wrap:wrap;gap:8px;margin-bottom:12px">'
+        +'<select id="doc_type">'+typeOpts+'</select>'
+        +'<input type="text" id="doc_label" placeholder="'+esc(t("docLabelOptional"))+'" style="width:150px">'
+        +'<input type="url" id="doc_url" placeholder="'+esc(t("pasteDriveLink"))+'" style="flex:1;min-width:220px">'
+        +'<button class="btn btn--solid tbtn" id="doc_add">'+esc(t("addLink"))+'</button></div>';
+    }
+    if(docs.length){
+      h+='<div class="sub-list">'+docs.map(function(d){
+        var label=(d.label&&d.label.trim())? d.label : (t("dt_"+(d.doc_type||"other"))||d.doc_type);
+        return '<div class="check" style="justify-content:space-between"><span class="ctext">📎 '+esc(t("dt_"+(d.doc_type||"other"))||d.doc_type)+(d.label&&d.label.trim()?' — '+esc(d.label):'')+'</span>'
+          +'<span style="display:flex;gap:6px"><a class="btn btn--ghost tbtn" href="'+esc(d.drive_url||"#")+'" target="_blank" rel="noopener">'+esc(t("openDrive"))+'</a>'
+          +(editable?'<button class="btn btn--ghost tbtn" data-deldoc="'+esc(d.id)+'" style="color:#a8402d">'+esc(t("remove"))+'</button>':'')+'</span></div>';
+      }).join('')+'</div>';
+    } else {
+      h+='<div style="font-size:.85rem;color:var(--ink-soft)">'+esc(t("noDocLinks"))+'</div>';
+    }
+    h+='</div>';
+    return h;
+  }
+  function wireDocuments(fileId){
+    var add=document.getElementById("doc_add");
+    if(add){ add.addEventListener("click",function(){
+      var url=(document.getElementById("doc_url").value||"").trim();
+      if(!url){ alert(t("pasteDriveLink")); return; }
+      if(!/^https?:\/\//i.test(url)){ alert(t("invalidLink")); return; }
+      var rec={ coordination_id:fileId, doc_type:document.getElementById("doc_type").value, label:(document.getElementById("doc_label").value||"").trim()||null, drive_url:url, added_by:ME.name };
+      sb.from("family_documents").insert(rec).then(function(res){ if(res.error){ alert("Erreur / Error: "+res.error.message); return; } loadAll(); });
+    }); }
+    document.querySelectorAll("[data-deldoc]").forEach(function(b){ b.addEventListener("click",function(){
+      if(!confirm(t("removeLinkConfirm"))) return;
+      sb.from("family_documents").delete().eq("id",b.getAttribute("data-deldoc")).then(function(){ loadAll(); });
+    }); });
   }
 
   function saveIntake(fileId){

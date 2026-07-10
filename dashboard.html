@@ -303,6 +303,13 @@
     createStaff:{fr:"Créer le compte",en:"Create login"},
     staffCreated:{fr:"Compte créé. Transmettez ces identifiants :",en:"Login created. Share these credentials:"},
     permissions:{fr:"Permissions",en:"Permissions"},
+    board:{fr:"Tableau d'équipe",en:"Team board"},
+    col_todo:{fr:"À faire",en:"To do"},
+    col_doing:{fr:"En cours",en:"In progress"},
+    col_done:{fr:"Terminé",en:"Done"},
+    addCard:{fr:"+ Ajouter une carte",en:"+ Add card"},
+    newCardText:{fr:"Écrire une carte…",en:"Write a card…"},
+    deleteCard:{fr:"Supprimer",en:"Delete"},
     finances:{fr:"Finances",en:"Finances"},
     invoices:{fr:"Factures",en:"Invoices"},
     newInvoice:{fr:"+ Nouvelle facture",en:"+ New invoice"},
@@ -413,7 +420,7 @@
   var loginView=document.getElementById("loginView");
   var hubView=document.getElementById("hubView");
   var ME={id:null,role:"none",name:""};
-  var DATA={inquiries:[],jobs:[],roster:[],applications:[],checklist:[],archive:[],coordination:[],notes:[],reviews:[],templates:[],invoices:[],invoiceItems:[],payments:[],expenses:[],documents:[]};
+  var DATA={inquiries:[],jobs:[],roster:[],applications:[],checklist:[],archive:[],coordination:[],notes:[],reviews:[],templates:[],invoices:[],invoiceItems:[],payments:[],expenses:[],documents:[],board:[]};
   var openInvoiceId=null;
   var financeTab="invoices";
   var finPeriod="month"; var finFrom=null, finTo=null;
@@ -497,6 +504,7 @@
         .on("postgres_changes",{event:"*",schema:"public",table:"coordination_files"},scheduleReload)
         .on("postgres_changes",{event:"*",schema:"public",table:"reviews"},scheduleReload)
         .on("postgres_changes",{event:"*",schema:"public",table:"notes"},scheduleReload)
+        .on("postgres_changes",{event:"*",schema:"public",table:"board_cards"},scheduleReload)
         .subscribe();
     }catch(e){ /* realtime optional; ignore */ }
   }
@@ -505,6 +513,7 @@
     var items=[["overview",t("overview")]];
     if(seesInquiries()) items.push(["inquiries",t("inquiries")]);
     if(isAdmin()||isStaff()) items.push(["coordination",t("coordination")]);
+    if(isAdmin()||isStaff()) items.push(["board",t("board")]);
     items.push(["jobs", isWorker()?t("myJobs"):t("jobs")]);
     if(isAdmin()||isStaff()){ items.push(["photographers",t("photographers")]); items.push(["caterers",t("caterers")]); }
     if(canStaff()){ items.push(["staff",t("staff")]); }
@@ -548,6 +557,7 @@
     q.push(canFinances()? sb.from("payments").select("*").order("paid_at",{ascending:true}) : Promise.resolve({data:[]}));
     q.push(canFinances()? sb.from("expenses").select("*").order("spent_on",{ascending:false}) : Promise.resolve({data:[]}));
     q.push((isAdmin()||isStaff())? sb.from("family_documents").select("*").order("created_at",{ascending:false}) : Promise.resolve({data:[]}));
+    q.push((isAdmin()||isStaff())? sb.from("board_cards").select("*").order("position",{ascending:true}) : Promise.resolve({data:[]}));
     Promise.all(q).then(function(r){
       DATA.inquiries=(r[0]&&r[0].data)||[]; DATA.jobs=(r[1]&&r[1].data)||[];
       DATA.roster=(r[2]&&r[2].data)||[]; DATA.applications=(r[3]&&r[3].data)||[];
@@ -556,6 +566,7 @@
       DATA.reviews=(r[8]&&r[8].data)||[]; DATA.templates=(r[9]&&r[9].data)||[];
       DATA.invoices=(r[10]&&r[10].data)||[]; DATA.invoiceItems=(r[11]&&r[11].data)||[]; DATA.payments=(r[12]&&r[12].data)||[];
       DATA.expenses=(r[13]&&r[13].data)||[]; DATA.documents=(r[14]&&r[14].data)||[];
+      DATA.board=(r[15]&&r[15].data)||[];
       if(quiet){
         // Don't yank someone out of an open intake file or mid-edit.
         if(openFileId || isEditing()){ buildNav(); return; }
@@ -579,6 +590,7 @@
     if(current==="applications") return renderApplications(m);
     if(current==="archive") return renderArchive(m);
     if(current==="coordination") return renderCoordination(m);
+    if(current==="board") return renderBoard(m);
     if(current==="reviews") return renderReviews(m);
     if(current==="templates") return renderTemplates(m);
     if(current==="finances") return renderFinances(m);
@@ -1431,6 +1443,65 @@
 
   // ================= COORDINATION FILES + GUIDED INTAKE =================
   function canIntake(){ return isAdmin() || (ME.can_manage_intake===true); }
+
+  // ================= TEAM BOARD (Phase 1) =================
+  var BOARD_COLS=[["todo","col_todo"],["doing","col_doing"],["done","col_done"]];
+  function renderBoard(m){
+    var cols=BOARD_COLS.map(function(c){
+      var cards=(DATA.board||[]).filter(function(x){return x.column_key===c[0];}).sort(function(a,b){return (a.position||0)-(b.position||0);});
+      var cardsHtml=cards.map(function(card){
+        return '<div class="bcard" draggable="true" data-cardid="'+esc(card.id)+'" style="background:'+(card.color||"#fff")+';border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:8px;cursor:grab;box-shadow:0 1px 3px rgba(0,0,0,.06)">'
+          +'<div contenteditable="true" data-cardbody="'+esc(card.id)+'" style="font-size:.9rem;outline:none;min-height:20px">'+esc(card.body)+'</div>'
+          +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">'
+          +'<span style="font-size:.7rem;color:var(--ink-soft)">'+esc(card.created_by||"")+'</span>'
+          +'<span class="cx" data-delcard="'+esc(card.id)+'" style="cursor:pointer;color:#b08a8a;font-size:.85rem">✕</span></div>'
+          +'</div>';
+      }).join('');
+      return '<div class="bcol" data-col="'+c[0]+'" style="flex:1;min-width:240px;background:var(--cream-deep,#efe9dd);border-radius:12px;padding:12px">'
+        +'<h3 style="margin:0 0 10px;font-size:1rem">'+esc(t(c[1]))+' <span style="color:var(--ink-soft);font-size:.8rem">('+cards.length+')</span></h3>'
+        +'<div class="bcol-cards" data-colcards="'+c[0]+'" style="min-height:40px">'+cardsHtml+'</div>'
+        +'<div class="clist-add" style="margin-top:8px"><input type="text" data-newcard="'+c[0]+'" placeholder="'+esc(t("newCardText"))+'" style="flex:1"><button class="btn btn--ghost tbtn" data-addcard="'+c[0]+'">+</button></div>'
+        +'</div>';
+    }).join('');
+    m.innerHTML='<h2 class="module-title">'+esc(t("board"))+'</h2>'
+      +'<div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start">'+cols+'</div>';
+
+    // add card
+    document.querySelectorAll("[data-addcard]").forEach(function(b){ b.addEventListener("click",function(){ addBoardCard(b.getAttribute("data-addcard")); }); });
+    document.querySelectorAll("[data-newcard]").forEach(function(i){ i.addEventListener("keydown",function(e){ if(e.key==="Enter") addBoardCard(i.getAttribute("data-newcard")); }); });
+    // edit card body (on blur)
+    document.querySelectorAll("[data-cardbody]").forEach(function(el){ el.addEventListener("blur",function(){
+      var id=el.getAttribute("data-cardbody"); var body=el.innerText.trim();
+      var card=(DATA.board||[]).filter(function(x){return String(x.id)===String(id);})[0];
+      if(card && card.body!==body){ sb.from("board_cards").update({body:body}).eq("id",id).then(function(){ card.body=body; }); }
+    }); });
+    // delete
+    document.querySelectorAll("[data-delcard]").forEach(function(x){ x.addEventListener("click",function(){
+      sb.from("board_cards").delete().eq("id",x.getAttribute("data-delcard")).then(function(){ loadAll(); });
+    }); });
+    // drag & drop between columns
+    var dragId=null;
+    document.querySelectorAll(".bcard").forEach(function(card){
+      card.addEventListener("dragstart",function(e){ dragId=card.getAttribute("data-cardid"); card.style.opacity="0.4"; });
+      card.addEventListener("dragend",function(){ card.style.opacity="1"; });
+    });
+    document.querySelectorAll(".bcol-cards").forEach(function(zone){
+      zone.addEventListener("dragover",function(e){ e.preventDefault(); });
+      zone.addEventListener("drop",function(e){
+        e.preventDefault(); if(!dragId) return;
+        var newCol=zone.getAttribute("data-colcards");
+        var count=(DATA.board||[]).filter(function(x){return x.column_key===newCol;}).length;
+        sb.from("board_cards").update({column_key:newCol, position:count}).eq("id",dragId).then(function(){ loadAll(); });
+        dragId=null;
+      });
+    });
+  }
+  function addBoardCard(col){
+    var input=document.querySelector('[data-newcard="'+col+'"]'); if(!input) return;
+    var body=input.value.trim(); if(!body) return;
+    var count=(DATA.board||[]).filter(function(x){return x.column_key===col;}).length;
+    sb.from("board_cards").insert({column_key:col, position:count, body:body, created_by:ME.name}).then(function(res){ if(res.error){alert(res.error.message);return;} loadAll(); });
+  }
 
   function renderCoordination(m){
     if(openFileId){ return renderIntake(m, openFileId); }

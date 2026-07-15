@@ -131,7 +131,7 @@
     <div class="field"><label id="llPass"></label><input type="password" id="loginPassword" autocomplete="current-password"></div>
     <button class="btn btn--solid" id="loginBtn"></button>
     <p class="login-err" id="loginErr"></p>
-    <p style="text-align:center;margin-top:24px;font-size:.85rem;color:var(--ink-soft)" id="applyPrompt"></p>
+    
   </div>
 </div>
 
@@ -170,8 +170,6 @@
     email:{fr:"Courriel",en:"Email"},
     password:{fr:"Mot de passe",en:"Password"},
     badCreds:{fr:"Identifiants invalides.",en:"Invalid credentials."},
-    applyPrompt:{fr:"Photographe ou traiteur ? ",en:"Photographer or caterer? "},
-    applyHere:{fr:"Postulez ici",en:"Apply here"},
     signOut:{fr:"Déconnexion",en:"Sign out"},
     overview:{fr:"Tableau de bord",en:"Overview"},
     inquiries:{fr:"Demandes",en:"Inquiries"},
@@ -482,8 +480,7 @@
     document.getElementById("llPass").textContent=t("password");
     document.getElementById("loginBtn").textContent=t("signIn");
     document.getElementById("loginErr").textContent=t("badCreds");
-    document.getElementById("applyPrompt").innerHTML=esc(t("applyPrompt"))+'<a href="apply.html" style="color:var(--gold-deep)">'+esc(t("applyHere"))+'</a>';
-  }
+      }
 
   document.querySelectorAll("[data-ll]").forEach(function(b){ b.addEventListener("click", function(){ setLang(b.getAttribute("data-ll")); }); });
   document.getElementById("loginBtn").addEventListener("click", doLogin);

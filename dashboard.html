@@ -346,6 +346,16 @@
     bookingTabAvailability:{fr:"Disponibilités",en:"Availability"},
     bookingClearDesc:{fr:"Retirer tous les créneaux ouverts (non réservés) d'un coup.",en:"Remove every open (unbooked) slot at once."},
     bookingClearAll:{fr:"Tout effacer",en:"Clear all"},
+    portalAccess:{fr:"Accès au portail famille",en:"Family portal access"},
+    portalActiveSince:{fr:"Actif depuis le",en:"Active since"},
+    portalRevoke:{fr:"Révoquer l'accès",en:"Revoke access"},
+    portalNotSignedUp:{fr:"La famille ne s'est pas encore inscrite au portail.",en:"The family hasn't signed up for the portal yet."},
+    portalRevokeConfirm:{fr:"Révoquer l'accès au portail pour cette famille ? Cette action supprime leur connexion.",en:"Revoke portal access for this family? This deletes their login."},
+    familyTimeline:{fr:"Échéancier famille",en:"Family timeline"},
+    noTimelineYet:{fr:"Aucune étape ajoutée pour le moment.",en:"No steps added yet."},
+    tlLabelPlaceholder:{fr:"Ex. : Cérémonie planifiée",en:"E.g. Ceremony scheduled"},
+    tlInProgress:{fr:"En cours",en:"In progress"},
+    tlDone:{fr:"Terminé",en:"Done"},
     col_todo:{fr:"À faire",en:"To do"},
     col_doing:{fr:"En cours",en:"In progress"},
     col_done:{fr:"Terminé",en:"Done"},
@@ -462,7 +472,7 @@
   var loginView=document.getElementById("loginView");
   var hubView=document.getElementById("hubView");
   var ME={id:null,role:"none",name:""};
-  var DATA={inquiries:[],jobs:[],roster:[],applications:[],checklist:[],archive:[],coordination:[],notes:[],reviews:[],templates:[],invoices:[],invoiceItems:[],payments:[],expenses:[],documents:[],board:[],bookingSlots:[],bookingRequests:[]};
+  var DATA={inquiries:[],jobs:[],roster:[],applications:[],checklist:[],archive:[],coordination:[],notes:[],reviews:[],templates:[],invoices:[],invoiceItems:[],payments:[],expenses:[],documents:[],board:[],bookingSlots:[],bookingRequests:[],timelineEvents:[]};
   var openInvoiceId=null;
   var financeTab="invoices";
   var finPeriod="month"; var finFrom=null, finTo=null;
@@ -549,6 +559,7 @@
         .on("postgres_changes",{event:"*",schema:"public",table:"board_cards"},scheduleReload)
         .on("postgres_changes",{event:"*",schema:"public",table:"booking_slots"},scheduleReload)
         .on("postgres_changes",{event:"*",schema:"public",table:"booking_requests"},scheduleReload)
+        .on("postgres_changes",{event:"*",schema:"public",table:"family_timeline_events"},scheduleReload)
         .subscribe();
     }catch(e){ /* realtime optional; ignore */ }
   }
@@ -606,6 +617,7 @@
     q.push((isAdmin()||isStaff())? sb.from("board_cards").select("*").order("position",{ascending:true}) : Promise.resolve({data:[]}));
     q.push((isAdmin()||isStaff())? sb.from("booking_slots").select("*").order("slot_date",{ascending:true}).order("start_time",{ascending:true}) : Promise.resolve({data:[]}));
     q.push((isAdmin()||isStaff())? sb.from("booking_requests").select("*").order("created_at",{ascending:false}) : Promise.resolve({data:[]}));
+    q.push((isAdmin()||isStaff())? sb.from("family_timeline_events").select("*").order("position",{ascending:true}) : Promise.resolve({data:[]}));
     Promise.all(q).then(function(r){
       DATA.inquiries=(r[0]&&r[0].data)||[]; DATA.jobs=(r[1]&&r[1].data)||[];
       DATA.roster=(r[2]&&r[2].data)||[]; DATA.applications=(r[3]&&r[3].data)||[];
@@ -616,6 +628,7 @@
       DATA.expenses=(r[13]&&r[13].data)||[]; DATA.documents=(r[14]&&r[14].data)||[];
       DATA.board=(r[15]&&r[15].data)||[];
       DATA.bookingSlots=(r[16]&&r[16].data)||[]; DATA.bookingRequests=(r[17]&&r[17].data)||[];
+      DATA.timelineEvents=(r[18]&&r[18].data)||[];
       if(quiet){
         // Don't yank someone out of an open intake file or mid-edit.
         if(openFileId || isEditing()){ buildNav(); return; }
@@ -1839,6 +1852,9 @@
       html+= noteThreadHTML("coordination", fileId, sec.key);
       html+='</div>';
     });
+    // ---- Portal access + Timeline panels ----
+    html+= portalAccessPanelHTML(f);
+    html+= timelinePanelHTML(fileId, editable);
     // ---- Documents upload panel ----
     html+= documentsPanelHTML(fileId, editable);
     m.innerHTML=html;
@@ -1850,7 +1866,90 @@
     var gj=document.getElementById("genJobs");
     if(gj){ gj.addEventListener("click",function(){ generateJobsFromIntake(fileId); }); }
     wireDocuments(fileId);
+    wirePortalAccess(f);
+    wireTimeline(fileId, editable);
     wireNoteThreads();
+  }
+
+  // ---- Portal access panel ----
+  function portalAccessPanelHTML(f){
+    var active = !!f.portal_user_id;
+    var h='<div class="intake-section" style="margin-top:26px"><h3>🔑 '+esc(t("portalAccess"))+'</h3>';
+    if(active){
+      h+='<p style="font-size:.9rem;color:var(--ink)">'+esc(t("portalActiveSince"))+' '+esc(fmtDate(f.portal_created_at))+' ('+esc(f.portal_email||"")+')</p>'
+        +'<button class="btn btn--ghost tbtn" id="portalRevoke" style="color:#a8402d">'+esc(t("portalRevoke"))+'</button>';
+    } else {
+      h+='<p style="font-size:.9rem;color:var(--ink-soft)">'+esc(t("portalNotSignedUp"))+'</p>';
+    }
+    h+='</div>';
+    return h;
+  }
+  function wirePortalAccess(f){
+    var btn=document.getElementById("portalRevoke");
+    if(!btn) return;
+    btn.addEventListener("click", function(){
+      if(!confirm(t("portalRevokeConfirm"))) return;
+      btn.disabled=true;
+      sb.functions.invoke("portal-revoke", { body:{ coordination_id: f.id } }).then(function(res){
+        btn.disabled=false;
+        if(!res.data || !res.data.success){ alert((res.data&&res.data.error)||"Error"); return; }
+        loadAll();
+      });
+    });
+  }
+
+  // ---- Timeline panel ----
+  function timelinePanelHTML(fileId, editable){
+    var events=(DATA.timelineEvents||[]).filter(function(x){ return String(x.coordination_id)===String(fileId); });
+    var statusLabel={pending:t("bookingStatusPending")||"Pending",in_progress:t("tlInProgress"),done:t("tlDone")};
+    var h='<div class="intake-section" style="margin-top:26px"><h3>📅 '+esc(t("familyTimeline"))+'</h3>';
+    if(events.length){
+      h+='<div class="sub-list">'+events.map(function(ev){
+        return '<div class="check" style="justify-content:space-between;align-items:center">'
+          +'<span class="ctext">'+esc(ev.label)+(ev.event_date?' — '+esc(ev.event_date):'')+'</span>'
+          +'<span style="display:flex;gap:6px;align-items:center">'
+          +'<select data-tlstatus="'+esc(ev.id)+'">'
+          +['pending','in_progress','done'].map(function(s){ return '<option value="'+s+'"'+(ev.status===s?' selected':'')+'>'+esc(statusLabel[s])+'</option>'; }).join('')
+          +'</select>'
+          +'<button class="btn btn--ghost tbtn" data-tldel="'+esc(ev.id)+'" style="color:#a8402d">'+esc(t("remove"))+'</button>'
+          +'</span></div>';
+      }).join('')+'</div>';
+    } else {
+      h+='<div style="font-size:.85rem;color:var(--ink-soft)">'+esc(t("noTimelineYet"))+'</div>';
+    }
+    if(editable){
+      h+='<div class="clist-add" style="flex-wrap:wrap;gap:8px;margin-top:12px">'
+        +'<input type="text" id="tl_label" placeholder="'+esc(t("tlLabelPlaceholder"))+'" style="flex:1;min-width:180px">'
+        +'<input type="date" id="tl_date" style="width:150px">'
+        +'<button class="btn btn--solid tbtn" id="tl_add">'+esc(t("addLink"))+'</button></div>';
+    }
+    h+='</div>';
+    return h;
+  }
+  function wireTimeline(fileId, editable){
+    document.querySelectorAll("[data-tlstatus]").forEach(function(sel){
+      sel.addEventListener("change", function(){
+        sb.from("family_timeline_events").update({status:sel.value}).eq("id",sel.getAttribute("data-tlstatus")).then(function(){ loadAllQuiet(); });
+      });
+    });
+    document.querySelectorAll("[data-tldel]").forEach(function(b){
+      b.addEventListener("click", function(){
+        sb.from("family_timeline_events").delete().eq("id",b.getAttribute("data-tldel")).then(function(){ loadAll(); });
+      });
+    });
+    var addBtn=document.getElementById("tl_add");
+    if(addBtn){
+      addBtn.addEventListener("click", function(){
+        var label=(document.getElementById("tl_label").value||"").trim();
+        if(!label) return;
+        var date=document.getElementById("tl_date").value||null;
+        var existing=(DATA.timelineEvents||[]).filter(function(x){ return String(x.coordination_id)===String(fileId); });
+        var pos=existing.length;
+        sb.from("family_timeline_events").insert({coordination_id:fileId,label:label,status:"pending",event_date:date,position:pos}).then(function(res){
+          if(res.error){ alert(res.error.message); return; } loadAll();
+        });
+      });
+    }
   }
 
   var DOC_TYPES=["death_certificate","will","contract","photo","id","marriage","military","other"];

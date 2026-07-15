@@ -99,9 +99,9 @@ h1, h2, h3, h4 {
 }
 .site-header .wrap {
   display: flex; align-items: center; justify-content: space-between;
-  min-height: 84px; gap: 20px;
+  min-height: 84px; gap: 14px;
 }
-.brand { display: flex; align-items: center; gap: 14px; }
+.brand { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
 .brand img { height: 46px; width: auto; }
 .brand .brand-text { display: flex; flex-direction: column; line-height: 1; }
 .brand .brand-name {
@@ -113,26 +113,27 @@ h1, h2, h3, h4 {
   text-transform: uppercase; color: var(--gold-deep); margin-top: 4px;
 }
 
-.nav { display: flex; align-items: center; gap: 30px; }
+.nav { display: flex; align-items: center; gap: 18px; }
 .nav a.navlink {
-  font-family: var(--sans); font-weight: 400; font-size: .8rem;
-  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft);
+  font-family: var(--sans); font-weight: 400; font-size: .74rem;
+  letter-spacing: .07em; text-transform: uppercase; color: var(--ink-soft);
+  white-space: nowrap;
 }
 .nav a.navlink:hover, .nav a.navlink.active { color: var(--gold-deep); }
 
 .lang-toggle {
   display: flex; align-items: center; border: 1px solid var(--line);
-  border-radius: 30px; overflow: hidden;
+  border-radius: 30px; overflow: hidden; flex-shrink: 0;
 }
 .lang-toggle button {
   font-family: var(--sans); font-size: .72rem; letter-spacing: .1em;
-  padding: 7px 13px; background: transparent; border: 0; cursor: pointer;
-  color: var(--ink-soft); transition: all .2s;
+  padding: 7px 12px; background: transparent; border: 0; cursor: pointer;
+  color: var(--ink-soft); transition: all .2s; white-space: nowrap;
 }
 .lang-toggle button.active { background: var(--gold); color: #fff; }
 
 /* Mobile nav */
-.nav-toggle { display: none; background: none; border: 0; cursor: pointer; padding: 6px; }
+.nav-toggle { display: none; background: none; border: 0; cursor: pointer; padding: 6px; flex-shrink: 0; }
 .nav-toggle span { display: block; width: 24px; height: 2px; background: var(--ink); margin: 5px 0; transition: .25s; }
 
 /* ---------- Hero ---------- */
@@ -288,7 +289,7 @@ html[lang="fr"] [data-lang="fr"].d-block,
 html[lang="en"] [data-lang="en"].d-block { display: block; }
 
 /* ---------- Responsive ---------- */
-@media (max-width: 900px) {
+@media (max-width: 1080px) {
   .nav { position: fixed; inset: 84px 0 auto 0; flex-direction: column; gap: 0;
          background: var(--cream); border-bottom: 1px solid var(--line);
          padding: 12px 0; transform: translateY(-130%); transition: transform .3s ease; }

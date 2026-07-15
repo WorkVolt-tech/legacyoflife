@@ -330,3 +330,41 @@ html[lang="en"] [data-lang="en"].d-block { display: block; }
 /* ---------- 404 ---------- */
 .error-page { text-align: center; padding: 120px 0; }
 .error-page .error-code { font-family: "Cormorant Garamond", serif; font-size: clamp(4rem, 12vw, 7rem); color: var(--gold); line-height: 1; }
+
+/* ---------- Resources / Family Guide ---------- */
+.toc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; max-width: 900px; }
+.toc-grid a {
+  display: block; padding: 14px 18px; border: 1px solid var(--line, rgba(43,42,40,.14));
+  border-radius: 4px; color: var(--ink); font-size: .92rem; transition: all .2s;
+}
+.toc-grid a:hover { border-color: var(--gold); color: var(--gold-deep); background: var(--cream-deep); }
+@media (max-width: 900px) { .toc-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .toc-grid { grid-template-columns: 1fr; } }
+
+.resource-section { scroll-margin-top: 100px; }
+.resource-section + .resource-section { margin-top: 6px; }
+
+.checklist { list-style: none; padding: 0; margin: 10px 0 20px; max-width: 700px; }
+.checklist li {
+  position: relative; padding: 10px 0 10px 34px; color: var(--ink-soft);
+  border-bottom: 1px solid rgba(43,42,40,.08); font-size: 1.02rem;
+}
+.checklist li::before {
+  content: ""; position: absolute; left: 0; top: 13px; width: 17px; height: 17px;
+  border: 1.5px solid var(--gold); border-radius: 3px;
+}
+
+.resource-callout {
+  border-left: 3px solid var(--gold); background: var(--cream-deep);
+  padding: 18px 22px; margin: 22px 0; border-radius: 0 4px 4px 0;
+}
+.resource-callout p { margin: 0; color: var(--ink); }
+
+.crisis-box {
+  border: 1px solid rgba(168,64,45,.35); background: rgba(168,64,45,.06);
+  padding: 18px 22px; margin: 22px 0 30px; border-radius: 4px;
+}
+.crisis-box p { margin: 0; color: var(--ink); }
+.crisis-box strong { color: #a8402d; }
+
+.term-item summary { font-size: 1.08rem; }

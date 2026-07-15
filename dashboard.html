@@ -344,6 +344,8 @@
     bookingCancelConfirm:{fr:"Annuler cette demande ? Le créneau redeviendra disponible.",en:"Cancel this request? The slot will reopen."},
     bookingTabRequests:{fr:"Demandes",en:"Requests"},
     bookingTabAvailability:{fr:"Disponibilités",en:"Availability"},
+    bookingClearDesc:{fr:"Retirer tous les créneaux ouverts (non réservés) d'un coup.",en:"Remove every open (unbooked) slot at once."},
+    bookingClearAll:{fr:"Tout effacer",en:"Clear all"},
     col_todo:{fr:"À faire",en:"To do"},
     col_doing:{fr:"En cours",en:"In progress"},
     col_done:{fr:"Terminé",en:"Done"},
@@ -1648,6 +1650,12 @@
       +'<span id="bgenResult" style="margin-left:14px;font-size:.88rem;color:var(--ink-soft)"></span>'
       +'</div>';
 
+    var openCount=(DATA.bookingSlots||[]).filter(function(s){ return s.status==="open"; }).length;
+    var clearHtml='<div style="border:1px solid rgba(168,64,45,.3);background:rgba(168,64,45,.05);border-radius:8px;padding:16px 22px;margin-bottom:28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">'
+      +'<span style="font-size:.9rem;color:var(--ink)">'+esc(t("bookingClearDesc"))+'</span>'
+      +'<button class="btn btn--ghost" id="bclearAll" style="border-color:#a8402d;color:#a8402d">'+esc(t("bookingClearAll"))+' ('+openCount+')</button>'
+      +'</div>';
+
     var upcoming=(DATA.bookingSlots||[]).filter(function(s){ return s.slot_date >= todayIso; });
     var statusLabel={open:t("bookingStatusOpen"),booked:t("bookingStatusBooked"),blocked:t("bookingStatusBlocked")};
     var statusColor={open:"#3d7a4d",booked:"#b8860b",blocked:"#a8402d"};
@@ -1674,14 +1682,32 @@
       listHtml+='</div>';
     }
 
-    m.innerHTML=genHtml+listHtml;
+    m.innerHTML=genHtml+clearHtml+listHtml;
 
     document.getElementById("bgenSubmit").addEventListener("click", function(){ generateBookingSlots(); });
+    document.getElementById("bclearAll").addEventListener("click", function(){ clearAllOpenSlots(); });
     document.querySelectorAll("[data-bdelslot]").forEach(function(x){
       x.addEventListener("click", function(){
         if(!confirm(t("bookingDeleteSlotConfirm"))) return;
         sb.from("booking_slots").delete().eq("id",x.getAttribute("data-bdelslot")).then(function(){ loadAll(); });
       });
+    });
+  }
+
+  function clearAllOpenSlots(){
+    var openCount=(DATA.bookingSlots||[]).filter(function(s){ return s.status==="open"; }).length;
+    if(!openCount) return;
+    var msg=(LANG==="fr"
+      ? "Supprimer "+openCount+" créneau(x) ouvert(s) ? Les créneaux déjà réservés ne seront PAS touchés. Tapez OUI pour confirmer."
+      : "Delete "+openCount+" open slot(s)? Already-booked slots will NOT be touched. Type YES to confirm.");
+    var typed=prompt(msg);
+    if(typed===null) return;
+    if(typed.trim().toUpperCase()!==(LANG==="fr"?"OUI":"YES")){ return; }
+    // Delete by filter (not by ID list) — a year's worth of slots can be thousands
+    // of rows, and an .in(id list) delete would build a URL far too long to send.
+    sb.from("booking_slots").delete().eq("status","open").then(function(res){
+      if(res.error){ alert(res.error.message); return; }
+      loadAll();
     });
   }
 

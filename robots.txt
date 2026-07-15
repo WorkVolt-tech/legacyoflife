@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /dashboard.html
 
-Sitemap: https://heritagedevie.ca/sitemap.xml
+Sitemap: https://REPLACE-WITH-YOUR-DOMAIN/sitemap.xml

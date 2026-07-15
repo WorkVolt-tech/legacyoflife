@@ -308,6 +308,44 @@
     staffCreated:{fr:"Compte créé. Transmettez ces identifiants :",en:"Login created. Share these credentials:"},
     permissions:{fr:"Permissions",en:"Permissions"},
     board:{fr:"Tableau d'équipe",en:"Team board"},
+    booking:{fr:"Rendez-vous",en:"Booking"},
+    bookingRequests:{fr:"Demandes de rendez-vous",en:"Booking requests"},
+    bookingAvailability:{fr:"Disponibilités",en:"Availability"},
+    bookingNoRequests:{fr:"Aucune demande pour le moment.",en:"No requests yet."},
+    bookingSlot:{fr:"Créneau",en:"Slot"},
+    bookingStatusPending:{fr:"En attente",en:"Pending"},
+    bookingStatusConfirmed:{fr:"Confirmé",en:"Confirmed"},
+    bookingStatusCancelled:{fr:"Annulé",en:"Cancelled"},
+    bookingStatusCompleted:{fr:"Terminé",en:"Completed"},
+    bookingConfirm:{fr:"Confirmer",en:"Confirm"},
+    bookingCancel:{fr:"Annuler",en:"Cancel"},
+    bookingComplete:{fr:"Marquer terminé",en:"Mark completed"},
+    bookingGenerate:{fr:"Générer des disponibilités",en:"Generate availability"},
+    bookingFrom:{fr:"Du",en:"From"},
+    bookingTo:{fr:"Au",en:"To"},
+    bookingStartTime:{fr:"Heure de début",en:"Start time"},
+    bookingEndTime:{fr:"Heure de fin",en:"End time"},
+    bookingDuration:{fr:"Durée par créneau (min)",en:"Slot length (min)"},
+    bookingDays:{fr:"Jours",en:"Days"},
+    bookingDayMon:{fr:"Lun",en:"Mon"},
+    bookingDayTue:{fr:"Mar",en:"Tue"},
+    bookingDayWed:{fr:"Mer",en:"Wed"},
+    bookingDayThu:{fr:"Jeu",en:"Thu"},
+    bookingDayFri:{fr:"Ven",en:"Fri"},
+    bookingDaySat:{fr:"Sam",en:"Sat"},
+    bookingDaySun:{fr:"Dim",en:"Sun"},
+    bookingGenerateBtn:{fr:"Générer",en:"Generate"},
+    bookingGenerated:{fr:"créneaux créés.",en:"slots created."},
+    bookingUpcoming:{fr:"Créneaux à venir",en:"Upcoming slots"},
+    bookingNoSlots:{fr:"Aucun créneau à venir.",en:"No upcoming slots."},
+    bookingStatusOpen:{fr:"Ouvert",en:"Open"},
+    bookingStatusBooked:{fr:"Réservé",en:"Booked"},
+    bookingStatusBlocked:{fr:"Bloqué",en:"Blocked"},
+    bookingDeleteSlot:{fr:"Supprimer",en:"Delete"},
+    bookingDeleteSlotConfirm:{fr:"Supprimer ce créneau ?",en:"Delete this slot?"},
+    bookingCancelConfirm:{fr:"Annuler cette demande ? Le créneau redeviendra disponible.",en:"Cancel this request? The slot will reopen."},
+    bookingTabRequests:{fr:"Demandes",en:"Requests"},
+    bookingTabAvailability:{fr:"Disponibilités",en:"Availability"},
     col_todo:{fr:"À faire",en:"To do"},
     col_doing:{fr:"En cours",en:"In progress"},
     col_done:{fr:"Terminé",en:"Done"},
@@ -424,11 +462,12 @@
   var loginView=document.getElementById("loginView");
   var hubView=document.getElementById("hubView");
   var ME={id:null,role:"none",name:""};
-  var DATA={inquiries:[],jobs:[],roster:[],applications:[],checklist:[],archive:[],coordination:[],notes:[],reviews:[],templates:[],invoices:[],invoiceItems:[],payments:[],expenses:[],documents:[],board:[]};
+  var DATA={inquiries:[],jobs:[],roster:[],applications:[],checklist:[],archive:[],coordination:[],notes:[],reviews:[],templates:[],invoices:[],invoiceItems:[],payments:[],expenses:[],documents:[],board:[],bookingSlots:[],bookingRequests:[]};
   var openInvoiceId=null;
   var financeTab="invoices";
   var finPeriod="month"; var finFrom=null, finTo=null;
   var openFileId=null;  // which coordination file is open
+  var bookingTab="requests"; // "requests" | "availability"
   var current="overview";
 
   function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
@@ -509,6 +548,8 @@
         .on("postgres_changes",{event:"*",schema:"public",table:"reviews"},scheduleReload)
         .on("postgres_changes",{event:"*",schema:"public",table:"notes"},scheduleReload)
         .on("postgres_changes",{event:"*",schema:"public",table:"board_cards"},scheduleReload)
+        .on("postgres_changes",{event:"*",schema:"public",table:"booking_slots"},scheduleReload)
+        .on("postgres_changes",{event:"*",schema:"public",table:"booking_requests"},scheduleReload)
         .subscribe();
     }catch(e){ /* realtime optional; ignore */ }
   }
@@ -518,6 +559,7 @@
     if(seesInquiries()) items.push(["inquiries",t("inquiries")]);
     if(isAdmin()||isStaff()) items.push(["coordination",t("coordination")]);
     if(isAdmin()||isStaff()) items.push(["board",t("board")]);
+    if(isAdmin()||isStaff()) items.push(["booking",t("booking")]);
     items.push(["jobs", isWorker()?t("myJobs"):t("jobs")]);
     if(isAdmin()||isStaff()){ items.push(["photographers",t("photographers")]); items.push(["caterers",t("caterers")]); }
     if(canStaff()){ items.push(["staff",t("staff")]); }
@@ -534,6 +576,7 @@
       a.addEventListener("click", function(){ current=it[0]; buildNav(); render(); });
       if(it[0]==="applications"){ var n=DATA.applications.filter(function(x){return x.status==="pending";}).length; if(n){ var b=document.createElement("span"); b.className="badge"; b.textContent=n; a.appendChild(b);} }
       if(it[0]==="inquiries"){ var n2=DATA.inquiries.filter(function(x){return x.status==="new";}).length; if(n2){ var b2=document.createElement("span"); b2.className="badge"; b2.textContent=n2; a.appendChild(b2);} }
+      if(it[0]==="booking"){ var n3=DATA.bookingRequests.filter(function(x){return x.status==="pending";}).length; if(n3){ var b3=document.createElement("span"); b3.className="badge"; b3.textContent=n3; a.appendChild(b3);} }
       nav.appendChild(a);
     });
     document.getElementById("meBox").innerHTML=esc(ME.name)+"<br><b>"+esc(ME.role)+"</b>";
@@ -562,6 +605,8 @@
     q.push(canFinances()? sb.from("expenses").select("*").order("spent_on",{ascending:false}) : Promise.resolve({data:[]}));
     q.push((isAdmin()||isStaff())? sb.from("family_documents").select("*").order("created_at",{ascending:false}) : Promise.resolve({data:[]}));
     q.push((isAdmin()||isStaff())? sb.from("board_cards").select("*").order("position",{ascending:true}) : Promise.resolve({data:[]}));
+    q.push((isAdmin()||isStaff())? sb.from("booking_slots").select("*").order("slot_date",{ascending:true}).order("start_time",{ascending:true}) : Promise.resolve({data:[]}));
+    q.push((isAdmin()||isStaff())? sb.from("booking_requests").select("*").order("created_at",{ascending:false}) : Promise.resolve({data:[]}));
     Promise.all(q).then(function(r){
       DATA.inquiries=(r[0]&&r[0].data)||[]; DATA.jobs=(r[1]&&r[1].data)||[];
       DATA.roster=(r[2]&&r[2].data)||[]; DATA.applications=(r[3]&&r[3].data)||[];
@@ -571,6 +616,7 @@
       DATA.invoices=(r[10]&&r[10].data)||[]; DATA.invoiceItems=(r[11]&&r[11].data)||[]; DATA.payments=(r[12]&&r[12].data)||[];
       DATA.expenses=(r[13]&&r[13].data)||[]; DATA.documents=(r[14]&&r[14].data)||[];
       DATA.board=(r[15]&&r[15].data)||[];
+      DATA.bookingSlots=(r[16]&&r[16].data)||[]; DATA.bookingRequests=(r[17]&&r[17].data)||[];
       if(quiet){
         // Don't yank someone out of an open intake file or mid-edit.
         if(openFileId || isEditing()){ buildNav(); return; }
@@ -595,6 +641,7 @@
     if(current==="archive") return renderArchive(m);
     if(current==="coordination") return renderCoordination(m);
     if(current==="board") return renderBoard(m);
+    if(current==="booking") return renderBooking(m);
     if(current==="reviews") return renderReviews(m);
     if(current==="templates") return renderTemplates(m);
     if(current==="finances") return renderFinances(m);
@@ -1506,6 +1553,176 @@
     var count=(DATA.board||[]).filter(function(x){return x.column_key===col;}).length;
     sb.from("board_cards").insert({column_key:col, position:count, body:body, created_by:ME.name}).then(function(res){ if(res.error){alert(res.error.message);return;} loadAll(); });
   }
+
+  // ================= BOOKING MODULE =================
+  function renderBooking(m){
+    var tabsHtml='<div class="tabs" style="display:flex;gap:8px;margin-bottom:20px">'
+      +'<button class="btn '+(bookingTab==="requests"?"btn--solid":"btn--ghost")+' tbtn" data-btab="requests">'+esc(t("bookingTabRequests"))+'</button>'
+      +'<button class="btn '+(bookingTab==="availability"?"btn--solid":"btn--ghost")+' tbtn" data-btab="availability">'+esc(t("bookingTabAvailability"))+'</button>'
+      +'</div>';
+    m.innerHTML='<h2 class="module-title">'+esc(t("booking"))+'</h2>'+tabsHtml+'<div id="bookingSubArea"></div>';
+    document.querySelectorAll("[data-btab]").forEach(function(b){
+      b.addEventListener("click", function(){ bookingTab=b.getAttribute("data-btab"); renderBooking(m); });
+    });
+    var sub=document.getElementById("bookingSubArea");
+    if(bookingTab==="availability") renderBookingAvailability(sub); else renderBookingRequests(sub);
+  }
+
+  function slotLabel(slot){
+    if(!slot) return "—";
+    return slot.slot_date+" · "+slot.start_time.slice(0,5)+"–"+slot.end_time.slice(0,5);
+  }
+
+  function renderBookingRequests(m){
+    var rows=(DATA.bookingRequests||[]).slice().sort(function(a,b){
+      var order={pending:0,confirmed:1,completed:2,cancelled:3};
+      var oa=order[a.status]==null?9:order[a.status], ob=order[b.status]==null?9:order[b.status];
+      if(oa!==ob) return oa-ob;
+      return new Date(b.created_at)-new Date(a.created_at);
+    });
+    if(!rows.length){ m.innerHTML='<p style="color:var(--ink-soft)">'+esc(t("bookingNoRequests"))+'</p>'; return; }
+    var statusLabel={pending:t("bookingStatusPending"),confirmed:t("bookingStatusConfirmed"),cancelled:t("bookingStatusCancelled"),completed:t("bookingStatusCompleted")};
+    var statusColor={pending:"#b8860b",confirmed:"#3d7a4d",cancelled:"#a8402d",completed:"#666"};
+    var html='<div style="display:flex;flex-direction:column;gap:10px">';
+    rows.forEach(function(r){
+      var slot=(DATA.bookingSlots||[]).filter(function(s){return String(s.id)===String(r.slot_id);})[0];
+      html+='<div style="border:1px solid var(--line);border-radius:8px;padding:16px 18px;background:#fff">'
+        +'<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:flex-start">'
+        +'<div>'
+        +'<div style="font-weight:600">'+esc(r.family_name)+' <span style="font-weight:400;color:var(--ink-soft);font-size:.85rem">— '+esc(slotLabel(slot))+'</span></div>'
+        +'<div style="font-size:.85rem;color:var(--ink-soft);margin-top:4px">'+esc(r.phone)+(r.email?' · '+esc(r.email):'')+'</div>'
+        +(r.reason?'<div style="font-size:.88rem;margin-top:8px">'+esc(r.reason)+'</div>':'')
+        +'</div>'
+        +'<span style="font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:'+statusColor[r.status]+';white-space:nowrap">'+esc(statusLabel[r.status]||r.status)+'</span>'
+        +'</div>'
+        +'<div style="display:flex;gap:8px;margin-top:12px">'
+        +(r.status==="pending"?'<button class="btn btn--ghost tbtn" data-bconfirm="'+r.id+'">'+esc(t("bookingConfirm"))+'</button>':'')
+        +(r.status==="pending"||r.status==="confirmed"?'<button class="btn btn--ghost tbtn" data-bcancel="'+r.id+'">'+esc(t("bookingCancel"))+'</button>':'')
+        +(r.status==="confirmed"?'<button class="btn btn--ghost tbtn" data-bcomplete="'+r.id+'">'+esc(t("bookingComplete"))+'</button>':'')
+        +'</div>'
+        +'</div>';
+    });
+    html+='</div>';
+    m.innerHTML=html;
+    document.querySelectorAll("[data-bconfirm]").forEach(function(b){ b.addEventListener("click",function(){ confirmBookingRequest(b.getAttribute("data-bconfirm")); }); });
+    document.querySelectorAll("[data-bcancel]").forEach(function(b){ b.addEventListener("click",function(){ if(confirm(t("bookingCancelConfirm"))) cancelBookingRequest(b.getAttribute("data-bcancel")); }); });
+    document.querySelectorAll("[data-bcomplete]").forEach(function(b){ b.addEventListener("click",function(){ completeBookingRequest(b.getAttribute("data-bcomplete")); }); });
+  }
+
+  function confirmBookingRequest(id){
+    sb.from("booking_requests").update({status:"confirmed", confirmed_by:ME.id, confirmed_at:new Date().toISOString()}).eq("id",id)
+      .then(function(res){ if(res.error){alert(res.error.message);return;} loadAll(); });
+  }
+  function completeBookingRequest(id){
+    sb.from("booking_requests").update({status:"completed"}).eq("id",id)
+      .then(function(res){ if(res.error){alert(res.error.message);return;} loadAll(); });
+  }
+  function cancelBookingRequest(id){
+    var req=(DATA.bookingRequests||[]).filter(function(x){return String(x.id)===String(id);})[0];
+    sb.from("booking_requests").update({status:"cancelled"}).eq("id",id).then(function(res){
+      if(res.error){ alert(res.error.message); return; }
+      if(req && req.slot_id){
+        sb.from("booking_slots").update({status:"open"}).eq("id",req.slot_id).then(function(){ loadAll(); });
+      } else { loadAll(); }
+    });
+  }
+
+  function renderBookingAvailability(m){
+    var dayDefs=[["0",t("bookingDaySun")],["1",t("bookingDayMon")],["2",t("bookingDayTue")],["3",t("bookingDayWed")],["4",t("bookingDayThu")],["5",t("bookingDayFri")],["6",t("bookingDaySat")]];
+    var dayChecks=dayDefs.map(function(d){
+      var checked=(d[0]!=="0"&&d[0]!=="6")?"checked":""; // default Mon-Fri
+      return '<label style="display:inline-flex;align-items:center;gap:4px;margin-right:12px;font-size:.85rem"><input type="checkbox" data-bday="'+d[0]+'" '+checked+'>'+esc(d[1])+'</label>';
+    }).join('');
+
+    var today=new Date(); var in30=new Date(today.getTime()+30*86400000);
+    var todayIso=today.toISOString().slice(0,10); var in30Iso=in30.toISOString().slice(0,10);
+
+    var genHtml='<div style="border:1px solid var(--line);border-radius:8px;padding:20px 22px;background:#fff;margin-bottom:28px">'
+      +'<h3 style="margin-top:0">'+esc(t("bookingGenerate"))+'</h3>'
+      +'<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px">'
+      +'<div><label style="display:block;font-size:.74rem;color:var(--ink-soft);margin-bottom:4px">'+esc(t("bookingFrom"))+'</label><input type="date" id="bgenFrom" value="'+todayIso+'"></div>'
+      +'<div><label style="display:block;font-size:.74rem;color:var(--ink-soft);margin-bottom:4px">'+esc(t("bookingTo"))+'</label><input type="date" id="bgenTo" value="'+in30Iso+'"></div>'
+      +'<div><label style="display:block;font-size:.74rem;color:var(--ink-soft);margin-bottom:4px">'+esc(t("bookingStartTime"))+'</label><input type="time" id="bgenStart" value="09:00"></div>'
+      +'<div><label style="display:block;font-size:.74rem;color:var(--ink-soft);margin-bottom:4px">'+esc(t("bookingEndTime"))+'</label><input type="time" id="bgenEnd" value="17:00"></div>'
+      +'<div><label style="display:block;font-size:.74rem;color:var(--ink-soft);margin-bottom:4px">'+esc(t("bookingDuration"))+'</label><input type="number" id="bgenDuration" value="30" min="10" step="5" style="width:80px"></div>'
+      +'</div>'
+      +'<div style="margin-bottom:16px"><label style="display:block;font-size:.74rem;color:var(--ink-soft);margin-bottom:6px">'+esc(t("bookingDays"))+'</label>'+dayChecks+'</div>'
+      +'<button class="btn btn--solid" id="bgenSubmit">'+esc(t("bookingGenerateBtn"))+'</button>'
+      +'<span id="bgenResult" style="margin-left:14px;font-size:.88rem;color:var(--ink-soft)"></span>'
+      +'</div>';
+
+    var upcoming=(DATA.bookingSlots||[]).filter(function(s){ return s.slot_date >= todayIso; });
+    var statusLabel={open:t("bookingStatusOpen"),booked:t("bookingStatusBooked"),blocked:t("bookingStatusBlocked")};
+    var statusColor={open:"#3d7a4d",booked:"#b8860b",blocked:"#a8402d"};
+    var listHtml='<h3>'+esc(t("bookingUpcoming"))+' ('+upcoming.length+')</h3>';
+    if(!upcoming.length){
+      listHtml+='<p style="color:var(--ink-soft)">'+esc(t("bookingNoSlots"))+'</p>';
+    } else {
+      // group by date
+      var byDate={};
+      upcoming.forEach(function(s){ (byDate[s.slot_date]=byDate[s.slot_date]||[]).push(s); });
+      var dates=Object.keys(byDate).sort();
+      listHtml+='<div style="display:flex;flex-direction:column;gap:16px">';
+      dates.forEach(function(d){
+        listHtml+='<div><div style="font-weight:600;margin-bottom:8px">'+esc(d)+'</div><div style="display:flex;flex-wrap:wrap;gap:8px">';
+        byDate[d].sort(function(a,b){return a.start_time<b.start_time?-1:1;}).forEach(function(s){
+          listHtml+='<span style="display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:.85rem;background:#fff">'
+            +s.start_time.slice(0,5)+'–'+s.end_time.slice(0,5)
+            +' <b style="color:'+statusColor[s.status]+';font-weight:600;font-size:.72rem;text-transform:uppercase">'+esc(statusLabel[s.status]||s.status)+'</b>'
+            +(s.status!=="booked"?' <span data-bdelslot="'+s.id+'" style="cursor:pointer;color:#b08a8a" title="'+esc(t("bookingDeleteSlot"))+'">✕</span>':'')
+            +'</span>';
+        });
+        listHtml+='</div></div>';
+      });
+      listHtml+='</div>';
+    }
+
+    m.innerHTML=genHtml+listHtml;
+
+    document.getElementById("bgenSubmit").addEventListener("click", function(){ generateBookingSlots(); });
+    document.querySelectorAll("[data-bdelslot]").forEach(function(x){
+      x.addEventListener("click", function(){
+        if(!confirm(t("bookingDeleteSlotConfirm"))) return;
+        sb.from("booking_slots").delete().eq("id",x.getAttribute("data-bdelslot")).then(function(){ loadAll(); });
+      });
+    });
+  }
+
+  function generateBookingSlots(){
+    var from=document.getElementById("bgenFrom").value;
+    var to=document.getElementById("bgenTo").value;
+    var startT=document.getElementById("bgenStart").value;
+    var endT=document.getElementById("bgenEnd").value;
+    var duration=parseInt(document.getElementById("bgenDuration").value,10)||30;
+    var days=[]; document.querySelectorAll("[data-bday]").forEach(function(cb){ if(cb.checked) days.push(cb.getAttribute("data-bday")); });
+    if(!from||!to||!startT||!endT||!days.length){ alert(LANG==="fr"?"Veuillez remplir tous les champs.":"Please fill in all fields."); return; }
+
+    var slots=[];
+    var d=new Date(from+"T00:00:00");
+    var end=new Date(to+"T00:00:00");
+    while(d<=end){
+      if(days.indexOf(String(d.getDay()))!==-1){
+        var dateStr=d.toISOString().slice(0,10);
+        var cursorMin=parseInt(startT.slice(0,2),10)*60+parseInt(startT.slice(3,5),10);
+        var endMin=parseInt(endT.slice(0,2),10)*60+parseInt(endT.slice(3,5),10);
+        while(cursorMin+duration<=endMin){
+          var sh=String(Math.floor(cursorMin/60)).padStart(2,"0"), sm=String(cursorMin%60).padStart(2,"0");
+          var em=cursorMin+duration;
+          var eh2=String(Math.floor(em/60)).padStart(2,"0"), em2=String(em%60).padStart(2,"0");
+          slots.push({slot_date:dateStr, start_time:sh+":"+sm+":00", end_time:eh2+":"+em2+":00", status:"open", created_by:ME.id});
+          cursorMin+=duration;
+        }
+      }
+      d.setDate(d.getDate()+1);
+    }
+    if(!slots.length){ document.getElementById("bgenResult").textContent = LANG==="fr" ? "Aucun créneau à créer avec ces paramètres." : "No slots to create with these settings."; return; }
+    sb.from("booking_slots").insert(slots).then(function(res){
+      if(res.error){ alert(res.error.message); return; }
+      document.getElementById("bgenResult").textContent = slots.length+" "+t("bookingGenerated");
+      loadAll();
+    });
+  }
+  // ================= END BOOKING MODULE =================
 
   function renderCoordination(m){
     if(openFileId){ return renderIntake(m, openFileId); }

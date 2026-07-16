@@ -364,6 +364,7 @@
     staffMember:{fr:"Membre du personnel",en:"Staff member"},
     msgReplyPlaceholder:{fr:"Écrire une réponse…",en:"Write a reply…"},
     send:{fr:"Envoyer",en:"Send"},
+    viewConversation:{fr:"Voir la conversation",en:"View conversation"},
     col_todo:{fr:"À faire",en:"To do"},
     col_doing:{fr:"En cours",en:"In progress"},
     col_done:{fr:"Terminé",en:"Done"},
@@ -1818,6 +1819,7 @@
           +staffOptions.map(function(p){ return '<option value="'+esc(p.id)+'"'+(th.file.assigned_to===p.id?' selected':'')+'>'+esc(p.full_name||"—")+'</option>'; }).join('')
           +'</select>'
           +'</div>'
+          +'<div style="margin-top:10px"><a href="#" data-openfilelink="'+esc(th.file.id)+'" style="font-size:.85rem;color:var(--gold-deep,#B08D49);text-decoration:underline">'+esc(t("viewConversation"))+' →</a></div>'
           +'</div>';
       });
       html+='</div>';
@@ -1827,7 +1829,16 @@
     document.querySelectorAll("[data-openfile]").forEach(function(row){
       row.addEventListener("click", function(ev){
         if(ev.target.closest("[data-noopen]")) return;
+        if(ev.target.closest("[data-openfilelink]")) return; // handled separately below
         openFileId=row.getAttribute("data-openfile");
+        current="coordination";
+        buildNav(); render();
+      });
+    });
+    document.querySelectorAll("[data-openfilelink]").forEach(function(link){
+      link.addEventListener("click", function(ev){
+        ev.preventDefault();
+        openFileId=link.getAttribute("data-openfilelink");
         current="coordination";
         buildNav(); render();
       });

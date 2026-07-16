@@ -356,6 +356,14 @@
     tlLabelPlaceholder:{fr:"Ex. : Cérémonie planifiée",en:"E.g. Ceremony scheduled"},
     tlInProgress:{fr:"En cours",en:"In progress"},
     tlDone:{fr:"Terminé",en:"Done"},
+    familyMessagesInbox:{fr:"Messages",en:"Messages"},
+    familyMessagesThread:{fr:"Conversation avec la famille",en:"Conversation with family"},
+    noMessagesYet:{fr:"Aucun message pour le moment.",en:"No messages yet."},
+    assignedTo:{fr:"Coordonnateur assigné",en:"Assigned coordinator"},
+    unassigned:{fr:"Non assigné",en:"Unassigned"},
+    staffMember:{fr:"Membre du personnel",en:"Staff member"},
+    msgReplyPlaceholder:{fr:"Écrire une réponse…",en:"Write a reply…"},
+    send:{fr:"Envoyer",en:"Send"},
     col_todo:{fr:"À faire",en:"To do"},
     col_doing:{fr:"En cours",en:"In progress"},
     col_done:{fr:"Terminé",en:"Done"},
@@ -472,7 +480,7 @@
   var loginView=document.getElementById("loginView");
   var hubView=document.getElementById("hubView");
   var ME={id:null,role:"none",name:""};
-  var DATA={inquiries:[],jobs:[],roster:[],applications:[],checklist:[],archive:[],coordination:[],notes:[],reviews:[],templates:[],invoices:[],invoiceItems:[],payments:[],expenses:[],documents:[],board:[],bookingSlots:[],bookingRequests:[],timelineEvents:[]};
+  var DATA={inquiries:[],jobs:[],roster:[],applications:[],checklist:[],archive:[],coordination:[],notes:[],reviews:[],templates:[],invoices:[],invoiceItems:[],payments:[],expenses:[],documents:[],board:[],bookingSlots:[],bookingRequests:[],timelineEvents:[],messages:[]};
   var openInvoiceId=null;
   var financeTab="invoices";
   var finPeriod="month"; var finFrom=null, finTo=null;
@@ -560,6 +568,7 @@
         .on("postgres_changes",{event:"*",schema:"public",table:"booking_slots"},scheduleReload)
         .on("postgres_changes",{event:"*",schema:"public",table:"booking_requests"},scheduleReload)
         .on("postgres_changes",{event:"*",schema:"public",table:"family_timeline_events"},scheduleReload)
+        .on("postgres_changes",{event:"*",schema:"public",table:"family_messages"},scheduleReload)
         .subscribe();
     }catch(e){ /* realtime optional; ignore */ }
   }
@@ -570,6 +579,7 @@
     if(isAdmin()||isStaff()) items.push(["coordination",t("coordination")]);
     if(isAdmin()||isStaff()) items.push(["board",t("board")]);
     if(isAdmin()||isStaff()) items.push(["booking",t("booking")]);
+    if(isAdmin()||isStaff()) items.push(["messages",t("familyMessagesInbox")]);
     items.push(["jobs", isWorker()?t("myJobs"):t("jobs")]);
     if(isAdmin()||isStaff()){ items.push(["photographers",t("photographers")]); items.push(["caterers",t("caterers")]); }
     if(canStaff()){ items.push(["staff",t("staff")]); }
@@ -587,6 +597,7 @@
       if(it[0]==="applications"){ var n=DATA.applications.filter(function(x){return x.status==="pending";}).length; if(n){ var b=document.createElement("span"); b.className="badge"; b.textContent=n; a.appendChild(b);} }
       if(it[0]==="inquiries"){ var n2=DATA.inquiries.filter(function(x){return x.status==="new";}).length; if(n2){ var b2=document.createElement("span"); b2.className="badge"; b2.textContent=n2; a.appendChild(b2);} }
       if(it[0]==="booking"){ var n3=DATA.bookingRequests.filter(function(x){return x.status==="pending";}).length; if(n3){ var b3=document.createElement("span"); b3.className="badge"; b3.textContent=n3; a.appendChild(b3);} }
+      if(it[0]==="messages"){ var n4=DATA.messages.filter(function(x){return x.sender_role==="family"&&!x.read_by_staff;}).length; if(n4){ var b4=document.createElement("span"); b4.className="badge"; b4.textContent=n4; a.appendChild(b4);} }
       nav.appendChild(a);
     });
     document.getElementById("meBox").innerHTML=esc(ME.name)+"<br><b>"+esc(ME.role)+"</b>";
@@ -618,6 +629,7 @@
     q.push((isAdmin()||isStaff())? sb.from("booking_slots").select("*").order("slot_date",{ascending:true}).order("start_time",{ascending:true}) : Promise.resolve({data:[]}));
     q.push((isAdmin()||isStaff())? sb.from("booking_requests").select("*").order("created_at",{ascending:false}) : Promise.resolve({data:[]}));
     q.push((isAdmin()||isStaff())? sb.from("family_timeline_events").select("*").order("position",{ascending:true}) : Promise.resolve({data:[]}));
+    q.push((isAdmin()||isStaff())? sb.from("family_messages").select("*").order("created_at",{ascending:true}) : Promise.resolve({data:[]}));
     Promise.all(q).then(function(r){
       DATA.inquiries=(r[0]&&r[0].data)||[]; DATA.jobs=(r[1]&&r[1].data)||[];
       DATA.roster=(r[2]&&r[2].data)||[]; DATA.applications=(r[3]&&r[3].data)||[];
@@ -629,6 +641,7 @@
       DATA.board=(r[15]&&r[15].data)||[];
       DATA.bookingSlots=(r[16]&&r[16].data)||[]; DATA.bookingRequests=(r[17]&&r[17].data)||[];
       DATA.timelineEvents=(r[18]&&r[18].data)||[];
+      DATA.messages=(r[19]&&r[19].data)||[];
       if(quiet){
         // Don't yank someone out of an open intake file or mid-edit.
         if(openFileId || isEditing()){ buildNav(); return; }
@@ -654,6 +667,7 @@
     if(current==="coordination") return renderCoordination(m);
     if(current==="board") return renderBoard(m);
     if(current==="booking") return renderBooking(m);
+    if(current==="messages") return renderMessagesInbox(m);
     if(current==="reviews") return renderReviews(m);
     if(current==="templates") return renderTemplates(m);
     if(current==="finances") return renderFinances(m);
@@ -1760,6 +1774,76 @@
   }
   // ================= END BOOKING MODULE =================
 
+  // ================= MESSAGES INBOX MODULE =================
+  function staffName(userId){
+    if(!userId) return null;
+    var row=(DATA.roster||[]).filter(function(p){ return String(p.id)===String(userId); })[0];
+    return row ? row.full_name : null;
+  }
+
+  function renderMessagesInbox(m){
+    var threads=(DATA.coordination||[]).map(function(f){
+      var msgs=(DATA.messages||[]).filter(function(x){ return String(x.coordination_id)===String(f.id); });
+      if(!msgs.length) return null;
+      var last=msgs[msgs.length-1];
+      var unread=msgs.filter(function(x){ return x.sender_role==="family" && !x.read_by_staff; }).length;
+      return { file:f, last:last, unread:unread, count:msgs.length };
+    }).filter(Boolean).sort(function(a,b){
+      if((a.unread>0)!==(b.unread>0)) return a.unread>0 ? -1 : 1;
+      return new Date(b.last.created_at)-new Date(a.last.created_at);
+    });
+
+    var staffOptions=(DATA.roster||[]).filter(function(p){ return p.role==="admin"||p.role==="staff"; });
+
+    var html='<h2 class="module-title">'+esc(t("familyMessagesInbox"))+'</h2>';
+    if(!threads.length){
+      html+='<p style="color:var(--ink-soft)">'+esc(t("noMessagesYet"))+'</p>';
+    } else {
+      html+='<div style="display:flex;flex-direction:column;gap:10px">';
+      threads.forEach(function(th){
+        var assignedName=staffName(th.file.assigned_to);
+        html+='<div class="msg-thread-row" data-openfile="'+esc(th.file.id)+'" style="border:1px solid var(--line);border-radius:8px;padding:16px 18px;background:#fff;cursor:pointer;'+(th.unread?'border-left:3px solid var(--gold)':'')+'">'
+          +'<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">'
+          +'<div><div style="font-weight:600">'+esc(th.file.family_name||"—")+(th.unread?' <span class="badge">'+th.unread+'</span>':'')+'</div>'
+          +'<div style="font-size:.85rem;color:var(--ink-soft);margin-top:4px">'
+          +'<b>'+esc(th.last.sender_role==="family"?(th.file.family_name||t("family")):esc(th.last.sender_name||t("staffMember")))+':</b> '
+          +esc((th.last.body||"").slice(0,90))+(th.last.body&&th.last.body.length>90?"…":"")
+          +'</div></div>'
+          +'<div style="text-align:right;font-size:.78rem;color:var(--ink-soft)">'+esc(fmtDate(th.last.created_at))+'</div>'
+          +'</div>'
+          +'<div style="margin-top:10px;display:flex;align-items:center;gap:8px" data-noopen="1">'
+          +'<span style="font-size:.8rem;color:var(--ink-soft)">'+esc(t("assignedTo"))+':</span>'
+          +'<select data-assignfile="'+esc(th.file.id)+'" style="font-size:.85rem">'
+          +'<option value="">'+esc(t("unassigned"))+'</option>'
+          +staffOptions.map(function(p){ return '<option value="'+esc(p.id)+'"'+(th.file.assigned_to===p.id?' selected':'')+'>'+esc(p.full_name||"—")+'</option>'; }).join('')
+          +'</select>'
+          +'</div>'
+          +'</div>';
+      });
+      html+='</div>';
+    }
+    m.innerHTML=html;
+
+    document.querySelectorAll("[data-openfile]").forEach(function(row){
+      row.addEventListener("click", function(ev){
+        if(ev.target.closest("[data-noopen]")) return;
+        openFileId=row.getAttribute("data-openfile");
+        current="coordination";
+        buildNav(); render();
+      });
+    });
+    document.querySelectorAll("[data-assignfile]").forEach(function(sel){
+      sel.addEventListener("click", function(ev){ ev.stopPropagation(); });
+      sel.addEventListener("change", function(){
+        var fileId=sel.getAttribute("data-assignfile");
+        sb.from("coordination_files").update({assigned_to: sel.value||null}).eq("id",fileId).then(function(res){
+          if(res.error){ alert(res.error.message); return; } loadAllQuiet();
+        });
+      });
+    });
+  }
+  // ================= END MESSAGES INBOX MODULE =================
+
   function renderCoordination(m){
     if(openFileId){ return renderIntake(m, openFileId); }
     var rows=DATA.coordination||[];
@@ -1854,7 +1938,9 @@
     });
     // ---- Portal access + Timeline panels ----
     html+= portalAccessPanelHTML(f);
+    html+= assignedCoordinatorHTML(f);
     html+= timelinePanelHTML(fileId, editable);
+    html+= messagesThreadHTML(fileId);
     // ---- Documents upload panel ----
     html+= documentsPanelHTML(fileId, editable);
     m.innerHTML=html;
@@ -1867,8 +1953,80 @@
     if(gj){ gj.addEventListener("click",function(){ generateJobsFromIntake(fileId); }); }
     wireDocuments(fileId);
     wirePortalAccess(f);
+    wireAssignedCoordinator(f);
     wireTimeline(fileId, editable);
+    wireMessagesThread(fileId);
     wireNoteThreads();
+    markMessagesRead(fileId);
+  }
+
+  // ---- Assigned coordinator ----
+  function assignedCoordinatorHTML(f){
+    var staffOptions=(DATA.roster||[]).filter(function(p){ return p.role==="admin"||p.role==="staff"; });
+    var h='<div class="intake-section" style="margin-top:26px"><h3>👤 '+esc(t("assignedTo"))+'</h3>';
+    h+='<select id="assignedCoordSelect"><option value="">'+esc(t("unassigned"))+'</option>'
+      +staffOptions.map(function(p){ return '<option value="'+esc(p.id)+'"'+(f.assigned_to===p.id?' selected':'')+'>'+esc(p.full_name||"—")+'</option>'; }).join('')
+      +'</select></div>';
+    return h;
+  }
+  function wireAssignedCoordinator(f){
+    var sel=document.getElementById("assignedCoordSelect");
+    if(!sel) return;
+    sel.addEventListener("change", function(){
+      sb.from("coordination_files").update({assigned_to: sel.value||null}).eq("id",f.id).then(function(res){
+        if(res.error){ alert(res.error.message); return; } loadAllQuiet();
+      });
+    });
+  }
+
+  // ---- Messages thread ----
+  function messagesThreadHTML(fileId){
+    var msgs=(DATA.messages||[]).filter(function(x){ return String(x.coordination_id)===String(fileId); });
+    var h='<div class="intake-section" style="margin-top:26px"><h3>💬 '+esc(t("familyMessagesThread"))+'</h3>';
+    if(msgs.length){
+      h+='<div id="msgThreadList" style="max-height:340px;overflow:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:14px">';
+      msgs.forEach(function(msg){
+        var mine = msg.sender_role==="staff";
+        h+='<div style="align-self:'+(mine?'flex-end':'flex-start')+';max-width:75%;background:'+(mine?'var(--gold)':'#fff')+';color:'+(mine?'#fff':'var(--ink)')+';border:1px solid var(--line);border-radius:8px;padding:10px 14px">'
+          +'<div style="font-size:.72rem;opacity:.75;margin-bottom:3px">'+esc(msg.sender_name||(mine?t("staffMember"):t("family")))+' · '+esc(fmtDate(msg.created_at))+'</div>'
+          +'<div style="font-size:.92rem;white-space:pre-wrap">'+esc(msg.body)+'</div>'
+          +'</div>';
+      });
+      h+='</div>';
+    } else {
+      h+='<p style="font-size:.85rem;color:var(--ink-soft)">'+esc(t("noMessagesYet"))+'</p>';
+    }
+    h+='<div style="display:flex;gap:8px">'
+      +'<input type="text" id="msgReplyInput" placeholder="'+esc(t("msgReplyPlaceholder"))+'" style="flex:1">'
+      +'<button class="btn btn--solid tbtn" id="msgReplySend">'+esc(t("send"))+'</button></div>';
+    h+='</div>';
+    return h;
+  }
+  function wireMessagesThread(fileId){
+    var btn=document.getElementById("msgReplySend");
+    if(!btn) return;
+    function send(){
+      var input=document.getElementById("msgReplyInput");
+      var body=(input.value||"").trim();
+      if(!body) return;
+      btn.disabled=true;
+      sb.from("family_messages").insert({coordination_id:fileId, sender_role:"staff", sender_name:ME.name, body:body, read_by_staff:true}).then(function(res){
+        btn.disabled=false;
+        if(res.error){ alert(res.error.message); return; }
+        input.value="";
+        loadAll();
+      });
+    }
+    btn.addEventListener("click", send);
+    document.getElementById("msgReplyInput").addEventListener("keydown", function(e){ if(e.key==="Enter") send(); });
+    var list=document.getElementById("msgThreadList");
+    if(list) list.scrollTop = list.scrollHeight;
+  }
+  function markMessagesRead(fileId){
+    var unread=(DATA.messages||[]).filter(function(x){ return String(x.coordination_id)===String(fileId) && x.sender_role==="family" && !x.read_by_staff; });
+    if(!unread.length) return;
+    var ids=unread.map(function(x){ return x.id; });
+    sb.from("family_messages").update({read_by_staff:true}).in("id",ids).then(function(){ loadAllQuiet(); });
   }
 
   // ---- Portal access panel ----

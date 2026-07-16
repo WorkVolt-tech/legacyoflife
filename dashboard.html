@@ -371,6 +371,7 @@
     msgReplyPlaceholder:{fr:"Écrire une réponse…",en:"Write a reply…"},
     send:{fr:"Envoyer",en:"Send"},
     viewConversation:{fr:"Voir la conversation",en:"View conversation"},
+    noMatchingPerson:{fr:"Aucune personne trouvée avec ce nom. Vérifiez l'orthographe ou choisissez dans la liste.",en:"No matching person with that name. Check the spelling or pick from the list."},
     col_todo:{fr:"À faire",en:"To do"},
     col_doing:{fr:"En cours",en:"In progress"},
     col_done:{fr:"Terminé",en:"Done"},
@@ -703,6 +704,31 @@
     var seen={}; names=names.filter(function(n){ if(seen[n])return false; seen[n]=1; return true; });
     return '<datalist id="staffNames">'+names.map(function(n){ return '<option value="'+esc(n)+'">'; }).join('')+'</datalist>';
   }
+
+  // ---- Generic type-to-search assignment (used by every "assign to a person" control) ----
+  // Renders as a text input with a native datalist: typing filters the list,
+  // clicking the field still shows the full scrollable list, exactly like
+  // a normal dropdown. On change we resolve the typed name back to a real
+  // person record (never save a typo as if it were a valid assignment).
+  function peopleDatalistHTML(datalistId, people){
+    var seen={};
+    var opts=(people||[]).filter(function(p){ if(!p.full_name||seen[p.full_name]) return false; seen[p.full_name]=1; return true; })
+      .map(function(p){ return '<option value="'+esc(p.full_name)+'">'; }).join('');
+    return '<datalist id="'+esc(datalistId)+'">'+opts+'</datalist>';
+  }
+  function resolvePersonByName(name, people){
+    if(!name) return null;
+    var n=name.trim().toLowerCase();
+    return (people||[]).filter(function(p){ return (p.full_name||"").trim().toLowerCase()===n; })[0] || null;
+  }
+  function resolvePersonById(id, people){
+    if(!id) return null;
+    return (people||[]).filter(function(p){ return String(p.id)===String(id); })[0] || null;
+  }
+  function assignInputHTML(datalistId, dataAttr, rowId, currentId, people, placeholder){
+    var current = resolvePersonById(currentId, people);
+    return '<input type="text" list="'+esc(datalistId)+'" data-'+dataAttr+'="'+esc(rowId)+'" value="'+esc(current?current.full_name:"")+'" placeholder="'+esc(placeholder||t("assign"))+'" style="min-width:170px">';
+  }
   function renderInquiries(m){
     m.innerHTML=staffNamesDatalist()+'<h2 class="module-title">'+esc(t("inquiries"))+'</h2>'+
       '<div class="controls"><select id="fStatus"><option value="">'+esc(t("all"))+'</option>'+ISTAT.map(function(s){return '<option value="'+s+'">'+esc(ts(s))+'</option>';}).join('')+'</select>'+
@@ -800,8 +826,9 @@
         '<label><input type="checkbox" id="pt_photo"> '+esc(t("photographers"))+'</label>'+
         '<label><input type="checkbox" id="pt_cater"> '+esc(t("caterers"))+'</label>'+
       '</div></div>'+
-      '<div class="full"><label>'+esc(t("orAssign"))+'</label><select id="jf_assign"><option value="">'+esc(t("postGroupOnly"))+'</option>'+
-        DATA.roster.filter(function(p){return p.role==="photographer"||p.role==="caterer";}).map(function(p){return '<option value="'+esc(p.id)+'|'+esc(p.full_name||"")+'|'+esc(p.role)+'">'+esc(p.full_name||"—")+' — '+esc(p.role)+'</option>';}).join('')+'</select></div>'+
+      '<div class="full"><label>'+esc(t("orAssign"))+'</label>'
+        +peopleDatalistHTML("photoCatererNames", DATA.roster.filter(function(p){return p.role==="photographer"||p.role==="caterer";}))
+        +'<input type="text" list="photoCatererNames" id="jf_assign" placeholder="'+esc(t("postGroupOnly"))+'"></div>'+
       '</div><div style="margin-top:16px;display:flex;gap:10px;"><button class="btn btn--solid tbtn" id="jobSaveBtn">'+esc(t("create"))+'</button><button class="btn btn--ghost tbtn" id="jobCancelBtn">'+esc(t("cancel"))+'</button></div>'+
       '<p id="jobFormErr" style="color:#a8402d;font-size:.85rem;margin-top:10px;display:none"></p></div>';
   }
@@ -819,8 +846,12 @@
       if(rec.job_type==="caterer"){ rec.food_budget=document.getElementById("jf_foodbudget").value||null; rec.cook_list=document.getElementById("jf_cooklist").value.trim()||null; }
       var pt=[]; if(document.getElementById("pt_photo").checked) pt.push("photographer"); if(document.getElementById("pt_cater").checked) pt.push("caterer");
       if(pt.length) rec.post_to=pt;
-      var assign=document.getElementById("jf_assign").value;
-      if(assign){ var parts=assign.split("|"); rec.assigned_to=parts[0]; rec.assigned_name=parts[1]; rec.status="assigned"; }
+      var assignTyped=document.getElementById("jf_assign").value.trim();
+      if(assignTyped){
+        var assignMatch=resolvePersonByName(assignTyped, DATA.roster.filter(function(p){return p.role==="photographer"||p.role==="caterer";}));
+        if(!assignMatch){ err.textContent=t("noMatchingPerson"); err.style.display="block"; return; }
+        rec.assigned_to=assignMatch.id; rec.assigned_name=assignMatch.full_name; rec.status="assigned";
+      }
       if(!rec.title){ err.textContent=t("titleReq"); err.style.display="block"; return; }
       sb.from("jobs").insert(rec).select().single().then(function(res){
         if(res.error){ err.textContent=res.error.message; err.style.display="block"; return; }
@@ -834,7 +865,11 @@
     var rows=DATA.jobs.filter(function(r){ return !st||r.status===st; });
     document.getElementById("jCount").textContent=rows.length+" / "+DATA.jobs.length;
     document.getElementById("jEmpty").classList.toggle("hide",rows.length>0);
-    document.getElementById("jList").innerHTML=rows.map(function(r){
+    var typesPresent={}; rows.forEach(function(r){ typesPresent[r.job_type]=true; });
+    var jobDatalistsHtml=Object.keys(typesPresent).map(function(jt){
+      return peopleDatalistHTML("roleNames_"+jt, DATA.roster.filter(function(p){return p.role===jt;}));
+    }).join('');
+    document.getElementById("jList").innerHTML=jobDatalistsHtml+rows.map(function(r){
       var canClaim=(isWorker()||isStaff())&&r.status==="open"; var mine=r.assigned_to===ME.id;
       return '<div class="card2 st-'+esc(r.status)+'"><div class="c-top"><span class="c-name">'+esc(r.title)+'</span><span class="c-date"><span class="pill st-'+esc(r.status)+'">'+esc(ts(r.status))+'</span></span></div>'
         +'<div class="c-meta">'
@@ -853,14 +888,25 @@
         +(canClaim?('<button class="btn btn--solid tbtn" data-claim="'+esc(r.id)+'">'+esc(t("claim"))+'</button>'):'')
         +(mine&&(r.status==="claimed"||r.status==="assigned")?('<button class="btn btn--ghost tbtn" data-done="'+esc(r.id)+'">'+esc(t("markDone"))+'</button>'):'')
         +(isAdmin()?('<select data-jid="'+esc(r.id)+'" data-f="status">'+JSTAT.map(function(s){return '<option value="'+s+'"'+(r.status===s?' selected':'')+'>'+esc(ts(s))+'</option>';}).join('')+'</select>'+
-          '<select data-assignjid="'+esc(r.id)+'"><option value="">'+esc(t("assign"))+'</option>'+DATA.roster.filter(function(p){return p.role===r.job_type;}).map(function(p){return '<option value="'+esc(p.id)+'|'+esc(p.full_name||"")+'"'+(r.assigned_to===p.id?' selected':'')+'>'+esc(p.full_name||"—")+'</option>';}).join('')+'</select>'+
+          assignInputHTML("roleNames_"+r.job_type, "assignjid", r.id, r.assigned_to, DATA.roster.filter(function(p){return p.role===r.job_type;}), t("assign"))+
           '<button class="btn btn--ghost tbtn" data-deljid="'+esc(r.id)+'">'+esc(t("del"))+'</button>'):'')
         +'<span class="saved" data-saved="'+esc(r.id)+'">✓</span></div></div>';
     }).join('');
     document.querySelectorAll("[data-claim]").forEach(function(b){ b.addEventListener("click", function(){ setJob(b.getAttribute("data-claim"),{status:"claimed",assigned_to:ME.id,assigned_name:ME.name}); }); });
     document.querySelectorAll("[data-done]").forEach(function(b){ b.addEventListener("click", function(){ setJob(b.getAttribute("data-done"),{status:"done"}); }); });
     document.querySelectorAll("[data-jid]").forEach(function(s){ s.addEventListener("change", function(){ setJob(s.getAttribute("data-jid"),{status:s.value}); }); });
-    document.querySelectorAll("[data-assignjid]").forEach(function(s){ s.addEventListener("change", function(){ var v=s.value; if(!v)return; var p=v.split("|"); setJob(s.getAttribute("data-assignjid"),{assigned_to:p[0],assigned_name:p[1],status:"assigned"}); }); });
+    document.querySelectorAll("[data-assignjid]").forEach(function(inp){
+      inp.addEventListener("change", function(){
+        var jobId=inp.getAttribute("data-assignjid");
+        var row=DATA.jobs.filter(function(x){return String(x.id)===String(jobId);})[0];
+        var typed=inp.value.trim();
+        if(!typed) return;
+        var candidates=DATA.roster.filter(function(p){return p.role===(row?row.job_type:null);});
+        var match=resolvePersonByName(typed, candidates);
+        if(!match){ alert(t("noMatchingPerson")); inp.value = row&&row.assigned_name || ""; return; }
+        setJob(jobId,{assigned_to:match.id,assigned_name:match.full_name,status:"assigned"});
+      });
+    });
     document.querySelectorAll("[data-deljid]").forEach(function(b){ b.addEventListener("click", function(){ if(confirm(t("delConfirm"))) delJob(b.getAttribute("data-deljid")); }); });
     wireChecklists();
   }
@@ -1618,7 +1664,7 @@
     var statusLabel={pending:t("bookingStatusPending"),confirmed:t("bookingStatusConfirmed"),cancelled:t("bookingStatusCancelled"),completed:t("bookingStatusCompleted")};
     var statusColor={pending:"#b8860b",confirmed:"#3d7a4d",cancelled:"#a8402d",completed:"#666"};
     var staffOptions=(DATA.roster||[]).filter(function(p){ return p.role==="admin"||p.role==="staff"; });
-    var html='<div style="display:flex;flex-direction:column;gap:10px">';
+    var html=peopleDatalistHTML("adminStaffNames", staffOptions)+'<div style="display:flex;flex-direction:column;gap:10px">';
     rows.forEach(function(r){
       var slot=(DATA.bookingSlots||[]).filter(function(s){return String(s.id)===String(r.slot_id);})[0];
       html+='<div style="border:1px solid var(--line);border-radius:8px;padding:16px 18px;background:#fff">'
@@ -1632,10 +1678,8 @@
         +'</div>'
         +(slot ? '<div style="margin-top:10px;display:flex;align-items:center;gap:8px">'
           +'<span style="font-size:.8rem;color:var(--ink-soft)">'+esc(t("assignedTo"))+':</span>'
-          +'<select data-bassignstaff="'+esc(slot.id)+'" style="font-size:.85rem">'
-          +'<option value="">'+esc(t("bookingUnassignedStaff"))+'</option>'
-          +staffOptions.map(function(p){ return '<option value="'+esc(p.id)+'"'+(slot.staff_id===p.id?' selected':'')+'>'+esc(p.full_name||"—")+'</option>'; }).join('')
-          +'</select></div>' : '')
+          +assignInputHTML("adminStaffNames", "bassignstaff", slot.id, slot.staff_id, staffOptions, t("bookingUnassignedStaff"))
+          +'</div>' : '')
         +'<div style="display:flex;gap:8px;margin-top:12px">'
         +(r.status==="pending"?'<button class="btn btn--ghost tbtn" data-bconfirm="'+r.id+'">'+esc(t("bookingConfirm"))+'</button>':'')
         +(r.status==="pending"||r.status==="confirmed"?'<button class="btn btn--ghost tbtn" data-bcancel="'+r.id+'">'+esc(t("bookingCancel"))+'</button>':'')
@@ -1648,10 +1692,17 @@
     document.querySelectorAll("[data-bconfirm]").forEach(function(b){ b.addEventListener("click",function(){ confirmBookingRequest(b.getAttribute("data-bconfirm")); }); });
     document.querySelectorAll("[data-bcancel]").forEach(function(b){ b.addEventListener("click",function(){ if(confirm(t("bookingCancelConfirm"))) cancelBookingRequest(b.getAttribute("data-bcancel")); }); });
     document.querySelectorAll("[data-bcomplete]").forEach(function(b){ b.addEventListener("click",function(){ completeBookingRequest(b.getAttribute("data-bcomplete")); }); });
-    document.querySelectorAll("[data-bassignstaff]").forEach(function(sel){
-      sel.addEventListener("change", function(){
-        var slotId=sel.getAttribute("data-bassignstaff");
-        sb.from("booking_slots").update({staff_id: sel.value||null}).eq("id",slotId).then(function(res){
+    document.querySelectorAll("[data-bassignstaff]").forEach(function(inp){
+      inp.addEventListener("change", function(){
+        var slotId=inp.getAttribute("data-bassignstaff");
+        var typed=inp.value.trim();
+        if(!typed){
+          sb.from("booking_slots").update({staff_id:null}).eq("id",slotId).then(function(res){ if(res.error){alert(res.error.message);return;} loadAll(); });
+          return;
+        }
+        var match=resolvePersonByName(typed, staffOptions);
+        if(!match){ alert(t("noMatchingPerson")); return; }
+        sb.from("booking_slots").update({staff_id: match.id}).eq("id",slotId).then(function(res){
           if(res.error){ alert(res.error.message); return; } loadAll();
         });
       });
@@ -1688,11 +1739,11 @@
     var staffOptions=(DATA.roster||[]).filter(function(p){ return p.role==="admin"||p.role==="staff"; });
 
     var genHtml='<div style="border:1px solid var(--line);border-radius:8px;padding:20px 22px;background:#fff;margin-bottom:28px">'
+      +peopleDatalistHTML("adminStaffNames", staffOptions)
       +'<h3 style="margin-top:0">'+esc(t("bookingGenerate"))+'</h3>'
       +'<div style="margin-bottom:14px"><label style="display:block;font-size:.74rem;color:var(--ink-soft);margin-bottom:4px">'+esc(t("bookingForStaff"))+'</label>'
-      +'<select id="bgenStaff" required><option value="">'+esc(t("bookingChooseStaff"))+'</option>'
-      +staffOptions.map(function(p){ return '<option value="'+esc(p.id)+'"'+(String(p.id)===String(ME.id)?' selected':'')+'>'+esc(p.full_name||"—")+'</option>'; }).join('')
-      +'</select></div>'
+      +'<input type="text" list="adminStaffNames" id="bgenStaff" required placeholder="'+esc(t("bookingChooseStaff"))+'" value="'+esc((resolvePersonById(ME.id, staffOptions)||{}).full_name||"")+'">'
+      +'</div>'
       +'<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px">'
       +'<div><label style="display:block;font-size:.74rem;color:var(--ink-soft);margin-bottom:4px">'+esc(t("bookingFrom"))+'</label><input type="date" id="bgenFrom" value="'+todayIso+'"></div>'
       +'<div><label style="display:block;font-size:.74rem;color:var(--ink-soft);margin-bottom:4px">'+esc(t("bookingTo"))+'</label><input type="date" id="bgenTo" value="'+in30Iso+'"></div>'
@@ -1784,8 +1835,10 @@
   }
 
   function generateBookingSlots(){
-    var staffId=document.getElementById("bgenStaff").value;
-    if(!staffId){ alert(t("bookingChooseStaffRequired")); return; }
+    var staffTyped=document.getElementById("bgenStaff").value.trim();
+    var staffMatch=resolvePersonByName(staffTyped, (DATA.roster||[]).filter(function(p){return p.role==="admin"||p.role==="staff";}));
+    if(!staffMatch){ alert(t("bookingChooseStaffRequired")); return; }
+    var staffId=staffMatch.id;
     var from=document.getElementById("bgenFrom").value;
     var to=document.getElementById("bgenTo").value;
     var startT=document.getElementById("bgenStart").value;
@@ -1842,13 +1895,12 @@
 
     var staffOptions=(DATA.roster||[]).filter(function(p){ return p.role==="admin"||p.role==="staff"; });
 
-    var html='<h2 class="module-title">'+esc(t("familyMessagesInbox"))+'</h2>';
+    var html=peopleDatalistHTML("adminStaffNames", staffOptions)+'<h2 class="module-title">'+esc(t("familyMessagesInbox"))+'</h2>';
     if(!threads.length){
       html+='<p style="color:var(--ink-soft)">'+esc(t("noMessagesYet"))+'</p>';
     } else {
       html+='<div style="display:flex;flex-direction:column;gap:10px">';
       threads.forEach(function(th){
-        var assignedName=staffName(th.file.assigned_to);
         html+='<div class="msg-thread-row" data-openfile="'+esc(th.file.id)+'" style="border:1px solid var(--line);border-radius:8px;padding:16px 18px;background:#fff;cursor:pointer;'+(th.unread?'border-left:3px solid var(--gold)':'')+'">'
           +'<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">'
           +'<div><div style="font-weight:600">'+esc(th.file.family_name||"—")+(th.unread?' <span class="badge">'+th.unread+'</span>':'')+'</div>'
@@ -1860,10 +1912,7 @@
           +'</div>'
           +'<div style="margin-top:10px;display:flex;align-items:center;gap:8px" data-noopen="1">'
           +'<span style="font-size:.8rem;color:var(--ink-soft)">'+esc(t("assignedTo"))+':</span>'
-          +'<select data-assignfile="'+esc(th.file.id)+'" style="font-size:.85rem">'
-          +'<option value="">'+esc(t("unassigned"))+'</option>'
-          +staffOptions.map(function(p){ return '<option value="'+esc(p.id)+'"'+(th.file.assigned_to===p.id?' selected':'')+'>'+esc(p.full_name||"—")+'</option>'; }).join('')
-          +'</select>'
+          +assignInputHTML("adminStaffNames", "assignfile", th.file.id, th.file.assigned_to, staffOptions, t("unassigned"))
           +'</div>'
           +'<div style="margin-top:10px"><a href="#" data-openfilelink="'+esc(th.file.id)+'" style="font-size:.85rem;color:var(--gold-deep,#B08D49);text-decoration:underline">'+esc(t("viewConversation"))+' →</a></div>'
           +'</div>';
@@ -1889,11 +1938,17 @@
         buildNav(); render();
       });
     });
-    document.querySelectorAll("[data-assignfile]").forEach(function(sel){
-      sel.addEventListener("click", function(ev){ ev.stopPropagation(); });
-      sel.addEventListener("change", function(){
-        var fileId=sel.getAttribute("data-assignfile");
-        sb.from("coordination_files").update({assigned_to: sel.value||null}).eq("id",fileId).then(function(res){
+    document.querySelectorAll("[data-assignfile]").forEach(function(inp){
+      inp.addEventListener("change", function(){
+        var fileId=inp.getAttribute("data-assignfile");
+        var typed=inp.value.trim();
+        if(!typed){
+          sb.from("coordination_files").update({assigned_to:null}).eq("id",fileId).then(function(res){ if(res.error){alert(res.error.message);return;} loadAllQuiet(); });
+          return;
+        }
+        var match=resolvePersonByName(typed, staffOptions);
+        if(!match){ alert(t("noMatchingPerson")); return; }
+        sb.from("coordination_files").update({assigned_to: match.id}).eq("id",fileId).then(function(res){
           if(res.error){ alert(res.error.message); return; } loadAllQuiet();
         });
       });
@@ -2020,17 +2075,26 @@
   // ---- Assigned coordinator ----
   function assignedCoordinatorHTML(f){
     var staffOptions=(DATA.roster||[]).filter(function(p){ return p.role==="admin"||p.role==="staff"; });
+    var current=resolvePersonById(f.assigned_to, staffOptions);
     var h='<div class="intake-section" style="margin-top:26px"><h3>👤 '+esc(t("assignedTo"))+'</h3>';
-    h+='<select id="assignedCoordSelect"><option value="">'+esc(t("unassigned"))+'</option>'
-      +staffOptions.map(function(p){ return '<option value="'+esc(p.id)+'"'+(f.assigned_to===p.id?' selected':'')+'>'+esc(p.full_name||"—")+'</option>'; }).join('')
-      +'</select></div>';
+    h+=peopleDatalistHTML("adminStaffNames", staffOptions)
+      +'<input type="text" list="adminStaffNames" id="assignedCoordSelect" value="'+esc(current?current.full_name:"")+'" placeholder="'+esc(t("unassigned"))+'">'
+      +'</div>';
     return h;
   }
   function wireAssignedCoordinator(f){
-    var sel=document.getElementById("assignedCoordSelect");
-    if(!sel) return;
-    sel.addEventListener("change", function(){
-      sb.from("coordination_files").update({assigned_to: sel.value||null}).eq("id",f.id).then(function(res){
+    var inp=document.getElementById("assignedCoordSelect");
+    if(!inp) return;
+    var staffOptions=(DATA.roster||[]).filter(function(p){ return p.role==="admin"||p.role==="staff"; });
+    inp.addEventListener("change", function(){
+      var typed=inp.value.trim();
+      if(!typed){
+        sb.from("coordination_files").update({assigned_to:null}).eq("id",f.id).then(function(res){ if(res.error){alert(res.error.message);return;} loadAllQuiet(); });
+        return;
+      }
+      var match=resolvePersonByName(typed, staffOptions);
+      if(!match){ alert(t("noMatchingPerson")); return; }
+      sb.from("coordination_files").update({assigned_to: match.id}).eq("id",f.id).then(function(res){
         if(res.error){ alert(res.error.message); return; } loadAllQuiet();
       });
     });

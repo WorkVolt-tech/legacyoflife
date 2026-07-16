@@ -344,6 +344,12 @@
     bookingCancelConfirm:{fr:"Annuler cette demande ? Le créneau redeviendra disponible.",en:"Cancel this request? The slot will reopen."},
     bookingTabRequests:{fr:"Demandes",en:"Requests"},
     bookingTabAvailability:{fr:"Disponibilités",en:"Availability"},
+    bookingForStaff:{fr:"Pour quel membre du personnel",en:"For which staff member"},
+    bookingChooseStaff:{fr:"— Choisir —",en:"— Choose —"},
+    bookingChooseStaffRequired:{fr:"Veuillez choisir un membre du personnel.",en:"Please choose a staff member."},
+    bookingViewingFor:{fr:"Affichage pour :",en:"Viewing for:"},
+    bookingAllStaff:{fr:"Tout le personnel",en:"All staff"},
+    bookingUnassignedStaff:{fr:"Non assigné",en:"Unassigned"},
     bookingClearDesc:{fr:"Retirer tous les créneaux ouverts (non réservés) d'un coup.",en:"Remove every open (unbooked) slot at once."},
     bookingClearAll:{fr:"Tout effacer",en:"Clear all"},
     portalAccess:{fr:"Accès au portail famille",en:"Family portal access"},
@@ -487,6 +493,7 @@
   var finPeriod="month"; var finFrom=null, finTo=null;
   var openFileId=null;  // which coordination file is open
   var bookingTab="requests"; // "requests" | "availability"
+  var bookingStaffFilter=""; // "" = all staff, else a specific staff id
   var current="overview";
 
   function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
@@ -1616,7 +1623,7 @@
       html+='<div style="border:1px solid var(--line);border-radius:8px;padding:16px 18px;background:#fff">'
         +'<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:flex-start">'
         +'<div>'
-        +'<div style="font-weight:600">'+esc(r.family_name)+' <span style="font-weight:400;color:var(--ink-soft);font-size:.85rem">— '+esc(slotLabel(slot))+'</span></div>'
+        +'<div style="font-weight:600">'+esc(r.family_name)+' <span style="font-weight:400;color:var(--ink-soft);font-size:.85rem">— '+esc(slotLabel(slot))+' · '+esc(staffName(slot&&slot.staff_id)||t("bookingUnassignedStaff"))+'</span></div>'
         +'<div style="font-size:.85rem;color:var(--ink-soft);margin-top:4px">'+esc(r.phone)+(r.email?' · '+esc(r.email):'')+'</div>'
         +(r.reason?'<div style="font-size:.88rem;margin-top:8px">'+esc(r.reason)+'</div>':'')
         +'</div>'
@@ -1663,9 +1670,14 @@
 
     var today=new Date(); var in30=new Date(today.getTime()+30*86400000);
     var todayIso=today.toISOString().slice(0,10); var in30Iso=in30.toISOString().slice(0,10);
+    var staffOptions=(DATA.roster||[]).filter(function(p){ return p.role==="admin"||p.role==="staff"; });
 
     var genHtml='<div style="border:1px solid var(--line);border-radius:8px;padding:20px 22px;background:#fff;margin-bottom:28px">'
       +'<h3 style="margin-top:0">'+esc(t("bookingGenerate"))+'</h3>'
+      +'<div style="margin-bottom:14px"><label style="display:block;font-size:.74rem;color:var(--ink-soft);margin-bottom:4px">'+esc(t("bookingForStaff"))+'</label>'
+      +'<select id="bgenStaff" required><option value="">'+esc(t("bookingChooseStaff"))+'</option>'
+      +staffOptions.map(function(p){ return '<option value="'+esc(p.id)+'"'+(String(p.id)===String(ME.id)?' selected':'')+'>'+esc(p.full_name||"—")+'</option>'; }).join('')
+      +'</select></div>'
       +'<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px">'
       +'<div><label style="display:block;font-size:.74rem;color:var(--ink-soft);margin-bottom:4px">'+esc(t("bookingFrom"))+'</label><input type="date" id="bgenFrom" value="'+todayIso+'"></div>'
       +'<div><label style="display:block;font-size:.74rem;color:var(--ink-soft);margin-bottom:4px">'+esc(t("bookingTo"))+'</label><input type="date" id="bgenTo" value="'+in30Iso+'"></div>'
@@ -1678,13 +1690,21 @@
       +'<span id="bgenResult" style="margin-left:14px;font-size:.88rem;color:var(--ink-soft)"></span>'
       +'</div>';
 
-    var openCount=(DATA.bookingSlots||[]).filter(function(s){ return s.status==="open"; }).length;
+    // ---- staff filter (scopes both the list below and the clear-all action) ----
+    var filterHtml='<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'
+      +'<label style="font-size:.85rem;color:var(--ink-soft)">'+esc(t("bookingViewingFor"))+'</label>'
+      +'<select id="bstaffFilter"><option value="">'+esc(t("bookingAllStaff"))+'</option>'
+      +staffOptions.map(function(p){ return '<option value="'+esc(p.id)+'"'+(bookingStaffFilter===p.id?' selected':'')+'>'+esc(p.full_name||"—")+'</option>'; }).join('')
+      +'</select></div>';
+
+    var scopedSlots=(DATA.bookingSlots||[]).filter(function(s){ return !bookingStaffFilter || s.staff_id===bookingStaffFilter; });
+    var openCount=scopedSlots.filter(function(s){ return s.status==="open"; }).length;
     var clearHtml='<div style="border:1px solid rgba(168,64,45,.3);background:rgba(168,64,45,.05);border-radius:8px;padding:16px 22px;margin-bottom:28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">'
       +'<span style="font-size:.9rem;color:var(--ink)">'+esc(t("bookingClearDesc"))+'</span>'
       +'<button class="btn btn--ghost" id="bclearAll" style="border-color:#a8402d;color:#a8402d">'+esc(t("bookingClearAll"))+' ('+openCount+')</button>'
       +'</div>';
 
-    var upcoming=(DATA.bookingSlots||[]).filter(function(s){ return s.slot_date >= todayIso; });
+    var upcoming=scopedSlots.filter(function(s){ return s.slot_date >= todayIso; });
     var statusLabel={open:t("bookingStatusOpen"),booked:t("bookingStatusBooked"),blocked:t("bookingStatusBlocked")};
     var statusColor={open:"#3d7a4d",booked:"#b8860b",blocked:"#a8402d"};
     var listHtml='<h3>'+esc(t("bookingUpcoming"))+' ('+upcoming.length+')</h3>';
@@ -1699,8 +1719,10 @@
       dates.forEach(function(d){
         listHtml+='<div><div style="font-weight:600;margin-bottom:8px">'+esc(d)+'</div><div style="display:flex;flex-wrap:wrap;gap:8px">';
         byDate[d].sort(function(a,b){return a.start_time<b.start_time?-1:1;}).forEach(function(s){
+          var who=staffName(s.staff_id) || t("bookingUnassignedStaff");
           listHtml+='<span style="display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:.85rem;background:#fff">'
             +s.start_time.slice(0,5)+'–'+s.end_time.slice(0,5)
+            +' · '+esc(who)
             +' <b style="color:'+statusColor[s.status]+';font-weight:600;font-size:.72rem;text-transform:uppercase">'+esc(statusLabel[s.status]||s.status)+'</b>'
             +(s.status!=="booked"?' <span data-bdelslot="'+s.id+'" style="cursor:pointer;color:#b08a8a" title="'+esc(t("bookingDeleteSlot"))+'">✕</span>':'')
             +'</span>';
@@ -1710,10 +1732,14 @@
       listHtml+='</div>';
     }
 
-    m.innerHTML=genHtml+clearHtml+listHtml;
+    m.innerHTML=genHtml+filterHtml+clearHtml+listHtml;
 
     document.getElementById("bgenSubmit").addEventListener("click", function(){ generateBookingSlots(); });
     document.getElementById("bclearAll").addEventListener("click", function(){ clearAllOpenSlots(); });
+    document.getElementById("bstaffFilter").addEventListener("change", function(sel){
+      bookingStaffFilter=document.getElementById("bstaffFilter").value;
+      renderBookingAvailability(m);
+    });
     document.querySelectorAll("[data-bdelslot]").forEach(function(x){
       x.addEventListener("click", function(){
         if(!confirm(t("bookingDeleteSlotConfirm"))) return;
@@ -1723,23 +1749,28 @@
   }
 
   function clearAllOpenSlots(){
-    var openCount=(DATA.bookingSlots||[]).filter(function(s){ return s.status==="open"; }).length;
-    if(!openCount) return;
+    var scopedOpen=(DATA.bookingSlots||[]).filter(function(s){ return s.status==="open" && (!bookingStaffFilter || s.staff_id===bookingStaffFilter); });
+    if(!scopedOpen.length) return;
+    var who = bookingStaffFilter ? (staffName(bookingStaffFilter)||"") : (LANG==="fr"?"tous les membres du personnel":"all staff");
     var msg=(LANG==="fr"
-      ? "Supprimer "+openCount+" créneau(x) ouvert(s) ? Les créneaux déjà réservés ne seront PAS touchés. Tapez OUI pour confirmer."
-      : "Delete "+openCount+" open slot(s)? Already-booked slots will NOT be touched. Type YES to confirm.");
+      ? "Supprimer "+scopedOpen.length+" créneau(x) ouvert(s) pour "+who+" ? Les créneaux déjà réservés ne seront PAS touchés. Tapez OUI pour confirmer."
+      : "Delete "+scopedOpen.length+" open slot(s) for "+who+"? Already-booked slots will NOT be touched. Type YES to confirm.");
     var typed=prompt(msg);
     if(typed===null) return;
     if(typed.trim().toUpperCase()!==(LANG==="fr"?"OUI":"YES")){ return; }
     // Delete by filter (not by ID list) — a year's worth of slots can be thousands
     // of rows, and an .in(id list) delete would build a URL far too long to send.
-    sb.from("booking_slots").delete().eq("status","open").then(function(res){
+    var q=sb.from("booking_slots").delete().eq("status","open");
+    if(bookingStaffFilter) q=q.eq("staff_id",bookingStaffFilter);
+    q.then(function(res){
       if(res.error){ alert(res.error.message); return; }
       loadAll();
     });
   }
 
   function generateBookingSlots(){
+    var staffId=document.getElementById("bgenStaff").value;
+    if(!staffId){ alert(t("bookingChooseStaffRequired")); return; }
     var from=document.getElementById("bgenFrom").value;
     var to=document.getElementById("bgenTo").value;
     var startT=document.getElementById("bgenStart").value;
@@ -1760,7 +1791,7 @@
           var sh=String(Math.floor(cursorMin/60)).padStart(2,"0"), sm=String(cursorMin%60).padStart(2,"0");
           var em=cursorMin+duration;
           var eh2=String(Math.floor(em/60)).padStart(2,"0"), em2=String(em%60).padStart(2,"0");
-          slots.push({slot_date:dateStr, start_time:sh+":"+sm+":00", end_time:eh2+":"+em2+":00", status:"open", created_by:ME.id});
+          slots.push({slot_date:dateStr, start_time:sh+":"+sm+":00", end_time:eh2+":"+em2+":00", status:"open", created_by:ME.id, staff_id:staffId});
           cursorMin+=duration;
         }
       }

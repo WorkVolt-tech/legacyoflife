@@ -541,6 +541,9 @@
                ME.can_manage_finances=p.data.can_manage_finances===true;
                ME.can_manage_reviews=p.data.can_manage_reviews===true;
                ME.can_manage_staff=p.data.can_manage_staff===true; }
+        // Restore whichever tab was open before a refresh, if it's still valid for this role.
+        var wanted=(location.hash||"").replace("#","");
+        if(wanted && menuItems().some(function(it){ return it[0]===wanted; })){ current=wanted; }
         showHub(); buildNav(); loadAll(); startRealtime();
       });
     });
@@ -602,7 +605,7 @@
     var nav=document.getElementById("sideNav"); nav.innerHTML="";
     menuItems().forEach(function(it){
       var a=document.createElement("a"); a.textContent=it[1]; if(it[0]===current) a.className="active";
-      a.addEventListener("click", function(){ current=it[0]; buildNav(); render(); });
+      a.addEventListener("click", function(){ current=it[0]; location.hash=it[0]; buildNav(); render(); });
       if(it[0]==="applications"){ var n=DATA.applications.filter(function(x){return x.status==="pending";}).length; if(n){ var b=document.createElement("span"); b.className="badge"; b.textContent=n; a.appendChild(b);} }
       if(it[0]==="inquiries"){ var n2=DATA.inquiries.filter(function(x){return x.status==="new";}).length; if(n2){ var b2=document.createElement("span"); b2.className="badge"; b2.textContent=n2; a.appendChild(b2);} }
       if(it[0]==="booking"){ var n3=DATA.bookingRequests.filter(function(x){return x.status==="pending";}).length; if(n3){ var b3=document.createElement("span"); b3.className="badge"; b3.textContent=n3; a.appendChild(b3);} }
@@ -652,11 +655,28 @@
       DATA.timelineEvents=(r[18]&&r[18].data)||[];
       DATA.messages=(r[19]&&r[19].data)||[];
       if(quiet){
-        // Don't yank someone out of an open intake file or mid-edit.
-        if(openFileId || isEditing()){ buildNav(); return; }
         var y=window.scrollY;
+        // Preserve whatever the person is mid-typing (e.g. a draft reply,
+        // or an intake field) so a live background update never wipes it
+        // out — but still actually refresh what's on screen, instead of
+        // freezing the whole view just because something has focus.
+        var activeEl=document.activeElement;
+        var activeId=activeEl&&activeEl.id;
+        var activeVal=(activeEl&&("value" in activeEl))?activeEl.value:null;
+        var activeSelStart=activeEl?activeEl.selectionStart:null;
+        var activeSelEnd=activeEl?activeEl.selectionEnd:null;
         buildNav(); render();
         window.scrollTo(0,y);
+        if(activeId){
+          var restored=document.getElementById(activeId);
+          if(restored){
+            if(activeVal!=null && "value" in restored) restored.value=activeVal;
+            restored.focus();
+            if(typeof activeSelStart==="number" && restored.setSelectionRange){
+              try{ restored.setSelectionRange(activeSelStart, activeSelEnd); }catch(e){}
+            }
+          }
+        }
       } else {
         buildNav(); render();
       }

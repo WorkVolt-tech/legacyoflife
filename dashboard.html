@@ -643,7 +643,7 @@
 
   function render(){
     var m=document.getElementById("moduleArea");
-    if(current==="overview") return renderOverview(m);
+    if(current==="overview") return renderDashboardOverview(m);
     if(current==="inquiries") return renderInquiries(m);
     if(current==="jobs") return renderJobs(m);
     if(current==="photographers") return renderRoster(m,"photographer",t("photographers"));
@@ -659,7 +659,7 @@
     if(current==="finances") return renderFinances(m);
   }
 
-  function renderOverview(m){
+  function renderDashboardOverview(m){
     var newInq=DATA.inquiries.filter(function(x){return x.status==="new";}).length;
     var openJobs=DATA.jobs.filter(function(x){return x.status==="open";}).length;
     var unassigned=DATA.jobs.filter(function(x){return !x.assigned_to&&x.status!=="cancelled"&&x.status!=="done";}).length;
@@ -1085,7 +1085,7 @@
       +'<button class="btn '+(financeTab==="overview"?"btn--solid":"btn--ghost")+' tbtn" data-ftab="overview">'+esc(t("tabOverview"))+'</button>'
       +'</div>';
     if(financeTab==="expenses"){ return renderExpenses(m, tabs); }
-    if(financeTab==="overview"){ return renderOverview(m, tabs); }
+    if(financeTab==="overview"){ return renderFinancesOverview(m, tabs); }
     var rows=DATA.invoices||[];
     m.innerHTML='<h2 class="module-title">'+esc(t("finances"))+'</h2>'+tabs
       +'<div class="controls"><button class="btn btn--solid tbtn" id="newInvBtn">'+esc(t("newInvoice"))+'</button><span class="count">'+rows.length+'</span></div>'
@@ -1286,7 +1286,7 @@
   }
   function inRange(d, lo, hi){ if(!d) return false; var s=String(d).slice(0,10); return s>=lo && s<=hi; }
 
-  function renderOverview(m, tabs){
+  function renderFinancesOverview(m, tabs){
     var r=periodRange(), lo=r[0], hi=r[1];
     // income = payments received in range
     var income=(DATA.payments||[]).filter(function(p){return inRange(p.paid_at,lo,hi);}).reduce(function(s,p){return s+(Number(p.amount)||0);},0);

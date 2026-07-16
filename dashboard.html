@@ -1617,18 +1617,25 @@
     if(!rows.length){ m.innerHTML='<p style="color:var(--ink-soft)">'+esc(t("bookingNoRequests"))+'</p>'; return; }
     var statusLabel={pending:t("bookingStatusPending"),confirmed:t("bookingStatusConfirmed"),cancelled:t("bookingStatusCancelled"),completed:t("bookingStatusCompleted")};
     var statusColor={pending:"#b8860b",confirmed:"#3d7a4d",cancelled:"#a8402d",completed:"#666"};
+    var staffOptions=(DATA.roster||[]).filter(function(p){ return p.role==="admin"||p.role==="staff"; });
     var html='<div style="display:flex;flex-direction:column;gap:10px">';
     rows.forEach(function(r){
       var slot=(DATA.bookingSlots||[]).filter(function(s){return String(s.id)===String(r.slot_id);})[0];
       html+='<div style="border:1px solid var(--line);border-radius:8px;padding:16px 18px;background:#fff">'
         +'<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:flex-start">'
         +'<div>'
-        +'<div style="font-weight:600">'+esc(r.family_name)+' <span style="font-weight:400;color:var(--ink-soft);font-size:.85rem">— '+esc(slotLabel(slot))+' · '+esc(staffName(slot&&slot.staff_id)||t("bookingUnassignedStaff"))+'</span></div>'
+        +'<div style="font-weight:600">'+esc(r.family_name)+' <span style="font-weight:400;color:var(--ink-soft);font-size:.85rem">— '+esc(slotLabel(slot))+'</span></div>'
         +'<div style="font-size:.85rem;color:var(--ink-soft);margin-top:4px">'+esc(r.phone)+(r.email?' · '+esc(r.email):'')+'</div>'
         +(r.reason?'<div style="font-size:.88rem;margin-top:8px">'+esc(r.reason)+'</div>':'')
         +'</div>'
         +'<span style="font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:'+statusColor[r.status]+';white-space:nowrap">'+esc(statusLabel[r.status]||r.status)+'</span>'
         +'</div>'
+        +(slot ? '<div style="margin-top:10px;display:flex;align-items:center;gap:8px">'
+          +'<span style="font-size:.8rem;color:var(--ink-soft)">'+esc(t("assignedTo"))+':</span>'
+          +'<select data-bassignstaff="'+esc(slot.id)+'" style="font-size:.85rem">'
+          +'<option value="">'+esc(t("bookingUnassignedStaff"))+'</option>'
+          +staffOptions.map(function(p){ return '<option value="'+esc(p.id)+'"'+(slot.staff_id===p.id?' selected':'')+'>'+esc(p.full_name||"—")+'</option>'; }).join('')
+          +'</select></div>' : '')
         +'<div style="display:flex;gap:8px;margin-top:12px">'
         +(r.status==="pending"?'<button class="btn btn--ghost tbtn" data-bconfirm="'+r.id+'">'+esc(t("bookingConfirm"))+'</button>':'')
         +(r.status==="pending"||r.status==="confirmed"?'<button class="btn btn--ghost tbtn" data-bcancel="'+r.id+'">'+esc(t("bookingCancel"))+'</button>':'')
@@ -1641,6 +1648,14 @@
     document.querySelectorAll("[data-bconfirm]").forEach(function(b){ b.addEventListener("click",function(){ confirmBookingRequest(b.getAttribute("data-bconfirm")); }); });
     document.querySelectorAll("[data-bcancel]").forEach(function(b){ b.addEventListener("click",function(){ if(confirm(t("bookingCancelConfirm"))) cancelBookingRequest(b.getAttribute("data-bcancel")); }); });
     document.querySelectorAll("[data-bcomplete]").forEach(function(b){ b.addEventListener("click",function(){ completeBookingRequest(b.getAttribute("data-bcomplete")); }); });
+    document.querySelectorAll("[data-bassignstaff]").forEach(function(sel){
+      sel.addEventListener("change", function(){
+        var slotId=sel.getAttribute("data-bassignstaff");
+        sb.from("booking_slots").update({staff_id: sel.value||null}).eq("id",slotId).then(function(res){
+          if(res.error){ alert(res.error.message); return; } loadAll();
+        });
+      });
+    });
   }
 
   function confirmBookingRequest(id){

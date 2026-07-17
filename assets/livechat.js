@@ -156,12 +156,11 @@
     var lang = getLang();
     var afterResponse = function (res) {
       sendBtn.disabled = false;
-      if (res && res.auto_reply) {
-        // Rendered directly (not via poll) since it comes back instantly
-        // in this same response — polling will just skip it via seenIds
-        // once it sees the real row.
-        appendMsg("auto", res.auto_reply);
-      }
+      // Don't render res.auto_reply directly here — it has no message id
+      // yet, so polling can't recognize it as "already shown" and would
+      // render it a second time once it sees the real database row.
+      // Polling picks it up properly a moment later instead.
+      pollMessages();
       startPolling();
     };
 

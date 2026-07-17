@@ -372,6 +372,23 @@
     send:{fr:"Envoyer",en:"Send"},
     viewConversation:{fr:"Voir la conversation",en:"View conversation"},
     noMatchingPerson:{fr:"Aucune personne trouvée avec ce nom. Vérifiez l'orthographe ou choisissez dans la liste.",en:"No matching person with that name. Check the spelling or pick from the list."},
+    liveChat:{fr:"Clavardage en direct",en:"Live Chat"},
+    liveChatConversations:{fr:"Conversations",en:"Conversations"},
+    liveChatKeywords:{fr:"Réponses automatiques",en:"Keyword Responses"},
+    liveChatNoConversations:{fr:"Aucune conversation pour le moment.",en:"No conversations yet."},
+    liveChatStatusNew:{fr:"Nouveau",en:"New"},
+    liveChatStatusActive:{fr:"Actif",en:"Active"},
+    liveChatStatusClosed:{fr:"Fermé",en:"Closed"},
+    liveChatAnonymous:{fr:"Visiteur anonyme",en:"Anonymous visitor"},
+    liveChatBack:{fr:"Retour aux conversations",en:"Back to conversations"},
+    liveChatAutoReply:{fr:"Réponse automatique",en:"Auto-reply"},
+    liveChatMarkClosed:{fr:"Marquer comme fermé",en:"Mark as closed"},
+    liveChatKeywordsDesc:{fr:"Lorsqu'un message d'un visiteur contient un de ces mots-clés, une réponse automatique est envoyée instantanément — le personnel peut tout de même répondre à tout moment.",en:"When a visitor's message contains one of these keywords, an instant automatic reply is sent — staff can still jump in and reply anytime."},
+    liveChatKeywordsPlaceholder:{fr:"mots-clés séparés par des virgules",en:"keywords separated by commas"},
+    liveChatActive:{fr:"Actif",en:"Active"},
+    liveChatAddKeyword:{fr:"Ajouter une réponse automatique",en:"Add keyword response"},
+    liveChatDeleteKeywordConfirm:{fr:"Supprimer cette réponse automatique ?",en:"Delete this keyword response?"},
+    liveChatKeywordRequired:{fr:"Veuillez entrer au moins un mot-clé et une réponse en français.",en:"Please enter at least one keyword and a French response."},
     col_todo:{fr:"À faire",en:"To do"},
     col_doing:{fr:"En cours",en:"In progress"},
     col_done:{fr:"Terminé",en:"Done"},
@@ -488,13 +505,15 @@
   var loginView=document.getElementById("loginView");
   var hubView=document.getElementById("hubView");
   var ME={id:null,role:"none",name:""};
-  var DATA={inquiries:[],jobs:[],roster:[],applications:[],checklist:[],archive:[],coordination:[],notes:[],reviews:[],templates:[],invoices:[],invoiceItems:[],payments:[],expenses:[],documents:[],board:[],bookingSlots:[],bookingRequests:[],timelineEvents:[],messages:[]};
+  var DATA={inquiries:[],jobs:[],roster:[],applications:[],checklist:[],archive:[],coordination:[],notes:[],reviews:[],templates:[],invoices:[],invoiceItems:[],payments:[],expenses:[],documents:[],board:[],bookingSlots:[],bookingRequests:[],timelineEvents:[],messages:[],chatConversations:[],chatMessages:[],chatKeywords:[]};
   var openInvoiceId=null;
   var financeTab="invoices";
   var finPeriod="month"; var finFrom=null, finTo=null;
   var openFileId=null;  // which coordination file is open
   var bookingTab="requests"; // "requests" | "availability"
   var bookingStaffFilter=""; // "" = all staff, else a specific staff id
+  var liveChatTab="conversations"; // "conversations" | "keywords"
+  var openChatId=null; // which live chat conversation is open
   var current="overview";
 
   function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
@@ -581,6 +600,8 @@
         .on("postgres_changes",{event:"*",schema:"public",table:"booking_requests"},scheduleReload)
         .on("postgres_changes",{event:"*",schema:"public",table:"family_timeline_events"},scheduleReload)
         .on("postgres_changes",{event:"*",schema:"public",table:"family_messages"},scheduleReload)
+        .on("postgres_changes",{event:"*",schema:"public",table:"chat_conversations"},scheduleReload)
+        .on("postgres_changes",{event:"*",schema:"public",table:"chat_messages"},scheduleReload)
         .subscribe();
     }catch(e){ /* realtime optional; ignore */ }
   }
@@ -592,6 +613,7 @@
     if(isAdmin()||isStaff()) items.push(["board",t("board")]);
     if(isAdmin()||isStaff()) items.push(["booking",t("booking")]);
     if(isAdmin()||isStaff()) items.push(["messages",t("familyMessagesInbox")]);
+    if(isAdmin()||isStaff()) items.push(["livechat",t("liveChat")]);
     items.push(["jobs", isWorker()?t("myJobs"):t("jobs")]);
     if(isAdmin()||isStaff()){ items.push(["photographers",t("photographers")]); items.push(["caterers",t("caterers")]); }
     if(canStaff()){ items.push(["staff",t("staff")]); }
@@ -610,6 +632,7 @@
       if(it[0]==="inquiries"){ var n2=DATA.inquiries.filter(function(x){return x.status==="new";}).length; if(n2){ var b2=document.createElement("span"); b2.className="badge"; b2.textContent=n2; a.appendChild(b2);} }
       if(it[0]==="booking"){ var n3=DATA.bookingRequests.filter(function(x){return x.status==="pending";}).length; if(n3){ var b3=document.createElement("span"); b3.className="badge"; b3.textContent=n3; a.appendChild(b3);} }
       if(it[0]==="messages"){ var n4=DATA.messages.filter(function(x){return x.sender_role==="family"&&!x.read_by_staff;}).length; if(n4){ var b4=document.createElement("span"); b4.className="badge"; b4.textContent=n4; a.appendChild(b4);} }
+      if(it[0]==="livechat"){ var n5=DATA.chatMessages.filter(function(x){return x.sender_type==="visitor"&&!x.read_by_staff;}).length; if(n5){ var b5=document.createElement("span"); b5.className="badge"; b5.textContent=n5; a.appendChild(b5);} }
       nav.appendChild(a);
     });
     document.getElementById("meBox").innerHTML=esc(ME.name)+"<br><b>"+esc(ME.role)+"</b>";
@@ -642,6 +665,9 @@
     q.push((isAdmin()||isStaff())? sb.from("booking_requests").select("*").order("created_at",{ascending:false}) : Promise.resolve({data:[]}));
     q.push((isAdmin()||isStaff())? sb.from("family_timeline_events").select("*").order("position",{ascending:true}) : Promise.resolve({data:[]}));
     q.push((isAdmin()||isStaff())? sb.from("family_messages").select("*").order("created_at",{ascending:true}) : Promise.resolve({data:[]}));
+    q.push((isAdmin()||isStaff())? sb.from("chat_conversations").select("*").order("last_message_at",{ascending:false}) : Promise.resolve({data:[]}));
+    q.push((isAdmin()||isStaff())? sb.from("chat_messages").select("*").order("created_at",{ascending:true}) : Promise.resolve({data:[]}));
+    q.push((isAdmin()||isStaff())? sb.from("chat_keyword_responses").select("*").order("position",{ascending:true}) : Promise.resolve({data:[]}));
     Promise.all(q).then(function(r){
       DATA.inquiries=(r[0]&&r[0].data)||[]; DATA.jobs=(r[1]&&r[1].data)||[];
       DATA.roster=(r[2]&&r[2].data)||[]; DATA.applications=(r[3]&&r[3].data)||[];
@@ -654,6 +680,7 @@
       DATA.bookingSlots=(r[16]&&r[16].data)||[]; DATA.bookingRequests=(r[17]&&r[17].data)||[];
       DATA.timelineEvents=(r[18]&&r[18].data)||[];
       DATA.messages=(r[19]&&r[19].data)||[];
+      DATA.chatConversations=(r[20]&&r[20].data)||[]; DATA.chatMessages=(r[21]&&r[21].data)||[]; DATA.chatKeywords=(r[22]&&r[22].data)||[];
       if(quiet){
         var y=window.scrollY;
         // Preserve whatever the person is mid-typing (e.g. a draft reply,
@@ -697,6 +724,7 @@
     if(current==="board") return renderBoard(m);
     if(current==="booking") return renderBooking(m);
     if(current==="messages") return renderMessagesInbox(m);
+    if(current==="livechat") return renderLiveChat(m);
     if(current==="reviews") return renderReviews(m);
     if(current==="templates") return renderTemplates(m);
     if(current==="finances") return renderFinances(m);
@@ -1975,6 +2003,180 @@
     });
   }
   // ================= END MESSAGES INBOX MODULE =================
+
+  // ================= LIVE CHAT MODULE =================
+  function renderLiveChat(m){
+    var tabsHtml='<div class="tabs" style="display:flex;gap:8px;margin-bottom:20px">'
+      +'<button class="btn '+(liveChatTab==="conversations"?"btn--solid":"btn--ghost")+' tbtn" data-lctab="conversations">'+esc(t("liveChatConversations"))+'</button>'
+      +'<button class="btn '+(liveChatTab==="keywords"?"btn--solid":"btn--ghost")+' tbtn" data-lctab="keywords">'+esc(t("liveChatKeywords"))+'</button>'
+      +'</div>';
+    m.innerHTML='<h2 class="module-title">'+esc(t("liveChat"))+'</h2>'+tabsHtml+'<div id="liveChatSubArea"></div>';
+    document.querySelectorAll("[data-lctab]").forEach(function(b){
+      b.addEventListener("click", function(){ liveChatTab=b.getAttribute("data-lctab"); openChatId=null; renderLiveChat(m); });
+    });
+    var sub=document.getElementById("liveChatSubArea");
+    if(liveChatTab==="keywords") renderChatKeywords(sub); else renderChatConversations(sub);
+  }
+
+  function renderChatConversations(m){
+    if(openChatId) return renderChatDetail(m, openChatId);
+
+    var convos=(DATA.chatConversations||[]).slice().sort(function(a,b){ return new Date(b.last_message_at)-new Date(a.last_message_at); });
+    if(!convos.length){ m.innerHTML='<p style="color:var(--ink-soft)">'+esc(t("liveChatNoConversations"))+'</p>'; return; }
+
+    var statusLabel={new:t("liveChatStatusNew"),active:t("liveChatStatusActive"),closed:t("liveChatStatusClosed")};
+    var statusColor={new:"#b8860b",active:"#3d7a4d",closed:"#666"};
+    var html='<div style="display:flex;flex-direction:column;gap:10px">';
+    convos.forEach(function(c){
+      var msgs=(DATA.chatMessages||[]).filter(function(x){return String(x.conversation_id)===String(c.id);});
+      var last=msgs[msgs.length-1];
+      var unread=msgs.filter(function(x){return x.sender_type==="visitor"&&!x.read_by_staff;}).length;
+      html+='<div data-openchat="'+esc(c.id)+'" style="border:1px solid var(--line);border-radius:8px;padding:16px 18px;background:#fff;cursor:pointer;'+(unread?'border-left:3px solid var(--gold)':'')+'">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">'
+        +'<div><div style="font-weight:600">'+esc(c.visitor_name||t("liveChatAnonymous"))+(unread?' <span class="badge">'+unread+'</span>':'')+'</div>'
+        +(last?'<div style="font-size:.85rem;color:var(--ink-soft);margin-top:4px">'+esc((last.body||"").slice(0,90))+(last.body&&last.body.length>90?"…":"")+'</div>':'')
+        +'</div>'
+        +'<span style="font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:'+statusColor[c.status]+';white-space:nowrap">'+esc(statusLabel[c.status]||c.status)+'</span>'
+        +'</div>'
+        +(c.page_url?'<div style="font-size:.76rem;color:var(--ink-soft);margin-top:8px">'+esc(c.page_url)+'</div>':'')
+        +'</div>';
+    });
+    html+='</div>';
+    m.innerHTML=html;
+    document.querySelectorAll("[data-openchat]").forEach(function(row){
+      row.addEventListener("click", function(){ openChatId=row.getAttribute("data-openchat"); renderChatConversations(m); });
+    });
+  }
+
+  function renderChatDetail(m, chatId){
+    var convo=(DATA.chatConversations||[]).filter(function(x){return String(x.id)===String(chatId);})[0];
+    var msgs=(DATA.chatMessages||[]).filter(function(x){return String(x.conversation_id)===String(chatId);});
+    var html='<button class="btn btn--ghost tbtn" id="lcBack" style="margin-bottom:16px">← '+esc(t("liveChatBack"))+'</button>';
+    html+='<h3 style="margin-top:0">'+esc(convo?(convo.visitor_name||t("liveChatAnonymous")):"—")+'</h3>';
+    if(msgs.length){
+      html+='<div id="lcThreadList" style="max-height:360px;overflow:auto;display:flex;flex-direction:column;gap:10px;margin:14px 0">';
+      msgs.forEach(function(msg){
+        var mine = msg.sender_type==="staff";
+        var bg = mine ? "var(--gold)" : (msg.sender_type==="auto" ? "#eef3ee" : "#fff");
+        var label = mine ? (msg.sender_name||t("staffMember")) : (msg.sender_type==="auto" ? t("liveChatAutoReply") : (convo&&convo.visitor_name||t("liveChatAnonymous")));
+        html+='<div style="align-self:'+(mine?"flex-end":"flex-start")+';max-width:75%;background:'+bg+';color:'+(mine?"#fff":"var(--ink)")+';border:1px solid var(--line);border-radius:8px;padding:10px 14px">'
+          +'<div style="font-size:.72rem;opacity:.75;margin-bottom:3px">'+esc(label)+' · '+esc(fmtDate(msg.created_at))+'</div>'
+          +'<div style="font-size:.92rem;white-space:pre-wrap">'+esc(msg.body)+'</div>'
+          +'</div>';
+      });
+      html+='</div>';
+    } else {
+      html+='<p style="font-size:.85rem;color:var(--ink-soft)">'+esc(t("noMessagesYet"))+'</p>';
+    }
+    html+='<div style="display:flex;gap:8px;margin-bottom:14px">'
+      +'<input type="text" id="lcReplyInput" placeholder="'+esc(t("msgReplyPlaceholder"))+'" style="flex:1">'
+      +'<button class="btn btn--solid tbtn" id="lcReplySend">'+esc(t("send"))+'</button></div>';
+    if(convo && convo.status!=="closed"){
+      html+='<button class="btn btn--ghost tbtn" id="lcCloseConvo">'+esc(t("liveChatMarkClosed"))+'</button>';
+    }
+    m.innerHTML=html;
+
+    document.getElementById("lcBack").addEventListener("click", function(){ openChatId=null; renderChatConversations(m); });
+    var list=document.getElementById("lcThreadList");
+    if(list) list.scrollTop=list.scrollHeight;
+
+    function sendReply(){
+      var input=document.getElementById("lcReplyInput");
+      var body=(input.value||"").trim();
+      if(!body) return;
+      var btn=document.getElementById("lcReplySend"); btn.disabled=true;
+      sb.from("chat_messages").insert({conversation_id:chatId, sender_type:"staff", sender_name:ME.name, body:body}).then(function(res){
+        btn.disabled=false;
+        if(res.error){ alert(res.error.message); return; }
+        sb.from("chat_conversations").update({last_message_at:new Date().toISOString(), status: convo&&convo.status==="new"?"active":(convo?convo.status:"active")}).eq("id",chatId).then(function(){ loadAll(); });
+      });
+    }
+    document.getElementById("lcReplySend").addEventListener("click", sendReply);
+    document.getElementById("lcReplyInput").addEventListener("keydown", function(e){ if(e.key==="Enter") sendReply(); });
+    var closeBtn=document.getElementById("lcCloseConvo");
+    if(closeBtn){
+      closeBtn.addEventListener("click", function(){
+        sb.from("chat_conversations").update({status:"closed"}).eq("id",chatId).then(function(res){
+          if(res.error){ alert(res.error.message); return; } loadAll();
+        });
+      });
+    }
+
+    // mark visitor messages as read
+    var unread=msgs.filter(function(x){ return x.sender_type==="visitor" && !x.read_by_staff; });
+    if(unread.length){
+      var ids=unread.map(function(x){ return x.id; });
+      sb.from("chat_messages").update({read_by_staff:true}).in("id",ids).then(function(){ loadAllQuiet(); });
+    }
+  }
+
+  function renderChatKeywords(m){
+    var rows=(DATA.chatKeywords||[]).slice().sort(function(a,b){ return (a.position||0)-(b.position||0); });
+    var html='<p style="color:var(--ink-soft);font-size:.9rem;margin-bottom:16px">'+esc(t("liveChatKeywordsDesc"))+'</p>';
+    html+='<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">';
+    rows.forEach(function(k){
+      html+='<div style="border:1px solid var(--line);border-radius:8px;padding:14px 16px;background:#fff">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">'
+        +'<input type="text" data-kwkeywords="'+esc(k.id)+'" value="'+esc(k.keywords)+'" placeholder="'+esc(t("liveChatKeywordsPlaceholder"))+'" style="flex:1;min-width:160px;font-weight:600">'
+        +'<label style="display:flex;align-items:center;gap:4px;font-size:.82rem"><input type="checkbox" data-kwactive="'+esc(k.id)+'" '+(k.active?"checked":"")+'>'+esc(t("liveChatActive"))+'</label>'
+        +'<button class="btn btn--ghost tbtn" data-kwdel="'+esc(k.id)+'" style="color:#a8402d">'+esc(t("del"))+'</button>'
+        +'</div>'
+        +'<div style="margin-top:8px"><label style="font-size:.72rem;color:var(--ink-soft)">FR</label>'
+        +'<textarea data-kwfr="'+esc(k.id)+'" style="width:100%;min-height:44px;font-size:.88rem;padding:6px 9px">'+esc(k.response_fr)+'</textarea></div>'
+        +'<div style="margin-top:6px"><label style="font-size:.72rem;color:var(--ink-soft)">EN</label>'
+        +'<textarea data-kwen="'+esc(k.id)+'" style="width:100%;min-height:44px;font-size:.88rem;padding:6px 9px">'+esc(k.response_en||"")+'</textarea></div>'
+        +'</div>';
+    });
+    html+='</div>';
+    html+='<div style="border:1px solid var(--line);border-radius:8px;padding:18px 20px;background:#fff">'
+      +'<h3 style="margin-top:0">'+esc(t("liveChatAddKeyword"))+'</h3>'
+      +'<input type="text" id="kwNewKeywords" placeholder="'+esc(t("liveChatKeywordsPlaceholder"))+'" style="width:100%;margin-bottom:8px">'
+      +'<label style="font-size:.72rem;color:var(--ink-soft)">FR</label>'
+      +'<textarea id="kwNewFr" style="width:100%;min-height:50px;margin-bottom:8px"></textarea>'
+      +'<label style="font-size:.72rem;color:var(--ink-soft)">EN</label>'
+      +'<textarea id="kwNewEn" style="width:100%;min-height:50px;margin-bottom:12px"></textarea>'
+      +'<button class="btn btn--solid" id="kwAddBtn">'+esc(t("liveChatAddKeyword"))+'</button>'
+      +'</div>';
+    m.innerHTML=html;
+
+    document.querySelectorAll("[data-kwactive]").forEach(function(cb){
+      cb.addEventListener("change", function(){
+        sb.from("chat_keyword_responses").update({active:cb.checked}).eq("id",cb.getAttribute("data-kwactive")).then(function(){ loadAllQuiet(); });
+      });
+    });
+    document.querySelectorAll("[data-kwkeywords]").forEach(function(inp){
+      inp.addEventListener("change", function(){
+        sb.from("chat_keyword_responses").update({keywords:inp.value}).eq("id",inp.getAttribute("data-kwkeywords")).then(function(){ loadAllQuiet(); });
+      });
+    });
+    document.querySelectorAll("[data-kwfr]").forEach(function(ta){
+      ta.addEventListener("change", function(){
+        sb.from("chat_keyword_responses").update({response_fr:ta.value}).eq("id",ta.getAttribute("data-kwfr")).then(function(){ loadAllQuiet(); });
+      });
+    });
+    document.querySelectorAll("[data-kwen]").forEach(function(ta){
+      ta.addEventListener("change", function(){
+        sb.from("chat_keyword_responses").update({response_en:ta.value||null}).eq("id",ta.getAttribute("data-kwen")).then(function(){ loadAllQuiet(); });
+      });
+    });
+    document.querySelectorAll("[data-kwdel]").forEach(function(b){
+      b.addEventListener("click", function(){
+        if(!confirm(t("liveChatDeleteKeywordConfirm"))) return;
+        sb.from("chat_keyword_responses").delete().eq("id",b.getAttribute("data-kwdel")).then(function(){ loadAll(); });
+      });
+    });
+    document.getElementById("kwAddBtn").addEventListener("click", function(){
+      var kw=document.getElementById("kwNewKeywords").value.trim();
+      var fr=document.getElementById("kwNewFr").value.trim();
+      var en=document.getElementById("kwNewEn").value.trim();
+      if(!kw||!fr){ alert(t("liveChatKeywordRequired")); return; }
+      var pos=(DATA.chatKeywords||[]).length;
+      sb.from("chat_keyword_responses").insert({keywords:kw, response_fr:fr, response_en:en||null, active:true, position:pos}).then(function(res){
+        if(res.error){ alert(res.error.message); return; } loadAll();
+      });
+    });
+  }
+  // ================= END LIVE CHAT MODULE =================
 
   function renderCoordination(m){
     if(openFileId){ return renderIntake(m, openFileId); }

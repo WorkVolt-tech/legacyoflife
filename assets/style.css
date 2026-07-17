@@ -33,11 +33,9 @@
 
 /* ---------- Reset ---------- */
 *, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; overflow-x: hidden; max-width: 100%; }
+html { scroll-behavior: smooth; }
 body {
   margin: 0;
-  overflow-x: hidden;
-  max-width: 100%;
   font-family: var(--sans);
   font-weight: 300;
   color: var(--ink);
@@ -299,8 +297,15 @@ html[lang="en"] [data-lang="en"].d-block { display: block; }
   .nav a.navlink { padding: 14px 28px; width: 100%; }
   .nav .lang-toggle { margin: 12px 28px; align-self: flex-start; }
   .nav-toggle { display: block; }
-  .brand { flex: 1; }
-  .brand .brand-text { flex: 1; align-items: center; text-align: center; }
+  .site-header .wrap { position: relative; justify-content: center; }
+  .nav-toggle { position: absolute; left: 28px; top: 50%; transform: translateY(-50%); }
+  .brand {
+    flex-direction: column; align-items: center; text-align: center;
+    flex-shrink: 1; min-width: 0; gap: 8px;
+  }
+  .brand img { height: 48px; }
+  .brand .brand-name { font-size: .98rem; letter-spacing: .1em; }
+  .brand .brand-sub { font-size: .56rem; letter-spacing: .18em; }
   .grid-2, .grid-3, .pkg-grid, .contact-grid, .split { grid-template-columns: 1fr; }
   .split { gap: 32px; }
   .svc-row { grid-template-columns: 1fr; gap: 16px; padding: 34px 0; }

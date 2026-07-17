@@ -57,6 +57,9 @@
     '#hdv-chat-inputbar{display:flex;gap:6px;padding:10px;border-top:1px solid var(--line,#ddd4c5);}' +
     '#hdv-chat-input{flex:1;border:1px solid var(--line,#ddd4c5);border-radius:18px;padding:8px 13px;font-size:.88rem;font-family:inherit;outline:none;}' +
     '#hdv-chat-send{background:var(--gold,#B08D49);border:0;color:#fff;border-radius:50%;width:34px;height:34px;cursor:pointer;flex-shrink:0;}' +
+    '#hdv-chat-chips{display:flex;flex-wrap:wrap;gap:6px;align-self:flex-start;max-width:100%;}' +
+    '.hdv-chip{border:1px solid var(--gold,#B08D49);color:var(--gold-deep,#927235);background:#fff;border-radius:16px;padding:6px 12px;font-size:.8rem;cursor:pointer;font-family:inherit;}' +
+    '.hdv-chip:hover{background:var(--gold,#B08D49);color:#fff;}' +
     '</style>' +
     '<div id="hdv-chat-bubble">' +
       '<svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>' +
@@ -99,6 +102,40 @@
     badge.textContent = String(badgeCount);
   }
 
+  function showQuickReplies() {
+    var lang = getLang();
+    var chips = lang === "en"
+      ? [
+          { label: "💰 Pricing", action: "text", value: "How much does this cost?" },
+          { label: "📅 Book a consultation", action: "link", value: "booking.html" },
+          { label: "📋 Documents needed", action: "text", value: "What documents do I need?" },
+          { label: "💬 Talk to a person", action: "text", value: "I'd like to speak to someone." },
+        ]
+      : [
+          { label: "💰 Prix", action: "text", value: "Combien ça coûte ?" },
+          { label: "📅 Réserver une consultation", action: "link", value: "booking.html" },
+          { label: "📋 Documents requis", action: "text", value: "Quels documents dois-je préparer ?" },
+          { label: "💬 Parler à quelqu'un", action: "text", value: "J'aimerais parler à quelqu'un." },
+        ];
+    var row = document.createElement("div");
+    row.id = "hdv-chat-chips";
+    chips.forEach(function (c) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "hdv-chip";
+      btn.textContent = c.label;
+      btn.addEventListener("click", function () {
+        if (c.action === "link") { window.open(c.value, "_blank"); return; }
+        inputEl.value = c.value;
+        send();
+        row.remove(); // chips are a one-time starting point, not a persistent menu
+      });
+      row.appendChild(btn);
+    });
+    bodyEl.appendChild(row);
+    bodyEl.scrollTop = bodyEl.scrollHeight;
+  }
+
   function openPanel(open) {
     panel.classList.toggle("open", open);
     if (open && badge) { badge.remove(); badge = null; badgeCount = 0; }
@@ -106,6 +143,7 @@
       appendMsg("system", getLang() === "en"
         ? "Hi! Ask us anything — a real person can jump in anytime."
         : "Bonjour ! Posez-nous vos questions — une vraie personne peut intervenir en tout temps.");
+      showQuickReplies();
     }
   }
   bubble.addEventListener("click", function () { openPanel(!panel.classList.contains("open")); });

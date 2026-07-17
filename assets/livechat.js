@@ -136,9 +136,25 @@
     bodyEl.scrollTop = bodyEl.scrollHeight;
   }
 
+  function resetConversation() {
+    stopPolling();
+    conversationId = null;
+    seenIds = {};
+    historyLoaded = false;
+    try { localStorage.removeItem(CONV_KEY); } catch (e) {}
+    bodyEl.innerHTML = "";
+  }
+
   function openPanel(open) {
+    var wasOpen = panel.classList.contains("open");
     panel.classList.toggle("open", open);
     if (open && badge) { badge.remove(); badge = null; badgeCount = 0; }
+    if (!open && wasOpen && conversationId) {
+      // Closing is treated as ending the chat — the conversation itself
+      // is still saved for staff, but the visitor gets a clean start next
+      // time rather than picking back up mid-thread days later.
+      resetConversation();
+    }
     if (open && !conversationId) {
       appendMsg("system", getLang() === "en"
         ? "Hi! Ask us anything — a real person can jump in anytime."

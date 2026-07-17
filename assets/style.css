@@ -33,9 +33,11 @@
 
 /* ---------- Reset ---------- */
 *, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: hidden; max-width: 100%; }
 body {
   margin: 0;
+  overflow-x: hidden;
+  max-width: 100%;
   font-family: var(--sans);
   font-weight: 300;
   color: var(--ink);
@@ -102,7 +104,7 @@ h1, h2, h3, h4 {
   min-height: 84px; gap: 14px;
 }
 .brand { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
-.brand img { height: 150px; width: auto; }
+.brand img { height: 62px; width: auto; }
 .brand .brand-text { display: flex; flex-direction: column; line-height: 1; }
 .brand .brand-name {
   font-family: var(--serif); font-size: 1.18rem; letter-spacing: .14em;
@@ -297,6 +299,8 @@ html[lang="en"] [data-lang="en"].d-block { display: block; }
   .nav a.navlink { padding: 14px 28px; width: 100%; }
   .nav .lang-toggle { margin: 12px 28px; align-self: flex-start; }
   .nav-toggle { display: block; }
+  .brand { flex: 1; }
+  .brand .brand-text { flex: 1; align-items: center; text-align: center; }
   .grid-2, .grid-3, .pkg-grid, .contact-grid, .split { grid-template-columns: 1fr; }
   .split { gap: 32px; }
   .svc-row { grid-template-columns: 1fr; gap: 16px; padding: 34px 0; }

@@ -2116,8 +2116,25 @@
     var closeBtn=document.getElementById("lcCloseConvo");
     if(closeBtn){
       closeBtn.addEventListener("click", function(){
-        sb.from("chat_conversations").update({status:"closed"}).eq("id",chatId).then(function(res){
-          if(res.error){ alert(res.error.message); return; } loadAll();
+        closeBtn.disabled=true;
+        var transcript=msgs.map(function(msg){
+          var who = msg.sender_type==="staff" ? (msg.sender_name||t("staffMember"))
+            : msg.sender_type==="auto" ? t("liveChatAutoReply")
+            : (convo&&convo.visitor_name)||t("liveChatAnonymous");
+          return "["+fmtDate(msg.created_at)+"] "+who+": "+msg.body;
+        }).join("\n");
+        var sheetRow=[ new Date().toISOString(), (convo&&convo.visitor_name)||"", (convo&&convo.page_url)||"", transcript ];
+        sb.functions.invoke("log-deletion", { body:{ row: sheetRow } }).then(function(res){
+          if(res.error || (res.data && res.data.error)){
+            alert((LANG==="fr"?"Journalisation Google Sheet échouée, mais la conversation sera tout de même marquée fermée. Erreur : ":"Google Sheet logging failed, but the conversation will still be marked closed. Error: ")+((res.error&&(res.error.message||res.error))||(res.data&&res.data.error)));
+          }
+          sb.from("chat_conversations").update({status:"closed"}).eq("id",chatId).then(function(res2){
+            closeBtn.disabled=false;
+            if(res2.error){ alert(res2.error.message); return; } loadAll();
+          });
+        }, function(err){
+          alert((LANG==="fr"?"Journalisation échouée : ":"Logging failed: ")+err);
+          sb.from("chat_conversations").update({status:"closed"}).eq("id",chatId).then(function(){ closeBtn.disabled=false; loadAll(); });
         });
       });
     }

@@ -372,6 +372,7 @@
     send:{fr:"Envoyer",en:"Send"},
     viewConversation:{fr:"Voir la conversation",en:"View conversation"},
     noMatchingPerson:{fr:"Aucune personne trouvée avec ce nom. Vérifiez l'orthographe ou choisissez dans la liste.",en:"No matching person with that name. Check the spelling or pick from the list."},
+    resetPassword:{fr:"Réinitialiser le mot de passe",en:"Reset password"},
     liveChat:{fr:"Clavardage en direct",en:"Live Chat"},
     liveChatConversations:{fr:"Conversations",en:"Conversations"},
     liveChatKeywords:{fr:"Réponses automatiques",en:"Keyword Responses"},
@@ -1057,6 +1058,24 @@
     });
   }
 
+  // Reset a login's password (staff or family portal) — admin only, goes
+  // through the admin-reset-password Edge Function since it needs the
+  // service role key.
+  function resetPasswordFor(userId, label){
+    var newPw = prompt((LANG==="fr"
+      ? "Nouveau mot de passe pour "+(label||"cet utilisateur")+" (8 caractères minimum) :"
+      : "New password for "+(label||"this user")+" (8+ characters):"));
+    if(newPw===null) return; // cancelled
+    if(newPw.length<8){ alert(LANG==="fr"?"Le mot de passe doit contenir au moins 8 caractères.":"Password must be at least 8 characters."); return; }
+    sb.functions.invoke("admin-reset-password", { body:{ user_id:userId, new_password:newPw } }).then(function(res){
+      if(!res.data || !res.data.success){
+        alert((res.data&&res.data.error)||(LANG==="fr"?"Erreur inconnue":"Unknown error"));
+        return;
+      }
+      alert(LANG==="fr"?"Mot de passe mis à jour.":"Password updated.");
+    });
+  }
+
   function renderRoster(m, roleFilter, title){
     var rows=DATA.roster.filter(function(p){ return roleFilter? p.role===roleFilter : true; });
     var showPerm=(current==="staff"); // only on the Staff page
@@ -1088,10 +1107,11 @@
           return '<tr><td>'+esc(p.full_name||"—")+'</td><td>'+(p.email?'<a href="mailto:'+esc(p.email)+'">'+esc(p.email)+'</a>':"—")+'</td><td><span class="rolechip">'+esc(p.role)+'</span></td>'
             +permCell
             +'<td>'+acc+' '+esc(t("accepted"))+' · '+done+' '+esc(t("completed"))+'</td>'
-            +(isAdmin()&&p.id!==ME.id&&p.role!=='admin'?'<td><button class="btn btn--ghost tbtn" data-rm-staff="'+esc(p.id)+'" style="color:#a8402d">'+esc(t("remove"))+'</button></td>':(isAdmin()?'<td></td>':''))
+            +(isAdmin()&&p.id!==ME.id&&p.role!=='admin'?'<td><button class="btn btn--ghost tbtn" data-resetpw="'+esc(p.id)+'" data-resetpw-name="'+esc(p.full_name||"")+'">'+esc(t("resetPassword"))+'</button> <button class="btn btn--ghost tbtn" data-rm-staff="'+esc(p.id)+'" style="color:#a8402d">'+esc(t("remove"))+'</button></td>':(isAdmin()&&p.id!==ME.id?'<td><button class="btn btn--ghost tbtn" data-resetpw="'+esc(p.id)+'" data-resetpw-name="'+esc(p.full_name||"")+'">'+esc(t("resetPassword"))+'</button></td>':(isAdmin()?'<td></td>':'')))
             +'</tr>'; }).join('')+'</tbody></table>'
        : '<div class="empty">'+esc(t("nobody"))+'<br><span style="font-size:.85rem">'+esc(t("addAccountsHint"))+'</span></div>');
     document.querySelectorAll("[data-rm-staff]").forEach(function(b){ b.addEventListener("click", function(){ var id=b.getAttribute("data-rm-staff"); var row=DATA.roster.filter(function(x){return String(x.id)===String(id);})[0]; removeStaffFully(id, row?row.full_name:""); }); });
+    document.querySelectorAll("[data-resetpw]").forEach(function(b){ b.addEventListener("click", function(){ resetPasswordFor(b.getAttribute("data-resetpw"), b.getAttribute("data-resetpw-name")); }); });
     document.querySelectorAll("[data-perm]").forEach(function(cb){ cb.addEventListener("change", function(){ var id=cb.getAttribute("data-perm-id"); var field=cb.getAttribute("data-perm"); var patch={}; patch[field]=cb.checked; sb.from("profiles").update(patch).eq("id",id).then(function(res){ if(res.error){ alert(res.error.message); cb.checked=!cb.checked; return; } var row=DATA.roster.filter(function(x){return String(x.id)===String(id);})[0]; if(row) row[field]=cb.checked; }); }); });
     // add-staff form
     if(current==="staff" && (isAdmin()||canStaff())){
@@ -2378,6 +2398,7 @@
     var h='<div class="intake-section" style="margin-top:26px"><h3>🔑 '+esc(t("portalAccess"))+'</h3>';
     if(active){
       h+='<p style="font-size:.9rem;color:var(--ink)">'+esc(t("portalActiveSince"))+' '+esc(fmtDate(f.portal_created_at))+' ('+esc(f.portal_email||"")+')</p>'
+        +(isAdmin()?'<button class="btn btn--ghost tbtn" id="portalResetPw">'+esc(t("resetPassword"))+'</button> ':'')
         +'<button class="btn btn--ghost tbtn" id="portalRevoke" style="color:#a8402d">'+esc(t("portalRevoke"))+'</button>';
     } else {
       h+='<p style="font-size:.9rem;color:var(--ink-soft)">'+esc(t("portalNotSignedUp"))+'</p>';
@@ -2387,16 +2408,23 @@
   }
   function wirePortalAccess(f){
     var btn=document.getElementById("portalRevoke");
-    if(!btn) return;
-    btn.addEventListener("click", function(){
-      if(!confirm(t("portalRevokeConfirm"))) return;
-      btn.disabled=true;
-      sb.functions.invoke("portal-revoke", { body:{ coordination_id: f.id } }).then(function(res){
-        btn.disabled=false;
-        if(!res.data || !res.data.success){ alert((res.data&&res.data.error)||"Error"); return; }
-        loadAll();
+    if(btn){
+      btn.addEventListener("click", function(){
+        if(!confirm(t("portalRevokeConfirm"))) return;
+        btn.disabled=true;
+        sb.functions.invoke("portal-revoke", { body:{ coordination_id: f.id } }).then(function(res){
+          btn.disabled=false;
+          if(!res.data || !res.data.success){ alert((res.data&&res.data.error)||"Error"); return; }
+          loadAll();
+        });
       });
-    });
+    }
+    var resetBtn=document.getElementById("portalResetPw");
+    if(resetBtn){
+      resetBtn.addEventListener("click", function(){
+        resetPasswordFor(f.portal_user_id, f.family_name);
+      });
+    }
   }
 
   // ---- Timeline panel ----

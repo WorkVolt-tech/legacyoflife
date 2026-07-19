@@ -383,7 +383,8 @@
     liveChatAnonymous:{fr:"Visiteur anonyme",en:"Anonymous visitor"},
     liveChatBack:{fr:"Retour aux conversations",en:"Back to conversations"},
     liveChatAutoReply:{fr:"Réponse automatique",en:"Auto-reply"},
-    liveChatMarkClosed:{fr:"Marquer comme fermé",en:"Mark as closed"},
+    liveChatMarkClosed:{fr:"Archiver dans Google Sheet et supprimer",en:"Archive to Google Sheet & delete"},
+    liveChatArchiveConfirm:{fr:"Cette conversation sera enregistrée dans Google Sheet, puis supprimée définitivement de Supabase. Continuer ?",en:"This conversation will be saved to Google Sheet, then permanently deleted from Supabase. Continue?"},
     liveChatKeywordsDesc:{fr:"Lorsqu'un message d'un visiteur contient un de ces mots-clés, une réponse automatique est envoyée instantanément — le personnel peut tout de même répondre à tout moment.",en:"When a visitor's message contains one of these keywords, an instant automatic reply is sent — staff can still jump in and reply anytime."},
     liveChatKeywordsPlaceholder:{fr:"mots-clés séparés par des virgules",en:"keywords separated by commas"},
     liveChatActive:{fr:"Actif",en:"Active"},
@@ -2116,6 +2117,7 @@
     var closeBtn=document.getElementById("lcCloseConvo");
     if(closeBtn){
       closeBtn.addEventListener("click", function(){
+        if(!confirm(t("liveChatArchiveConfirm"))) return;
         closeBtn.disabled=true;
         var transcript=msgs.map(function(msg){
           var who = msg.sender_type==="staff" ? (msg.sender_name||t("staffMember"))
@@ -2126,15 +2128,25 @@
         var sheetRow=[ new Date().toISOString(), (convo&&convo.visitor_name)||"", (convo&&convo.page_url)||"", transcript ];
         sb.functions.invoke("log-deletion", { body:{ row: sheetRow } }).then(function(res){
           if(res.error || (res.data && res.data.error)){
-            alert((LANG==="fr"?"Journalisation Google Sheet échouée, mais la conversation sera tout de même marquée fermée. Erreur : ":"Google Sheet logging failed, but the conversation will still be marked closed. Error: ")+((res.error&&(res.error.message||res.error))||(res.data&&res.data.error)));
-          }
-          sb.from("chat_conversations").update({status:"closed"}).eq("id",chatId).then(function(res2){
+            // Don't delete anything if we couldn't confirm it's safely
+            // logged first — losing the only copy of a conversation
+            // because the Sheet call failed would be worse than leaving
+            // it sitting here a bit longer.
             closeBtn.disabled=false;
-            if(res2.error){ alert(res2.error.message); return; } loadAll();
+            alert((LANG==="fr"?"Journalisation Google Sheet échouée — la conversation n'a PAS été supprimée, pour éviter toute perte de données. Réessayez. Erreur : ":"Google Sheet logging failed — the conversation was NOT deleted, to avoid losing data. Please try again. Error: ")+((res.error&&(res.error.message||res.error))||(res.data&&res.data.error)));
+            return;
+          }
+          // Logged successfully — now safe to remove from Supabase.
+          // Deleting the conversation cascades to delete its messages too.
+          sb.from("chat_conversations").delete().eq("id",chatId).then(function(res2){
+            closeBtn.disabled=false;
+            if(res2.error){ alert(res2.error.message); return; }
+            openChatId=null;
+            loadAll();
           });
         }, function(err){
-          alert((LANG==="fr"?"Journalisation échouée : ":"Logging failed: ")+err);
-          sb.from("chat_conversations").update({status:"closed"}).eq("id",chatId).then(function(){ closeBtn.disabled=false; loadAll(); });
+          closeBtn.disabled=false;
+          alert((LANG==="fr"?"Journalisation échouée — la conversation n'a PAS été supprimée : ":"Logging failed — the conversation was NOT deleted: ")+err);
         });
       });
     }

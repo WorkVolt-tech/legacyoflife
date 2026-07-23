@@ -99,9 +99,9 @@ h1, h2, h3, h4 {
 }
 .site-header .wrap {
   display: flex; align-items: center; justify-content: space-between;
-  min-height: 84px; gap: 14px; position: relative;
+  min-height: 84px; gap: 14px; position: relative; padding-left: 0;
 }
-.brand { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+.brand { display: flex; align-items: center; gap: 14px; flex-shrink: 0; margin-left: 0; }
 .brand img { height: 200px; width: auto; }
 .brand .brand-text { display: flex; flex-direction: column; line-height: 1; }
 .brand .brand-name {
@@ -113,10 +113,7 @@ h1, h2, h3, h4 {
   text-transform: uppercase; color: var(--gold-deep); margin-top: 4px;
 }
 
-.nav {
-  display: flex; align-items: center; justify-content: center; gap: 18px;
-  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-}
+.nav { display: flex; align-items: center; justify-content: center; flex: 1; gap: 18px; }
 .nav a.navlink {
   font-family: var(--sans); font-weight: 400; font-size: .74rem;
   letter-spacing: .07em; text-transform: uppercase; color: var(--ink-soft);

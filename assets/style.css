@@ -107,7 +107,7 @@ h1, h2, h3, h4 {
 
 .nav-center-group {
   display: flex; align-items: center; gap: 18px;
-  position: absolute; left: calc(50% - 55px); top: 50%; transform: translate(-50%, -50%);
+  position: absolute; left: calc(50% - 90px); top: 50%; transform: translate(-50%, -50%);
 }
 .nav { display: flex; align-items: center; gap: 18px; }
 .nav a.navlink {
@@ -260,6 +260,16 @@ form textarea { min-height: 130px; resize: vertical; }
 
 /* Honeypot — visually hidden but present for bots */
 .hp-field { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+/* Privacy consent checkbox on public forms */
+.consent-check {
+  display: flex; align-items: flex-start; gap: 10px; margin: 4px 0 22px;
+  font-size: .88rem; color: var(--ink-soft); cursor: pointer; line-height: 1.5;
+}
+.consent-check input[type="checkbox"] { margin-top: 4px; flex-shrink: 0; width: 16px; height: 16px; accent-color: var(--gold); cursor: pointer; }
+.consent-check a { text-decoration: underline; }
+.consent-check.invalid { color: #a8402d; }
+.consent-check.invalid input[type="checkbox"] { outline: 2px solid #a8402d; outline-offset: 2px; }
 
 /* Inline field validation */
 .field-error {

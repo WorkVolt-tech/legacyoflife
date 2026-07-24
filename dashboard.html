@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style.css?v=3">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" href="assets/favicon-32x32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="assets/favicon-16x16.png" sizes="16x16" type="image/png">
@@ -579,12 +579,14 @@
     return tag==="input" || tag==="textarea" || tag==="select";
   }
   function scheduleReload(){
-    // debounce bursts of changes; don't interrupt someone mid-typing
+    // debounce bursts of changes into one reload; the actual "don't lose
+    // what someone's typing" protection now lives in _doLoad's re-render
+    // (it preserves focus/value/cursor position), so this no longer needs
+    // to defer indefinitely just because focus happens to be in an input —
+    // that was silently blocking live updates for as long as someone's
+    // cursor sat in a reply box, which is most of the time while chatting.
     if(_rtTimer) clearTimeout(_rtTimer);
-    _rtTimer=setTimeout(function reload(){
-      if(isEditing()){ _rtTimer=setTimeout(reload, 4000); return; } // wait until they finish
-      loadAllQuiet();
-    }, 1200);
+    _rtTimer=setTimeout(function(){ loadAllQuiet(); }, 1200);
   }
   function startRealtime(){
     if(!sb.channel){ return; } // older SDKs: silently skip

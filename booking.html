@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style.css?v=3">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" href="assets/favicon-32x32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="assets/favicon-16x16.png" sizes="16x16" type="image/png">
@@ -52,8 +52,9 @@
 <header class="site-header">
   <div class="wrap">
     <button class="nav-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
-    <nav class="nav">
+    <div class="nav-center-group">
       <a class="nav-logo-link" href="index.html"><img class="nav-logo" src="assets/crest-dark.webp" alt="Héritage de Vie"></a>
+      <nav class="nav">
       <a class="navlink" href="index.html"><span data-lang="fr">Accueil</span><span data-lang="en">Home</span></a>
       <a class="navlink" href="about.html"><span data-lang="fr">À propos</span><span data-lang="en">About</span></a>
       <a class="navlink" href="story.html"><span data-lang="fr">Notre histoire</span><span data-lang="en">Our Story</span></a>
@@ -62,11 +63,12 @@
       <a class="navlink" href="faq.html"><span data-lang="fr">FAQ</span><span data-lang="en">FAQ</span></a>
       <a class="navlink" href="resources.html"><span data-lang="fr">Ressources</span><span data-lang="en">Resources</span></a>
       <a class="navlink" href="contact.html"><span data-lang="fr">Contact</span><span data-lang="en">Contact</span></a>
-      <div class="lang-toggle">
+      </nav>
+    </div>
+          <div class="lang-toggle">
         <button data-set-lang="fr">FR</button>
         <button data-set-lang="en">EN</button>
       </div>
-    </nav>
   </div>
 </header>
 

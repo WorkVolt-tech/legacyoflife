@@ -103,11 +103,11 @@ h1, h2, h3, h4 {
   position: relative;
 }
 .nav-logo-link { display: flex; align-items: center; flex-shrink: 0; }
-.nav-logo { height: 100px; width: auto; }
+.nav-logo { height: 90px; width: auto; }
 
 .nav-center-group {
   display: flex; align-items: center; gap: 18px;
-  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  position: absolute; left: calc(50% - 55px); top: 50%; transform: translate(-50%, -50%);
 }
 .nav { display: flex; align-items: center; gap: 18px; }
 .nav a.navlink {

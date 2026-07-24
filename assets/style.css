@@ -102,8 +102,7 @@ h1, h2, h3, h4 {
   gap: 28px; min-height: 84px; padding-top: 18px; padding-bottom: 18px;
   position: relative;
 }
-.brand { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
-.brand .brand-text { display: none; }
+.brand { display: none; }
 .brand img { height: 200px; width: auto; }
 .brand .brand-text { display: flex; flex-direction: column; line-height: 1; }
 .brand .brand-name {

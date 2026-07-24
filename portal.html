@@ -22,7 +22,7 @@
   .pf-tabs button.active { background:var(--ink); color:#fff; border-color:var(--ink); }
   .pf-field { margin-bottom:16px; }
   .pf-field label { display:block; font-size:.74rem; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:6px; }
-  .pf-field input { width:100%; padding:11px 13px; border:1px solid var(--line); border-radius:6px; font-family:var(--sans); font-size:.95rem; }
+  .pf-field input, .pf-field select { width:100%; padding:11px 13px; border:1px solid var(--line); border-radius:6px; font-family:var(--sans); font-size:.95rem; background:#fff; }
   .pf-err { color:#a8402d; font-size:.85rem; margin-top:10px; display:none; }
   .pf-err.show { display:block; }
   .pf-hint { font-size:.85rem; color:var(--ink-soft); margin-bottom:20px; }
@@ -143,6 +143,38 @@
       <div class="pf-section">
         <h2><span data-lang="fr">Documents</span><span data-lang="en">Documents</span></h2>
         <div id="pfDocuments"></div>
+      </div>
+
+      <div class="pf-section">
+        <h2><span data-lang="fr">Téléverser un document</span><span data-lang="en">Upload a document</span></h2>
+        <div id="pfUploadsList" style="margin-bottom:18px"></div>
+        <div style="border:1px solid var(--line);border-radius:8px;padding:20px;background:#fff">
+          <div class="pf-field">
+            <label><span data-lang="fr">Catégorie</span><span data-lang="en">Category</span></label>
+            <select id="pfUploadKind">
+              <option value="photo" data-lang="fr">Photo</option>
+              <option value="obituary" data-lang="fr">Nécrologie</option>
+              <option value="other" data-lang="fr">Autre</option>
+              <option value="photo" data-lang="en">Photo</option>
+              <option value="obituary" data-lang="en">Obituary</option>
+              <option value="other" data-lang="en">Other</option>
+            </select>
+          </div>
+          <div class="pf-field">
+            <label><span data-lang="fr">Fichier</span><span data-lang="en">File</span></label>
+            <input type="file" id="pfUploadFile" accept="image/jpeg,image/png,image/webp,image/heic,application/pdf,.doc,.docx">
+          </div>
+          <div class="pf-field">
+            <label><span data-lang="fr">Description (optionnel)</span><span data-lang="en">Description (optional)</span></label>
+            <input type="text" id="pfUploadDesc" placeholder="">
+          </div>
+          <p style="font-size:.82rem;color:var(--ink-soft);margin:0 0 14px">
+            <span data-lang="fr">Formats acceptés : JPG, PNG, WEBP, HEIC, PDF, DOC/DOCX — 20 Mo maximum.</span>
+            <span data-lang="en">Accepted formats: JPG, PNG, WEBP, HEIC, PDF, DOC/DOCX — 20MB max.</span>
+          </p>
+          <button class="btn btn--solid" id="pfUploadBtn"><span data-lang="fr">Téléverser</span><span data-lang="en">Upload</span></button>
+          <p id="pfUploadMsg" style="display:none;margin-top:12px;font-size:.9rem"></p>
+        </div>
       </div>
 
       <div class="pf-section">
@@ -286,11 +318,13 @@
         sb.from("family_timeline_events").select("*").eq("coordination_id", file.id).order("position", {ascending:true}),
         sb.from("family_documents").select("*").eq("coordination_id", file.id).order("created_at", {ascending:false}),
         sb.from("invoices").select("*").eq("coordination_id", file.id).neq("status","draft").order("created_at",{ascending:false}),
-        sb.from("family_messages").select("*").eq("coordination_id", file.id).order("created_at",{ascending:true})
+        sb.from("family_messages").select("*").eq("coordination_id", file.id).order("created_at",{ascending:true}),
+        sb.from("family_uploads").select("*").eq("coordination_id", file.id).order("created_at",{ascending:false})
       ]).then(function(results){
         renderTimeline(results[0].data || []);
         renderDocuments(results[1].data || []);
         renderMessages(results[3].data || []);
+        renderUploads(results[4].data || []);
         var invoices = results[2].data || [];
         if (invoices.length){
           var inv = invoices[0];
@@ -365,6 +399,105 @@
       return '<div class="doc-item"><span>📎 '+esc(label)+'</span><a class="btn btn--ghost" href="'+esc(d.drive_url||"#")+'" target="_blank" rel="noopener">'+(LANG==="fr"?"Voir":"View")+'</a></div>';
     }).join('');
   }
+
+  var KIND_LABELS = {
+    photo: {fr:"Photo", en:"Photo"},
+    obituary: {fr:"Nécrologie", en:"Obituary"},
+    other: {fr:"Autre", en:"Other"}
+  };
+  function renderUploads(uploads){
+    var el = document.getElementById("pfUploadsList");
+    if (!uploads.length){ el.innerHTML = '<p class="pf-empty">'+(LANG==="fr"?"Aucun fichier téléversé pour le moment.":"No files uploaded yet.")+'</p>'; return; }
+    el.innerHTML = uploads.map(function(u){
+      var kindLabel = (KIND_LABELS[u.kind]||KIND_LABELS.other)[LANG] || u.kind;
+      var statusLabel = u.review_status === "reviewed"
+        ? (LANG==="fr" ? "Consulté par l'équipe" : "Reviewed by our team")
+        : (LANG==="fr" ? "En attente de révision" : "Pending review");
+      return '<div class="doc-item">'
+        + '<span>📎 '+esc(u.file_name)+' <span style="color:var(--ink-soft);font-size:.85rem">— '+esc(kindLabel)+(u.description?' · '+esc(u.description):'')+' · '+esc(statusLabel)+'</span></span>'
+        + '<span style="display:flex;gap:6px">'
+        + '<button class="btn btn--ghost" data-view-upload="'+esc(u.id)+'" data-path="'+esc(u.file_path)+'">'+(LANG==="fr"?"Voir":"View")+'</button>'
+        + '<button class="btn btn--ghost" data-delete-upload="'+esc(u.id)+'" style="color:#a8402d">'+(LANG==="fr"?"Supprimer":"Delete")+'</button>'
+        + '</span></div>';
+    }).join('');
+
+    el.querySelectorAll('[data-view-upload]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var path = btn.getAttribute('data-path');
+        sb.storage.from('family-uploads').createSignedUrl(path, 300).then(function(res){
+          if (res.error || !res.data){ alert(LANG==="fr"?"Impossible d'ouvrir ce fichier.":"Couldn't open this file."); return; }
+          window.open(res.data.signedUrl, '_blank');
+        });
+      });
+    });
+    el.querySelectorAll('[data-delete-upload]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if (!confirm(LANG==="fr" ? "Supprimer ce fichier ?" : "Delete this file?")) return;
+        var id = btn.getAttribute('data-delete-upload');
+        var row = uploads.filter(function(u){ return String(u.id)===String(id); })[0];
+        if (!row) return;
+        sb.storage.from('family-uploads').remove([row.file_path]).then(function(){
+          sb.from('family_uploads').delete().eq('id', id).then(function(){ loadPortalData(); });
+        });
+      });
+    });
+  }
+
+  document.getElementById('pfUploadBtn').addEventListener('click', function(){
+    var msgEl = document.getElementById('pfUploadMsg');
+    msgEl.style.display = 'none';
+    if (!currentFile){ return; }
+    var fileInput = document.getElementById('pfUploadFile');
+    var file = fileInput.files && fileInput.files[0];
+    if (!file){
+      msgEl.textContent = LANG==="fr" ? "Veuillez choisir un fichier." : "Please choose a file.";
+      msgEl.style.color = '#a8402d'; msgEl.style.display = 'block';
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024){
+      msgEl.textContent = LANG==="fr" ? "Le fichier dépasse la limite de 20 Mo." : "File exceeds the 20MB limit.";
+      msgEl.style.color = '#a8402d'; msgEl.style.display = 'block';
+      return;
+    }
+    var kind = document.getElementById('pfUploadKind').value;
+    var description = document.getElementById('pfUploadDesc').value.trim();
+    var btn = document.getElementById('pfUploadBtn');
+    btn.disabled = true;
+
+    // Path prefix must be the coordination_id — that's what the storage
+    // policies check to scope access to this family's own folder only.
+    var safeName = file.name.replace(/[^A-Za-z0-9._-]/g, '_');
+    var path = currentFile.id + '/' + Date.now() + '_' + safeName;
+
+    sb.storage.from('family-uploads').upload(path, file, { upsert: false }).then(function(uploadRes){
+      if (uploadRes.error){
+        btn.disabled = false;
+        msgEl.textContent = (LANG==="fr" ? "Erreur : " : "Error: ") + uploadRes.error.message;
+        msgEl.style.color = '#a8402d'; msgEl.style.display = 'block';
+        return;
+      }
+      sb.from('family_uploads').insert({
+        coordination_id: currentFile.id,
+        file_path: path,
+        file_name: file.name,
+        kind: kind,
+        description: description || null,
+        uploaded_by_role: 'family'
+      }).then(function(insertRes){
+        btn.disabled = false;
+        if (insertRes.error){
+          msgEl.textContent = (LANG==="fr" ? "Erreur : " : "Error: ") + insertRes.error.message;
+          msgEl.style.color = '#a8402d'; msgEl.style.display = 'block';
+          return;
+        }
+        fileInput.value = '';
+        document.getElementById('pfUploadDesc').value = '';
+        msgEl.textContent = LANG==="fr" ? "Téléversé avec succès." : "Uploaded successfully.";
+        msgEl.style.color = '#3d7a4d'; msgEl.style.display = 'block';
+        loadPortalData();
+      });
+    });
+  });
 
   function renderInvoice(inv, items, payments){
     var el = document.getElementById("pfInvoice");

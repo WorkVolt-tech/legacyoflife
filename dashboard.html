@@ -391,6 +391,14 @@
     liveChatAddKeyword:{fr:"Ajouter une réponse automatique",en:"Add keyword response"},
     liveChatDeleteKeywordConfirm:{fr:"Supprimer cette réponse automatique ?",en:"Delete this keyword response?"},
     liveChatKeywordRequired:{fr:"Veuillez entrer au moins un mot-clé et une réponse en français.",en:"Please enter at least one keyword and a French response."},
+    familyUploads:{fr:"Fichiers téléversés par la famille",en:"Family-uploaded files"},
+    noUploadsYet:{fr:"Aucun fichier téléversé pour le moment.",en:"No files uploaded yet."},
+    reviewed:{fr:"Consulté",en:"Reviewed"},
+    pendingReview:{fr:"En attente",en:"Pending review"},
+    markReviewed:{fr:"Marquer consulté",en:"Mark reviewed"},
+    markPending:{fr:"Marquer en attente",en:"Mark pending"},
+    view:{fr:"Voir",en:"View"},
+    deleteUploadConfirm:{fr:"Supprimer ce fichier définitivement ?",en:"Permanently delete this file?"},
     col_todo:{fr:"À faire",en:"To do"},
     col_doing:{fr:"En cours",en:"In progress"},
     col_done:{fr:"Terminé",en:"Done"},
@@ -507,7 +515,7 @@
   var loginView=document.getElementById("loginView");
   var hubView=document.getElementById("hubView");
   var ME={id:null,role:"none",name:""};
-  var DATA={inquiries:[],jobs:[],roster:[],applications:[],checklist:[],archive:[],coordination:[],notes:[],reviews:[],templates:[],invoices:[],invoiceItems:[],payments:[],expenses:[],documents:[],board:[],bookingSlots:[],bookingRequests:[],timelineEvents:[],messages:[],chatConversations:[],chatMessages:[],chatKeywords:[]};
+  var DATA={inquiries:[],jobs:[],roster:[],applications:[],checklist:[],archive:[],coordination:[],notes:[],reviews:[],templates:[],invoices:[],invoiceItems:[],payments:[],expenses:[],documents:[],board:[],bookingSlots:[],bookingRequests:[],timelineEvents:[],messages:[],chatConversations:[],chatMessages:[],chatKeywords:[],familyUploads:[]};
   var openInvoiceId=null;
   var financeTab="invoices";
   var finPeriod="month"; var finFrom=null, finTo=null;
@@ -672,6 +680,7 @@
     q.push((isAdmin()||isStaff())? sb.from("chat_conversations").select("*").order("last_message_at",{ascending:false}) : Promise.resolve({data:[]}));
     q.push((isAdmin()||isStaff())? sb.from("chat_messages").select("*").order("created_at",{ascending:true}) : Promise.resolve({data:[]}));
     q.push((isAdmin()||isStaff())? sb.from("chat_keyword_responses").select("*").order("position",{ascending:true}) : Promise.resolve({data:[]}));
+    q.push((isAdmin()||isStaff())? sb.from("family_uploads").select("*").order("created_at",{ascending:false}) : Promise.resolve({data:[]}));
     Promise.all(q).then(function(r){
       DATA.inquiries=(r[0]&&r[0].data)||[]; DATA.jobs=(r[1]&&r[1].data)||[];
       DATA.roster=(r[2]&&r[2].data)||[]; DATA.applications=(r[3]&&r[3].data)||[];
@@ -685,6 +694,7 @@
       DATA.timelineEvents=(r[18]&&r[18].data)||[];
       DATA.messages=(r[19]&&r[19].data)||[];
       DATA.chatConversations=(r[20]&&r[20].data)||[]; DATA.chatMessages=(r[21]&&r[21].data)||[]; DATA.chatKeywords=(r[22]&&r[22].data)||[];
+      DATA.familyUploads=(r[23]&&r[23].data)||[];
       if(quiet){
         var y=window.scrollY;
         // Preserve whatever the person is mid-typing (e.g. a draft reply,
@@ -2328,6 +2338,8 @@
     html+= messagesThreadHTML(fileId);
     // ---- Documents upload panel ----
     html+= documentsPanelHTML(fileId, editable);
+    // ---- Family-uploaded files panel ----
+    html+= familyUploadsPanelHTML(fileId);
     m.innerHTML=html;
 
     document.getElementById("backFiles").addEventListener("click",function(){ openFileId=null; render(); });
@@ -2341,6 +2353,7 @@
     wireAssignedCoordinator(f);
     wireTimeline(fileId, editable);
     wireMessagesThread(fileId);
+    wireFamilyUploads(fileId);
     wireNoteThreads();
     markMessagesRead(fileId);
   }
@@ -2456,6 +2469,69 @@
         resetPasswordFor(f.portal_user_id, f.family_name);
       });
     }
+  }
+
+  // ---- Family-uploaded files panel (staff view) ----
+  var FU_KIND_LABEL = { photo:{fr:"Photo",en:"Photo"}, obituary:{fr:"Nécrologie",en:"Obituary"}, other:{fr:"Autre",en:"Other"} };
+  function familyUploadsPanelHTML(fileId){
+    var uploads=(DATA.familyUploads||[]).filter(function(x){ return String(x.coordination_id)===String(fileId); });
+    var h='<div class="intake-section" style="margin-top:26px"><h3>📎 '+esc(t("familyUploads"))+'</h3>';
+    if(!uploads.length){
+      h+='<p style="font-size:.9rem;color:var(--ink-soft)">'+esc(t("noUploadsYet"))+'</p>';
+    } else {
+      h+='<div style="display:flex;flex-direction:column;gap:10px">';
+      uploads.forEach(function(u){
+        var kindLabel=(FU_KIND_LABEL[u.kind]||FU_KIND_LABEL.other)[LANG]||u.kind;
+        var reviewed = u.review_status==="reviewed";
+        h+='<div style="border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#fff">'
+          +'<div><div style="font-weight:600;font-size:.92rem">'+esc(u.file_name)+'</div>'
+          +'<div style="font-size:.8rem;color:var(--ink-soft)">'+esc(kindLabel)+(u.description?' · '+esc(u.description):'')+' · '+esc(fmtDate(u.created_at))+'</div></div>'
+          +'<div style="display:flex;gap:6px;align-items:center">'
+          +'<span style="font-size:.72rem;padding:3px 9px;border-radius:20px;background:'+(reviewed?'#eef3ee':'#fbeee9')+';color:'+(reviewed?'#3d7a4d':'#a8602d')+'">'+esc(reviewed?t("reviewed"):t("pendingReview"))+'</span>'
+          +'<button class="btn btn--ghost tbtn" data-fu-toggle="'+esc(u.id)+'" data-fu-status="'+esc(u.review_status)+'">'+esc(reviewed?t("markPending"):t("markReviewed"))+'</button>'
+          +'<button class="btn btn--ghost tbtn" data-fu-view="'+esc(u.id)+'" data-fu-path="'+esc(u.file_path)+'">'+esc(t("view"))+'</button>'
+          +'<button class="btn btn--ghost tbtn" data-fu-delete="'+esc(u.id)+'" data-fu-path="'+esc(u.file_path)+'" style="color:#a8402d">'+esc(t("del"))+'</button>'
+          +'</div></div>';
+      });
+      h+='</div>';
+    }
+    h+='</div>';
+    return h;
+  }
+  function wireFamilyUploads(fileId){
+    document.querySelectorAll('[data-fu-view]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var path=btn.getAttribute('data-fu-path');
+        sb.storage.from('family-uploads').createSignedUrl(path, 300).then(function(res){
+          if(res.error || !res.data){ alert(res.error?res.error.message:'Error'); return; }
+          window.open(res.data.signedUrl, '_blank');
+        });
+      });
+    });
+    document.querySelectorAll('[data-fu-toggle]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id=btn.getAttribute('data-fu-toggle');
+        var current=btn.getAttribute('data-fu-status');
+        var next = current==="reviewed" ? "pending" : "reviewed";
+        sb.from('family_uploads').update({review_status:next}).eq('id',id).then(function(res){
+          if(res.error){ alert(res.error.message); return; }
+          loadAll();
+        });
+      });
+    });
+    document.querySelectorAll('[data-fu-delete]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if(!confirm(t("deleteUploadConfirm"))) return;
+        var id=btn.getAttribute('data-fu-delete');
+        var path=btn.getAttribute('data-fu-path');
+        sb.storage.from('family-uploads').remove([path]).then(function(){
+          sb.from('family_uploads').delete().eq('id',id).then(function(res){
+            if(res.error){ alert(res.error.message); return; }
+            loadAll();
+          });
+        });
+      });
+    });
   }
 
   // ---- Timeline panel ----

@@ -103,6 +103,7 @@ h1, h2, h3, h4 {
   position: relative;
 }
 .brand { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+.brand .brand-text { display: none; }
 .brand img { height: 200px; width: auto; }
 .brand .brand-text { display: flex; flex-direction: column; line-height: 1; }
 .brand .brand-name {
@@ -114,7 +115,10 @@ h1, h2, h3, h4 {
   text-transform: uppercase; color: var(--gold-deep); margin-top: 4px;
 }
 
-.nav { display: flex; align-items: center; justify-content: flex-start; flex: 1; gap: 18px; }
+.nav {
+  display: flex; align-items: center; justify-content: center; gap: 18px;
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+}
 .nav a.navlink {
   font-family: var(--sans); font-weight: 400; font-size: .74rem;
   letter-spacing: .07em; text-transform: uppercase; color: var(--ink-soft);
@@ -306,7 +310,7 @@ html[lang="en"] [data-lang="en"].d-block { display: block; }
     flex-shrink: 1; min-width: 0; gap: 14px;
   }
   .brand img { height: 100px; }
-  .brand .brand-text { gap: 5px; }
+  .brand .brand-text { display: flex; gap: 5px; }
   .brand .brand-name { font-size: .98rem; letter-spacing: .1em; }
   .brand .brand-sub { font-size: .56rem; letter-spacing: .18em; }
   .grid-2, .grid-3, .pkg-grid, .contact-grid, .split { grid-template-columns: 1fr; }

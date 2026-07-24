@@ -105,10 +105,11 @@ h1, h2, h3, h4 {
 .nav-logo-link { display: flex; align-items: center; flex-shrink: 0; }
 .nav-logo { height: 100px; width: auto; }
 
-.nav {
-  display: flex; align-items: center; justify-content: center; gap: 18px;
+.nav-center-group {
+  display: flex; align-items: center; gap: 18px;
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
 }
+.nav { display: flex; align-items: center; gap: 18px; }
 .nav a.navlink {
   font-family: var(--sans); font-weight: 400; font-size: .74rem;
   letter-spacing: .07em; text-transform: uppercase; color: var(--ink-soft);
@@ -128,7 +129,7 @@ h1, h2, h3, h4 {
 
 .lang-toggle {
   display: flex; align-items: center; border: 1px solid var(--line);
-  border-radius: 30px; overflow: hidden; flex-shrink: 0;
+  border-radius: 30px; overflow: hidden; flex-shrink: 0; margin-left: auto;
 }
 .lang-toggle button {
   font-family: var(--sans); font-size: .72rem; letter-spacing: .1em;
@@ -300,13 +301,22 @@ html[lang="en"] [data-lang="en"].d-block { display: block; }
          padding: 12px 0; transform: translateY(-130%); transition: transform .3s ease; }
   .nav.open { transform: translateY(0); }
   .nav a.navlink { padding: 14px 28px; width: 100%; }
-  .nav .lang-toggle { margin: 12px 28px; align-self: flex-start; }
   .nav-toggle { display: block; }
   .site-header .wrap { position: relative; justify-content: center; }
   .nav-toggle { position: absolute; left: 28px; top: 50%; transform: translateY(-50%); }
   .site-header .wrap { min-height: 0; padding-top: 22px; padding-bottom: 22px; }
-  .nav-logo-link { padding: 14px 28px; justify-content: center; }
+
+  /* The logo+links wrapper stops being absolutely centered on the page —
+     on mobile it just needs to show the logo (the links portion becomes
+     the fixed dropdown above and visually leaves this flow entirely). */
+  .nav-center-group { position: static; transform: none; flex: 1; justify-content: center; }
+  .nav-logo-link { padding: 0; }
   .nav-logo { height: 70px; }
+
+  /* Always visible, pinned to the true right edge - independent of
+     whether the link dropdown is open or closed. */
+  .lang-toggle { position: absolute; right: 28px; top: 50%; transform: translateY(-50%); margin-left: 0; }
+
   .grid-2, .grid-3, .pkg-grid, .contact-grid, .split { grid-template-columns: 1fr; }
   .split { gap: 32px; }
   .svc-row { grid-template-columns: 1fr; gap: 16px; padding: 34px 0; }

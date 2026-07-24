@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/style.css?v=4">
+<link rel="stylesheet" href="assets/style.css?v=5">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" href="assets/favicon-32x32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="assets/favicon-16x16.png" sizes="16x16" type="image/png">
@@ -76,6 +76,16 @@
         <label>Website (leave blank)</label>
         <input type="text" name="rwebsite" tabindex="-1" autocomplete="off">
       </div>
+      <label class="consent-check">
+        <input type="checkbox" name="rconsent" required>
+        <span data-lang="fr">J'ai lu la <a href="privacy.html" target="_blank">Politique de confidentialité</a> et j'autorise Héritage de Vie à utiliser ces renseignements pour traiter mon avis.</span>
+        <span data-lang="en">I have read the <a href="privacy.html" target="_blank">Privacy Policy</a> and authorize Héritage de Vie to use this information to process my review.</span>
+      </label>
+      <label class="consent-check">
+        <input type="checkbox" name="rpublish" required>
+        <span data-lang="fr">J'autorise la publication de mon avis et du nom affiché ci-dessus.</span>
+        <span data-lang="en">I authorize the publication of my review and the display name above.</span>
+      </label>
       <button class="btn btn--solid" type="button" id="reviewSubmit"><span data-lang="fr">Envoyer mon avis</span><span data-lang="en">Submit my review</span></button>
       <p id="reviewMsg" style="display:none;margin-top:14px"></p>
     </div>

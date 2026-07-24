@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/style.css?v=4">
+<link rel="stylesheet" href="assets/style.css?v=5">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" href="assets/favicon-32x32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="assets/favicon-16x16.png" sizes="16x16" type="image/png">
@@ -125,6 +125,11 @@
           <label><span data-lang="fr">Comment pouvons-nous vous aider ?</span><span data-lang="en">How can we support you?</span></label>
           <textarea name="message"></textarea>
         </div>
+        <label class="consent-check">
+          <input type="checkbox" name="consent" required>
+          <span data-lang="fr">J'ai lu la <a href="privacy.html" target="_blank">Politique de confidentialité</a> et j'autorise Héritage de Vie à utiliser ces renseignements pour répondre à ma demande.</span>
+          <span data-lang="en">I have read the <a href="privacy.html" target="_blank">Privacy Policy</a> and authorize Héritage de Vie to use this information to respond to my request.</span>
+        </label>
         <button class="btn btn--solid" type="submit"><span data-lang="fr">Envoyer la demande</span><span data-lang="en">Send request</span></button>
         <p class="form-msg" style="display:none;margin-top:18px;color:var(--gold-deep)">
           <span data-lang="fr">Merci. Votre demande a été reçue — nous vous contacterons sous peu.</span>

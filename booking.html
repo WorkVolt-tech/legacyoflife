@@ -129,7 +129,7 @@
     <div class="bk-confirmed" id="bkConfirmed">
       <p data-lang="fr"><strong>Merci.</strong> Votre demande a été reçue — nous vous contacterons sous peu pour confirmer.</p>
       <p data-lang="en"><strong>Thank you.</strong> Your request has been received — we'll reach out shortly to confirm.</p>
-      <p id="bkRefDisplay" style="font-size:.95rem;margin-top:10px"></p>
+      <p id="bkRefDisplay" style="display:none;margin-top:16px;padding:16px 18px;background:#fff;border:2px solid var(--gold);border-radius:8px;text-align:center"></p>
     </div>
     <div class="bk-error" id="bkError">
       <p data-lang="fr">Ce moment vient d'être réservé par quelqu'un d'autre. Veuillez choisir un autre moment.</p>
@@ -384,9 +384,14 @@
         document.getElementById("bkForm").reset();
         var refEl = document.getElementById("bkRefDisplay");
         if (res.reference_code) {
+          refEl.style.display = "block";
           refEl.innerHTML = (LANG === "fr"
-            ? "Numéro de référence : <strong>" + res.reference_code + "</strong> — conservez-le pour annuler ou changer votre rendez-vous plus tard."
-            : "Reference number: <strong>" + res.reference_code + "</strong> — keep this to cancel or reschedule later.");
+            ? '<span style="display:block;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px">Votre numéro de référence</span>'
+              + '<span style="display:block;font-size:1.8rem;font-weight:600;letter-spacing:.08em;color:var(--ink)">' + res.reference_code + '</span>'
+              + '<span style="display:block;font-size:.85rem;color:var(--ink-soft);margin-top:8px">Veuillez noter ce numéro ou prendre une capture d\'écran — vous en aurez besoin pour annuler ou changer votre rendez-vous.</span>'
+            : '<span style="display:block;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px">Your reference number</span>'
+              + '<span style="display:block;font-size:1.8rem;font-weight:600;letter-spacing:.08em;color:var(--ink)">' + res.reference_code + '</span>'
+              + '<span style="display:block;font-size:.85rem;color:var(--ink-soft);margin-top:8px">Please save this number or take a screenshot — you\'ll need it to cancel or reschedule your appointment.</span>');
         }
       } else {
         document.getElementById("bkError").classList.add("show");
@@ -403,7 +408,30 @@
 
   function mgShowMsg(text, isError){
     var el = document.getElementById("mgMsg");
-    el.textContent = text; el.style.color = isError ? "#a8402d" : "#3d7a4d"; el.style.display = "block";
+    el.textContent = text;
+    el.style.color = isError ? "#a8402d" : "#3d7a4d";
+    el.style.display = "block";
+    el.style.padding = ""; el.style.background = ""; el.style.border = ""; el.style.borderRadius = ""; el.style.textAlign = "";
+  }
+
+  function mgShowRefBox(newRef){
+    var el = document.getElementById("mgMsg");
+    el.style.display = "block";
+    el.style.color = "";
+    el.style.padding = "16px 18px";
+    el.style.background = "#fff";
+    el.style.border = "2px solid var(--gold)";
+    el.style.borderRadius = "8px";
+    el.style.textAlign = "center";
+    el.innerHTML = (LANG === "fr"
+      ? '<span style="display:block;font-size:.85rem;color:#3d7a4d;margin-bottom:8px">Rendez-vous déplacé avec succès.</span>'
+        + '<span style="display:block;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px">Votre nouveau numéro de référence</span>'
+        + '<span style="display:block;font-size:1.8rem;font-weight:600;letter-spacing:.08em;color:var(--ink)">' + newRef + '</span>'
+        + '<span style="display:block;font-size:.85rem;color:var(--ink-soft);margin-top:8px">Veuillez noter ce numéro ou prendre une capture d\'écran — l\'ancien numéro n\'est plus valide.</span>'
+      : '<span style="display:block;font-size:.85rem;color:#3d7a4d;margin-bottom:8px">Appointment rescheduled successfully.</span>'
+        + '<span style="display:block;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px">Your new reference number</span>'
+        + '<span style="display:block;font-size:1.8rem;font-weight:600;letter-spacing:.08em;color:var(--ink)">' + newRef + '</span>'
+        + '<span style="display:block;font-size:.85rem;color:var(--ink-soft);margin-top:8px">Please save this number or take a screenshot — your old reference number is no longer valid.</span>');
   }
 
   document.getElementById("mgLookupBtn").addEventListener("click", function(){
@@ -502,9 +530,7 @@
           if (res && res.success){
             document.getElementById("mgResult").style.display = "none";
             mgCurrentRef = res.reference_code; // old reference is now cancelled, this is the new one
-            mgShowMsg(LANG==="fr"
-              ? "Rendez-vous déplacé avec succès. Nouveau numéro de référence : " + res.reference_code
-              : "Appointment rescheduled successfully. New reference number: " + res.reference_code, false);
+            mgShowRefBox(res.reference_code);
           } else {
             mgShowMsg(LANG==="fr" ? "Ce moment n'est plus disponible. Veuillez en choisir un autre." : "That time is no longer available. Please choose another.", true);
           }

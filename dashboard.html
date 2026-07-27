@@ -706,8 +706,40 @@
         var activeVal=(activeEl&&("value" in activeEl))?activeEl.value:null;
         var activeSelStart=activeEl?activeEl.selectionStart:null;
         var activeSelEnd=activeEl?activeEl.selectionEnd:null;
+
+        // The intake form specifically can have a dozen sections' worth of
+        // unsaved fields at once — protecting only the focused one isn't
+        // enough, since every other in-progress field would silently reset
+        // to the last-SAVED server value the moment any background update
+        // triggers a re-render. Capture everything, not just the one field
+        // with focus, so a long intake interview never loses data to an
+        // unrelated realtime event firing elsewhere in the app.
+        var intakeSnapshot=null;
+        if(current==="coordination" && openFileId){
+          intakeSnapshot={};
+          document.querySelectorAll("[data-intake]").forEach(function(el){ intakeSnapshot["intake:"+el.getAttribute("data-intake")]=el.value; });
+          document.querySelectorAll("[data-note]").forEach(function(el){ intakeSnapshot["note:"+el.getAttribute("data-note")]=el.value; });
+          document.querySelectorAll("[data-secdone]").forEach(function(el){ intakeSnapshot["secdone:"+el.getAttribute("data-secdone")]=el.checked; });
+        }
+
         buildNav(); render();
         window.scrollTo(0,y);
+
+        if(intakeSnapshot){
+          document.querySelectorAll("[data-intake]").forEach(function(el){
+            var k="intake:"+el.getAttribute("data-intake");
+            if(k in intakeSnapshot) el.value=intakeSnapshot[k];
+          });
+          document.querySelectorAll("[data-note]").forEach(function(el){
+            var k="note:"+el.getAttribute("data-note");
+            if(k in intakeSnapshot) el.value=intakeSnapshot[k];
+          });
+          document.querySelectorAll("[data-secdone]").forEach(function(el){
+            var k="secdone:"+el.getAttribute("data-secdone");
+            if(k in intakeSnapshot) el.checked=intakeSnapshot[k];
+          });
+        }
+
         if(activeId){
           var restored=document.getElementById(activeId);
           if(restored){

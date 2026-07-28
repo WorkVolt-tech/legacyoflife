@@ -27,13 +27,12 @@
   .login-lang button { background:none; border:1px solid var(--line); border-radius:20px; padding:5px 14px; margin:0 3px; cursor:pointer; font-family:var(--sans); font-size:.75rem; color:var(--ink-soft); }
   .login-lang button.active { background:var(--gold); color:#fff; border-color:var(--gold); }
 
-  .hub { display:grid; grid-template-columns:230px 1fr; min-height:100vh; }
-  .side { background:var(--dark); color:var(--cream); padding:24px 0; position:sticky; top:0; height:100vh; overflow:auto; }
-  .side .brand { display:flex; align-items:center; gap:10px; padding:0 22px 18px; border-bottom:1px solid rgba(255,255,255,.1); margin-bottom:10px; }
+  .hub { display:block; min-height:100vh; }
+  .side { background:var(--dark); color:var(--cream); position:fixed; top:0; left:0; right:0; z-index:100; }
+  .side .brand { display:flex; align-items:center; gap:10px; }
   .side .brand img { height:34px; }
   .side .brand b { font-family:var(--serif); font-size:1.05rem; }
-  .side .lang { display:flex; align-items:center; padding:0 22px 14px; }
-  .side .lang { border:0; } /* reset - the pill border below goes on an inner wrapper instead */
+  .side .lang { display:flex; align-items:center; }
   .side .lang-pill { display:flex; border:1px solid rgba(255,255,255,.25); border-radius:30px; overflow:hidden; }
   .side .lang button { flex:none; background:transparent; border:0; padding:7px 14px; cursor:pointer; font-family:var(--sans); font-size:.72rem; letter-spacing:.1em; color:rgba(247,243,236,.7); transition:all .2s; white-space:nowrap; }
   .side .lang button.active { background:var(--gold); color:#fff; }
@@ -41,18 +40,26 @@
   .side nav a:hover { background:rgba(255,255,255,.05); color:#fff; }
   .side nav a.active { background:rgba(176,141,73,.18); border-left-color:var(--gold); color:#fff; }
   .side nav a .badge { margin-left:auto; background:var(--gold); color:#fff; font-size:.7rem; border-radius:20px; padding:1px 8px; }
-  .side .signout { margin:18px 22px 0; width:calc(100% - 44px); text-align:center; background:transparent; border:1px solid var(--gold); color:var(--gold); border-radius:var(--radius); padding:10px 0; cursor:pointer; font-family:var(--sans); font-size:.8rem; letter-spacing:.12em; text-transform:uppercase; transition:all .2s; }
+  .side .signout { margin:18px 22px; width:calc(100% - 44px); text-align:center; background:transparent; border:1px solid var(--gold); color:var(--gold); border-radius:var(--radius); padding:10px 0; cursor:pointer; font-family:var(--sans); font-size:.8rem; letter-spacing:.12em; text-transform:uppercase; transition:all .2s; }
   .side .signout:hover { background:var(--gold); color:#fff; }
   .side .me { padding:14px 22px 0; font-size:.78rem; color:rgba(247,243,236,.55); }
   .side .me b { color:var(--gold); text-transform:capitalize; }
 
-  .side-top-row { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; padding:0 22px 18px; border-bottom:1px solid rgba(255,255,255,.1); margin-bottom:10px; }
-  .side-top-row .brand { padding:0; border:0; margin:0; }
-  .side-top-row .lang { flex-basis:100%; padding:14px 0 0; margin:0; }
-  .side-toggle { display:none; background:none; border:0; cursor:pointer; padding:6px; flex-shrink:0; }
+  /* The always-visible fixed bar: hamburger left, logo centered, language pill right */
+  .side-top-row { display:flex; align-items:center; justify-content:space-between; padding:14px 22px; border-bottom:1px solid rgba(255,255,255,.1); position:relative; }
+  .side-top-row .brand { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); padding:0; border:0; margin:0; }
+  .side-top-row .lang { margin-left:auto; }
+  .side-toggle { display:block; order:-1; background:none; border:0; cursor:pointer; padding:6px; flex-shrink:0; }
   .side-toggle span { display:block; width:22px; height:2px; background:var(--cream); margin:4px 0; }
 
-  .main { padding:30px 34px; }
+  /* The dropdown itself: an overlay that appears below the fixed bar and
+     scrolls independently — never pushes page content around, whether
+     it's open or closed, on any screen size. */
+  .side-collapsible { display:none; position:fixed; top:var(--dashbar-h,70px); left:0; right:0; bottom:0; z-index:99; background:var(--dark); overflow-y:auto; padding-bottom:20px; }
+  .side-collapsible.open { display:block; }
+
+  /* Content sits below the fixed bar on every page, every screen size. */
+  .main { padding:30px 34px; margin-top:var(--dashbar-h,70px); }
   .main h2.module-title { font-size:1.7rem; margin:0 0 22px; }
   .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; }
   .scard { background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:22px 24px; }
@@ -126,13 +133,7 @@
   .clist-toggle { background:none; border:none; color:var(--gold-deep); cursor:pointer; font-family:var(--sans); font-size:.82rem; padding:4px 0; }
   .hide { display:none!important; }
   @media (max-width:820px){
-    .hub{grid-template-columns:1fr;} .side{position:relative;height:auto;padding:0;} .jf-grid{grid-template-columns:1fr;}
-    .side-toggle { display:block; order:-1; }
-    .side-top-row { flex-wrap:nowrap; padding-top:16px; padding-bottom:16px; position:relative; }
-    .side-top-row .brand { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); }
-    .side-top-row .lang { flex-basis:auto; padding:0; margin-left:auto; }
-    .side-collapsible { display:none; }
-    .side-collapsible.open { display:block; }
+    .jf-grid{grid-template-columns:1fr;}
   }
 </style>
 </head>
@@ -552,7 +553,12 @@
   function fmtDate(iso){ if(!iso) return "—"; return new Date(iso).toLocaleString(LANG==="fr"?"fr-CA":"en-CA"); }
 
   function showLogin(){ loginView.style.display="block"; hubView.style.display="none"; paintLogin(); }
-  function showHub(){ loginView.style.display="none"; hubView.style.display="block"; }
+  function showHub(){ loginView.style.display="none"; hubView.style.display="block"; syncDashbarHeight(); }
+  function syncDashbarHeight(){
+    var bar=document.querySelector(".side-top-row");
+    if(bar) document.documentElement.style.setProperty("--dashbar-h", bar.offsetHeight+"px");
+  }
+  window.addEventListener("resize", syncDashbarHeight);
   document.getElementById("sideToggle").addEventListener("click", function(){
     document.getElementById("sideCollapsible").classList.toggle("open");
   });

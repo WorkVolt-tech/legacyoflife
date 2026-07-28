@@ -195,6 +195,7 @@
     assignedTo:{fr:"Assigné à",en:"Assigned to"},
     makeJob:{fr:"→ Créer un mandat",en:"→ Make a job"},
     makeFamilyFile:{fr:"→ Créer un dossier famille",en:"→ Create family file"},
+    openFamilyFile:{fr:"→ Ouvrir le dossier famille",en:"→ Open family file"},
     familyFileCreated:{fr:"Dossier famille créé. Ouverture de l'entrevue…",en:"Family file created. Opening the interview…"},
     noInquiries:{fr:"Aucune demande.",en:"No inquiries."},
     newJob:{fr:"+ Nouveau mandat",en:"+ New job"},
@@ -844,7 +845,13 @@
           +(r.message?'<div class="c-msg">'+esc(r.message)+'</div>':'')
           +'<div class="c-actions"><select data-iid="'+esc(r.id)+'" data-f="status">'+ISTAT.map(function(s){return '<option value="'+s+'"'+(r.status===s?' selected':'')+'>'+esc(ts(s))+'</option>';}).join('')+'</select>'
           +'<input type="text" list="staffNames" data-iid="'+esc(r.id)+'" data-f="assigned_to" placeholder="'+esc(t("assignedTo"))+'" value="'+esc(r.assigned_to||"")+'" style="width:150px">'
-          +'<button class="btn btn--solid tbtn" data-tofile="'+esc(r.id)+'">'+esc(t("makeFamilyFile"))+'</button>'
+          +(function(){
+              var existing=(DATA.coordination||[]).filter(function(c){ return String(c.source_submission)===String(r.id); })[0];
+              if(existing){
+                return '<button class="btn btn--solid tbtn" data-openfile="'+esc(existing.id)+'">'+esc(t("openFamilyFile"))+'</button>';
+              }
+              return '<button class="btn btn--solid tbtn" data-tofile="'+esc(r.id)+'">'+esc(t("makeFamilyFile"))+'</button>';
+            })()
           +'<button class="btn btn--ghost tbtn" data-convert="'+esc(r.id)+'">'+esc(t("makeJob"))+'</button>'
           +(isAdmin()?'<button class="btn btn--ghost tbtn" data-rm-inq="'+esc(r.id)+'" style="color:#a8402d">'+esc(t("remove"))+'</button>':'')
           +'<span class="saved" data-saved="'+esc(r.id)+'">✓</span></div>'
@@ -854,6 +861,7 @@
       document.querySelectorAll("[data-iid]").forEach(function(el){ el.addEventListener("change", function(){ updateInquiry(el.getAttribute("data-iid"),el.getAttribute("data-f"),el.value); }); });
       document.querySelectorAll("[data-convert]").forEach(function(b){ b.addEventListener("click", function(){ convertToJob(b.getAttribute("data-convert")); }); });
       document.querySelectorAll("[data-tofile]").forEach(function(b){ b.addEventListener("click", function(){ inquiryToFamilyFile(b.getAttribute("data-tofile")); }); });
+      document.querySelectorAll("[data-openfile]").forEach(function(b){ b.addEventListener("click", function(){ current="coordination"; openFileId=b.getAttribute("data-openfile"); buildNav(); render(); }); });
       document.querySelectorAll("[data-rm-inq]").forEach(function(b){ b.addEventListener("click", function(){ var id=b.getAttribute("data-rm-inq"); var row=DATA.inquiries.filter(function(x){return String(x.id)===String(id);})[0]; archiveAndRemove("contact_submissions", id, row?row.name:""); }); });
       wireNoteThreads();
     }
@@ -873,6 +881,13 @@
 
   function inquiryToFamilyFile(inqId){
     var inq=DATA.inquiries.filter(function(r){return String(r.id)===String(inqId);})[0]; if(!inq) return;
+    // Safety net: even if this got called directly, never create a second
+    // file for the same inquiry — just go to the one that already exists.
+    var existing=(DATA.coordination||[]).filter(function(c){ return String(c.source_submission)===String(inqId); })[0];
+    if(existing){
+      current="coordination"; openFileId=existing.id; buildNav(); render();
+      return;
+    }
     // Pre-fill the intake contact section from the inquiry.
     var intake={};
     if(inq.name) intake.contact_name=inq.name;

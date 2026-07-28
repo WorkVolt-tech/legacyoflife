@@ -1182,7 +1182,7 @@
        +'</div><div style="margin-top:12px;display:flex;gap:10px"><button class="btn btn--solid tbtn" id="sf_save">'+esc(t("createStaff"))+'</button><button class="btn btn--ghost tbtn" id="sf_cancel">'+esc(t("cancel"))+'</button></div></div>')
       : '';
     m.innerHTML='<h2 class="module-title">'+esc(title)+'</h2>'+ addForm +
-      (rows.length? '<table class="roster"><thead><tr><th>'+esc(t("name"))+'</th><th>'+esc(t("email"))+'</th><th>'+esc(t("role"))+'</th>'+(showPerm?'<th>'+esc(t("permissions"))+'</th>':'')+'<th>'+esc(t("jobsCol"))+'</th>'+(isAdmin()?'<th></th>':'')+'</tr></thead><tbody>'+
+      (rows.length? '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="roster"><thead><tr><th>'+esc(t("name"))+'</th><th>'+esc(t("email"))+'</th><th>'+esc(t("role"))+'</th>'+(showPerm?'<th>'+esc(t("permissions"))+'</th>':'')+'<th>'+esc(t("jobsCol"))+'</th>'+(isAdmin()?'<th></th>':'')+'</tr></thead><tbody>'+
         rows.map(function(p){ var acc=DATA.jobs.filter(function(j){return j.assigned_to===p.id;}).length; var done=DATA.jobs.filter(function(j){return j.assigned_to===p.id&&j.status==="done";}).length;
           var permCell="";
           if(showPerm){
@@ -1201,7 +1201,7 @@
             +permCell
             +'<td>'+acc+' '+esc(t("accepted"))+' · '+done+' '+esc(t("completed"))+'</td>'
             +(isAdmin()&&p.id!==ME.id&&p.role!=='admin'?'<td><button class="btn btn--ghost tbtn" data-resetpw="'+esc(p.id)+'" data-resetpw-name="'+esc(p.full_name||"")+'">'+esc(t("resetPassword"))+'</button> <button class="btn btn--ghost tbtn" data-rm-staff="'+esc(p.id)+'" style="color:#a8402d">'+esc(t("remove"))+'</button></td>':(isAdmin()&&p.id!==ME.id?'<td><button class="btn btn--ghost tbtn" data-resetpw="'+esc(p.id)+'" data-resetpw-name="'+esc(p.full_name||"")+'">'+esc(t("resetPassword"))+'</button></td>':(isAdmin()?'<td></td>':'')))
-            +'</tr>'; }).join('')+'</tbody></table>'
+            +'</tr>'; }).join('')+'</tbody></table></div>'
        : '<div class="empty">'+esc(t("nobody"))+'<br><span style="font-size:.85rem">'+esc(t("addAccountsHint"))+'</span></div>');
     document.querySelectorAll("[data-rm-staff]").forEach(function(b){ b.addEventListener("click", function(){ var id=b.getAttribute("data-rm-staff"); var row=DATA.roster.filter(function(x){return String(x.id)===String(id);})[0]; removeStaffFully(id, row?row.full_name:""); }); });
     document.querySelectorAll("[data-resetpw]").forEach(function(b){ b.addEventListener("click", function(){ resetPasswordFor(b.getAttribute("data-resetpw"), b.getAttribute("data-resetpw-name")); }); });
@@ -1493,7 +1493,7 @@
       +'<div style="text-align:right"><div style="font-size:1.2rem" class="gold">'+(L==="fr"?"FACTURE":"INVOICE")+'</div><div class="muted">'+esc(inv.invoice_number)+'</div></div></div>'
       +'<div style="display:flex;justify-content:space-between;margin:18px 0"><div><b>'+(L==="fr"?"Facturé à":"Bill to")+'</b><br>'+esc(inv.client_name||"—")+'<br><span class="muted">'+esc(inv.client_email||"")+'</span></div>'
       +'<div style="text-align:right"><b>'+(L==="fr"?"Date":"Date")+':</b> '+esc(fmtDate(inv.issue_date))+(inv.due_date?'<br><b>'+(L==="fr"?"Échéance":"Due")+':</b> '+esc(fmtDate(inv.due_date)):'')+'</div></div>'
-      +'<table><thead><tr><th>'+(L==="fr"?"Description":"Description")+'</th><th style="text-align:center">'+(L==="fr"?"Qté":"Qty")+'</th><th style="text-align:right">'+(L==="fr"?"Prix":"Price")+'</th><th style="text-align:right">'+(L==="fr"?"Montant":"Amount")+'</th></tr></thead><tbody>'+rowsHtml+'</tbody></table>'
+      +'<div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table><thead><tr><th>'+(L==="fr"?"Description":"Description")+'</th><th style="text-align:center">'+(L==="fr"?"Qté":"Qty")+'</th><th style="text-align:right">'+(L==="fr"?"Prix":"Price")+'</th><th style="text-align:right">'+(L==="fr"?"Montant":"Amount")+'</th></tr></thead><tbody>'+rowsHtml+'</tbody></table></div>'
       +'<div class="tot"><div><span>'+(L==="fr"?"Sous-total":"Subtotal")+'</span><span>'+money(tt.subtotal)+'</span></div>'
       +(inv.apply_gst?'<div><span>TPS / GST (5%)</span><span>'+money(tt.gst)+'</span></div>':'')
       +(inv.apply_qst?'<div><span>TVQ / QST (9.975%)</span><span>'+money(tt.qst)+'</span></div>':'')

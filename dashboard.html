@@ -32,9 +32,11 @@
   .side .brand { display:flex; align-items:center; gap:10px; padding:0 22px 18px; border-bottom:1px solid rgba(255,255,255,.1); margin-bottom:10px; }
   .side .brand img { height:34px; }
   .side .brand b { font-family:var(--serif); font-size:1.05rem; }
-  .side .lang { display:flex; gap:6px; padding:0 22px 14px; }
-  .side .lang button { flex:1; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15); border-radius:20px; padding:5px 0; cursor:pointer; font-family:var(--sans); font-size:.72rem; color:rgba(247,243,236,.7); }
-  .side .lang button.active { background:var(--gold); color:#fff; border-color:var(--gold); }
+  .side .lang { display:flex; align-items:center; padding:0 22px 14px; }
+  .side .lang { border:0; } /* reset - the pill border below goes on an inner wrapper instead */
+  .side .lang-pill { display:flex; border:1px solid rgba(255,255,255,.25); border-radius:30px; overflow:hidden; }
+  .side .lang button { flex:none; background:transparent; border:0; padding:7px 14px; cursor:pointer; font-family:var(--sans); font-size:.72rem; letter-spacing:.1em; color:rgba(247,243,236,.7); transition:all .2s; white-space:nowrap; }
+  .side .lang button.active { background:var(--gold); color:#fff; }
   .side nav a { display:flex; align-items:center; gap:10px; padding:12px 22px; color:rgba(247,243,236,.75); font-size:.9rem; cursor:pointer; border-left:3px solid transparent; }
   .side nav a:hover { background:rgba(255,255,255,.05); color:#fff; }
   .side nav a.active { background:rgba(176,141,73,.18); border-left-color:var(--gold); color:#fff; }
@@ -44,8 +46,9 @@
   .side .me { padding:14px 22px 0; font-size:.78rem; color:rgba(247,243,236,.55); }
   .side .me b { color:var(--gold); text-transform:capitalize; }
 
-  .side-top-row { display:flex; align-items:center; justify-content:space-between; padding:0 22px 18px; border-bottom:1px solid rgba(255,255,255,.1); margin-bottom:10px; }
+  .side-top-row { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; padding:0 22px 18px; border-bottom:1px solid rgba(255,255,255,.1); margin-bottom:10px; }
   .side-top-row .brand { padding:0; border:0; margin:0; }
+  .side-top-row .lang { flex-basis:100%; padding:14px 0 0; margin:0; }
   .side-toggle { display:none; background:none; border:0; cursor:pointer; padding:6px; flex-shrink:0; }
   .side-toggle span { display:block; width:22px; height:2px; background:var(--cream); margin:4px 0; }
 
@@ -125,6 +128,9 @@
   @media (max-width:820px){
     .hub{grid-template-columns:1fr;} .side{position:relative;height:auto;} .jf-grid{grid-template-columns:1fr;}
     .side-toggle { display:block; order:-1; }
+    .side-top-row { flex-wrap:nowrap; padding-top:16px; padding-bottom:16px; }
+    .side-top-row .brand { flex:1; justify-content:center; text-align:center; }
+    .side-top-row .lang { flex-basis:auto; padding:0; }
     .side-collapsible { display:none; }
     .side-collapsible.open { display:block; }
   }
@@ -151,8 +157,8 @@
       <div class="side-top-row">
         <div class="brand"><img src="assets/crest-white.webp" alt=""><b>Héritage de Vie</b></div>
         <button class="side-toggle" id="sideToggle" aria-label="Menu"><span></span><span></span><span></span></button>
+        <div class="lang"><div class="lang-pill"><button data-ll="fr">Français</button><button data-ll="en">English</button></div></div>
       </div>
-      <div class="lang"><button data-ll="fr">Français</button><button data-ll="en">English</button></div>
       <div class="side-collapsible" id="sideCollapsible">
         <nav id="sideNav"></nav>
         <div class="me" id="meBox"></div>

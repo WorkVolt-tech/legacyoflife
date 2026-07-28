@@ -13,7 +13,8 @@
 <link rel="icon" href="assets/favicon-16x16.png" sizes="16x16" type="image/png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <style>
-  body { background: var(--cream-deep); }
+  html { overflow-x: hidden; max-width: 100%; }
+  body { background: var(--cream-deep); overflow-x: hidden; max-width: 100%; }
   .login-card { max-width:400px; margin:60px auto; background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:40px 34px; }
   .login-card h1 { font-size:1.6rem; text-align:center; margin-bottom:6px; }
   .login-card p.sub { text-align:center; color:var(--ink-soft); font-size:.9rem; margin:0 0 26px; }
@@ -1595,10 +1596,10 @@
       +'<div class="clist-add" style="margin-top:14px;max-width:640px"><input type="text" id="tplNew" placeholder="'+esc(t("newStepPlaceholder"))+'"><button class="btn btn--solid tbtn" id="tplAddBtn">'+esc(t("addMasterStep"))+'</button></div>';
     var list=document.getElementById("tplList");
     list.innerHTML=items.map(function(it){
-      return '<div class="tpl-row" draggable="true" data-tplid="'+esc(it.id)+'" style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:8px">'
+      return '<div class="tpl-row" draggable="true" data-tplid="'+esc(it.id)+'" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:8px">'
         +'<span class="tpl-grip" style="cursor:grab;color:var(--ink-soft);font-size:1.1rem">⠿</span>'
-        +'<input type="text" data-tpl-fr="'+esc(it.id)+'" value="'+esc(it.task_fr||"")+'" placeholder="FR" style="flex:1;padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:.9rem">'
-        +'<input type="text" data-tpl-en="'+esc(it.id)+'" value="'+esc(it.task_en||"")+'" placeholder="EN" style="flex:1;padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:.9rem">'
+        +'<input type="text" data-tpl-fr="'+esc(it.id)+'" value="'+esc(it.task_fr||"")+'" placeholder="FR" style="flex:1;min-width:140px;padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:.9rem">'
+        +'<input type="text" data-tpl-en="'+esc(it.id)+'" value="'+esc(it.task_en||"")+'" placeholder="EN" style="flex:1;min-width:140px;padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:.9rem">'
         +'<button class="btn btn--ghost tbtn" data-tpl-save="'+esc(it.id)+'">'+esc(t("saveNote"))+'</button>'
         +'<span class="cx" data-tpl-del="'+esc(it.id)+'" title="'+esc(t("removeStep"))+'" style="color:#b08a8a;cursor:pointer">✕</span>'
         +'</div>';

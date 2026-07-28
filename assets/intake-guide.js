@@ -68,7 +68,7 @@ window.HDV_INTAKE = [
       { key:"disposition", type:"radio", label:{fr:"Inhumation ou crémation",en:"Burial or cremation"}, options:[{v:"burial",fr:"Inhumation",en:"Burial"},{v:"cremation",fr:"Crémation",en:"Cremation"},{v:"undecided",fr:"Indécis",en:"Undecided"}] },
       { key:"religion", type:"select", label:{fr:"Religion",en:"Religion"}, options:[{v:"catholic",fr:"Catholique",en:"Catholic"},{v:"christian",fr:"Chrétienne",en:"Christian"},{v:"jewish",fr:"Juive",en:"Jewish"},{v:"muslim",fr:"Musulmane",en:"Muslim"},{v:"hindu",fr:"Hindoue",en:"Hindu"},{v:"none",fr:"Non religieuse",en:"Non-religious"},{v:"other",fr:"Autre",en:"Other"}] },
       { key:"ceremony", type:"select", label:{fr:"Type de cérémonie",en:"Ceremony"}, options:[{v:"traditional",fr:"Funérailles traditionnelles",en:"Traditional funeral"},{v:"celebration",fr:"Célébration de vie",en:"Celebration of life"},{v:"memorial",fr:"Service commémoratif",en:"Memorial service"},{v:"private",fr:"Service familial privé",en:"Private family service"},{v:"graveside",fr:"Au cimetière seulement",en:"Graveside only"}] },
-      { key:"preferred_date", type:"text", label:{fr:"Date de service souhaitée (ou « flexible »)",en:"Preferred service date (or 'flexible')"} }
+      { key:"preferred_date", type:"date", label:{fr:"Date de service souhaitée (laisser vide si flexible)",en:"Preferred service date (leave blank if flexible)"} }
     ]
   },
   {

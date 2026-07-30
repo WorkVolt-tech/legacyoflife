@@ -374,7 +374,8 @@
         p_name: document.getElementById("bkName").value.trim(),
         p_phone: document.getElementById("bkPhone").value.trim(),
         p_email: document.getElementById("bkEmail").value.trim() || null,
-        p_reason: document.getElementById("bkReason").value.trim() || null
+        p_reason: document.getElementById("bkReason").value.trim() || null,
+        p_lang: LANG
       })
     }).then(function(r){ return r.json(); }).then(function(res){
       btn.disabled = false;
@@ -524,7 +525,7 @@
         fetch(base + "/rest/v1/rpc/reschedule_booking", {
           method: "POST",
           headers: { "apikey": cfg.SUPABASE_ANON_KEY, "Authorization": "Bearer "+cfg.SUPABASE_ANON_KEY, "Content-Type": "application/json" },
-          body: JSON.stringify({ p_reference_code: mgCurrentRef, p_phone: mgCurrentPhone, p_new_slot_date: iso, p_new_start_time: mgNewSelectedTime })
+          body: JSON.stringify({ p_reference_code: mgCurrentRef, p_phone: mgCurrentPhone, p_new_slot_date: iso, p_new_start_time: mgNewSelectedTime, p_lang: LANG })
         }).then(function(r){ return r.json(); }).then(function(res){
           btn.disabled = false;
           if (res && res.success){

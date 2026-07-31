@@ -1,190 +1,261 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Contact — Héritage de Vie</title>
-<meta name="description" content="Joignez Héritage de Vie pour une consultation. Contact us for a compassionate funeral planning consultation.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="title.contact">Contact Us | Get a Free Website Quote | Chezmaxo</title>
+<meta name="description" content="Tell us about your business and the website you need. Request a free, no-obligation website quote from Chezmaxo today." data-i18n-content="desc.contact">
+<link rel="canonical" href="https://www.chezmaxo.ca/contact.html">
+
+<!-- Open Graph (placeholders — update image URL before launch) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Contact Us | Get a Free Website Quote | Chezmaxo" data-i18n-content="title.contact">
+<meta property="og:description" content="Tell us about your business and the website you need. Request a free, no-obligation website quote from Chezmaxo today." data-i18n-content="desc.contact">
+<meta property="og:image" content="https://www.chezmaxo.ca/images/logo-full.png">
+<meta property="og:url" content="https://www.chezmaxo.ca/contact.html">
+<meta property="og:site_name" content="Chezmaxo">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" type="image/png" href="images/favicon.png">
+<link rel="apple-touch-icon" href="images/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/style.css?v=5">
-<link rel="icon" href="favicon.ico" sizes="any">
-<link rel="icon" href="assets/favicon-32x32.png" sizes="32x32" type="image/png">
-<link rel="icon" href="assets/favicon-16x16.png" sizes="16x16" type="image/png">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-
 <header class="site-header">
-  <div class="wrap">
-    <button class="nav-toggle" aria-label="Menu"><span></span><span></span><span></span></button>
-    <div class="nav-center-group">
-      <a class="nav-logo-link" href="index.html"><img class="nav-logo" src="assets/crest-dark.webp" alt="Héritage de Vie"></a>
-      <nav class="nav">
-      <a class="navlink" href="index.html"><span data-lang="fr">Accueil</span><span data-lang="en">Home</span></a>
-      <a class="navlink" href="about.html"><span data-lang="fr">À propos</span><span data-lang="en">About</span></a>
-      <a class="navlink" href="story.html"><span data-lang="fr">Notre histoire</span><span data-lang="en">Our Story</span></a>
-      <a class="navlink" href="services.html"><span data-lang="fr">Services</span><span data-lang="en">Services</span></a>
-      <a class="navlink" href="packages.html"><span data-lang="fr">Forfaits</span><span data-lang="en">Packages</span></a>
-      <a class="navlink" href="faq.html"><span data-lang="fr">FAQ</span><span data-lang="en">FAQ</span></a>
-      <a class="navlink" href="resources.html"><span data-lang="fr">Ressources</span><span data-lang="en">Resources</span></a>
-      <a class="navlink active" href="contact.html"><span data-lang="fr">Contact</span><span data-lang="en">Contact</span></a>
-      </nav>
-    </div>
-          <div class="lang-toggle">
-        <button data-set-lang="fr">FR</button>
-        <button data-set-lang="en">EN</button>
+  <div class="nav-wrap">
+    <button class="hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav-links">
+      <span></span><span></span><span></span>
+    </button>
+    <a href="index.html" class="brand"><span class="mark"><img src="images/logo-icon.png" alt="Chezmaxo"></span> Chezmaxo</a>
+    <nav class="nav-links" id="nav-links" aria-label="Primary">
+        <a href="index.html" class="" data-i18n="nav.home">Home</a>
+        <a href="services.html" class="" data-i18n="nav.services">Services</a>
+        <a href="pricing.html" class="" data-i18n="nav.pricing">Pricing</a>
+        <a href="how-it-works.html" class="" data-i18n="nav.how">How It Works</a>
+        <a href="portfolio.html" class="" data-i18n="nav.portfolio">Portfolio</a>
+        <a href="about.html" class="" data-i18n="nav.about">About</a>
+        <a href="faq.html" class="" data-i18n="nav.faq">FAQ</a>
+        <a href="contact.html" class="active" data-i18n="nav.contact">Contact</a>
+      <div class="mobile-cta">
+        <a href="pricing.html" class="btn btn-secondary btn-sm btn-block"><span data-i18n="nav.viewplans">View Plans</span></a>
+        <a href="contact.html" class="btn btn-primary btn-sm btn-block"><span data-i18n="nav.getquote">Get a Free Quote</span></a>
       </div>
+    </nav>
+    <div class="nav-cta">
+      <div class="lang-toggle" role="group" aria-label="Language / Langue">
+        <button class="lang-btn" data-lang-btn="en" aria-pressed="true">EN</button>
+        <button class="lang-btn" data-lang-btn="fr" aria-pressed="false">FR</button>
+      </div>
+      <a href="pricing.html" class="btn btn-secondary btn-sm desktop-only" data-i18n="nav.viewplans">View Plans</a>
+      <a href="contact.html" class="btn btn-primary btn-sm desktop-only" data-i18n="nav.getquote">Get a Free Quote</a>
+    </div>
   </div>
 </header>
 
-<section class="block alt">
-  <div class="wrap">
-    <div class="section-head" style="margin-bottom:0">
-      <p class="eyebrow"><span data-lang="fr">Contact</span><span data-lang="en">Contact</span></p>
-      <h1 data-lang="fr">Nous sommes là pour vous</h1>
-      <h1 data-lang="en">We are here for you</h1>
-      <p data-lang="fr">Écrivez-nous ou appelez-nous. Nous vous répondrons avec attention et discrétion.</p>
-      <p data-lang="en">Write or call us. We'll respond with care and discretion.</p>
-    </div>
+<section class="page-hero">
+  <div class="container">
+    <div class="breadcrumb"><span data-i18n="breadcrumb.contact">CONTACT</span></div>
+    <h1><span data-i18n="contact.h1">Tell us about your business and the website you need.</span></h1>
+    <p><span data-i18n="contact.lede">Fill out the form below and we'll follow up with a free, no-pressure quote. No obligation, no pushy sales calls.</span></p>
   </div>
 </section>
 
-<section class="block">
-  <div class="wrap">
-    <div class="contact-grid">
-
-      <div class="contact-info">
-        <div class="info-item">
-          <div class="label"><span data-lang="fr">Téléphone</span><span data-lang="en">Phone</span></div>
-          <div class="val"><a href="tel:+15140000000">+1 (514) 000-0000</a></div>
-        </div>
-        <div class="info-item">
-          <div class="label"><span data-lang="fr">Courriel</span><span data-lang="en">Email</span></div>
-          <div class="val"><a href="mailto:info@heritagedevie.ca">info@heritagedevie.ca</a></div>
-        </div>
-        <div class="info-item">
-          <div class="label"><span data-lang="fr">Zone desservie</span><span data-lang="en">Service area</span></div>
-          <div class="val"><span data-lang="fr">Grand Montréal, Québec</span><span data-lang="en">Greater Montréal, Quebec</span></div>
-        </div>
-        <div class="info-item">
-          <div class="label"><span data-lang="fr">Disponibilité</span><span data-lang="en">Availability</span></div>
-          <div class="val"><span data-lang="fr">7 jours sur 7</span><span data-lang="en">7 days a week</span></div>
-        </div>
-        <p style="color:var(--ink-soft);margin-top:30px;font-size:.95rem">
-          <span data-lang="fr">Vous préférez être rappelé ? Indiquez-le dans le formulaire et nous vous contacterons au moment qui vous convient.</span>
-          <span data-lang="en">Prefer a callback? Note it in the form and we'll reach you at a time that suits you.</span>
-        </p>
+<section>
+  <div class="container">
+    <div class="grid-2" style="align-items:flex-start;">
+      <div>
+        <div id="form-success" class="form-success" data-i18n="contact.success">Thanks — your request has been received! We'll follow up within one to two business days.</div>
+        <div id="form-error" class="form-error-box" data-i18n="contact.error">Something went wrong sending your request. Please try again, or email us directly at marxanc@outlook.com.</div>
+        <form id="contact-form" novalidate>
+          <div class="form-grid">
+            <div class="field">
+              <label for="fullName"><span class="req">*</span> <span data-i18n="contact.f.name">Full name</span></label>
+              <input type="text" id="fullName" name="fullName" autocomplete="name" required>
+              <div class="error-msg" data-i18n-placeholder-target="fullName"></div>
+            </div>
+            <div class="field">
+              <label for="businessName"><span class="req">*</span> <span data-i18n="contact.f.biz">Business name</span></label>
+              <input type="text" id="businessName" name="businessName" autocomplete="organization" required>
+              <div class="error-msg"></div>
+            </div>
+            <div class="field">
+              <label for="email"><span class="req">*</span> <span data-i18n="contact.f.email">Email</span></label>
+              <input type="email" id="email" name="email" autocomplete="email" required>
+              <div class="error-msg"></div>
+            </div>
+            <div class="field">
+              <label for="phone"><span class="req">*</span> <span data-i18n="contact.f.phone">Phone number</span></label>
+              <input type="tel" id="phone" name="phone" autocomplete="tel" required>
+              <div class="error-msg"></div>
+            </div>
+            <div class="field">
+              <label for="website" data-i18n="contact.f.website">Existing website URL (if any)</label>
+              <input type="text" id="website" name="website" placeholder="e.g. www.yourbusiness.com" data-i18n-placeholder="contact.ph.website">
+            </div>
+            <div class="field">
+              <label for="businessType" data-i18n="contact.f.type">Type of business</label>
+              <input type="text" id="businessType" name="businessType" placeholder="e.g. barbershop, contractor, restaurant" data-i18n-placeholder="contact.ph.type">
+            </div>
+            <div class="field">
+              <label for="budget" data-i18n="contact.f.budget">Estimated budget</label>
+              <select id="budget" name="budget">
+                <option value="" data-i18n="contact.opt.budget">Select a range (optional)</option>
+                <option data-i18n="bud.1">Under $500</option>
+                <option data-i18n="bud.2">$500 – $1,000</option>
+                <option data-i18n="bud.3">$1,000 – $2,500</option>
+                <option data-i18n="bud.4">$2,500+</option>
+                <option data-i18n="bud.5">Not sure yet</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="launchDate" data-i18n="contact.f.launch">Desired launch date</label>
+              <input type="text" id="launchDate" name="launchDate" placeholder="e.g. within 1 month, flexible" data-i18n-placeholder="contact.ph.launch">
+            </div>
+            <div class="field">
+              <label for="contactMethod" data-i18n="contact.f.method">Preferred contact method</label>
+              <select id="contactMethod" name="contactMethod">
+                <option value="" data-i18n="contact.opt.select2">Select an option</option>
+                <option data-i18n="cm.email">Email</option>
+                <option data-i18n="cm.phone">Phone call</option>
+                <option data-i18n="cm.text">Text message</option>
+              </select>
+            </div>
+            <div class="field full" id="needsField">
+              <label><span class="req">*</span> <span data-i18n="contact.f.needs">What do you need help with? (select all that apply)</span></label>
+              <div class="checkbox-grid">
+                <label class="checkbox-item"><input type="checkbox" name="needs" value="New website"> <span data-i18n="needs.new">New website</span></label>
+                <label class="checkbox-item"><input type="checkbox" name="needs" value="Website redesign"> <span data-i18n="needs.redesign">Website redesign</span></label>
+                <label class="checkbox-item"><input type="checkbox" name="needs" value="Website maintenance"> <span data-i18n="needs.maint">Website maintenance</span></label>
+                <label class="checkbox-item"><input type="checkbox" name="needs" value="Small website update"> <span data-i18n="needs.small">Small website update</span></label>
+                <label class="checkbox-item"><input type="checkbox" name="needs" value="Online store"> <span data-i18n="needs.store">Online store</span></label>
+                <label class="checkbox-item"><input type="checkbox" name="needs" value="Booking system"> <span data-i18n="needs.booking">Booking system</span></label>
+                <label class="checkbox-item"><input type="checkbox" name="needs" value="Custom feature"> <span data-i18n="needs.custom">Custom feature</span></label>
+                <label class="checkbox-item"><input type="checkbox" name="needs" value="Not sure yet"> <span data-i18n="needs.unsure">Not sure yet</span></label>
+              </div>
+              <div class="error-msg" id="needsError"></div>
+            </div>
+            <div class="field full">
+              <label for="description"><span class="req">*</span> <span data-i18n="contact.f.desc">Tell us about your business and your project</span></label>
+              <textarea id="description" name="description" rows="5" required></textarea>
+              <div class="error-msg"></div>
+            </div>
+          </div>
+          <p class="form-note" data-i18n="contact.note">Fields marked * are required. We'll never share your information with third parties.</p>
+          <button type="submit" class="btn btn-primary" style="margin-top:16px;" data-i18n="contact.submit">Send My Request</button>
+        </form>
       </div>
 
-      <form data-contact id="contactForm" novalidate>
-        <!-- Honeypot: hidden from people, bots tend to fill it. Leave empty. -->
-        <div class="hp-field" aria-hidden="true">
-          <label>Website</label>
-          <input type="text" name="website" tabindex="-1" autocomplete="off">
-        </div>
-        <div class="field-row">
-          <div class="field">
-            <label><span data-lang="fr">Nom</span><span data-lang="en">Name</span></label>
-            <input type="text" name="name" required>
-            <span class="field-error" data-for="name">
-              <span data-lang="fr">Veuillez entrer votre nom.</span>
-              <span data-lang="en">Please enter your name.</span>
-            </span>
+      <div>
+        <div class="ticket" style="margin-bottom:24px;">
+          <div class="ticket-top">
+            <div class="ticket-id" data-i18n="contact.ticket.title">CONTACT DETAILS</div>
+            <div class="ticket-stamp" data-i18n="contact.ticket.stamp">OPEN</div>
           </div>
-          <div class="field">
-            <label><span data-lang="fr">Téléphone</span><span data-lang="en">Phone</span></label>
-            <input type="tel" name="phone">
-          </div>
+          <div class="ticket-row"><span class="label" data-i18n="contact.f.email">Email</span><span class="val">marxanc@outlook.com</span></div>
+          <div class="ticket-row"><span class="label" data-i18n="contact.ticket.phone">Phone</span><span class="val">514-943-1535</span></div>
+          <div class="ticket-row"><span class="label" data-i18n="contact.ticket.area">Service area</span><span class="val" data-i18n="common.servicearea">Canada & USA</span></div>
+          <div class="ticket-row"><span class="label" data-i18n="contact.ticket.hours">Business hours</span><span class="val" data-i18n="common.hours">Noon – 11 PM, 7 days a week</span></div>
         </div>
-        <div class="field">
-          <label><span data-lang="fr">Courriel</span><span data-lang="en">Email</span></label>
-          <input type="email" name="email" required>
-          <span class="field-error" data-for="email">
-            <span data-lang="fr">Veuillez entrer une adresse courriel valide.</span>
-            <span data-lang="en">Please enter a valid email address.</span>
-          </span>
+        <div class="card">
+          <h3 data-i18n="contact.after.h">What happens after I submit this form?</h3>
+          <p data-i18n="contact.after.p">We'll review your project details and follow up — usually within one to two business days — with a free, no-obligation quote and any questions we have about your business.</p>
         </div>
-        <div class="field-row">
-          <div class="field">
-            <label><span data-lang="fr">Contact préféré</span><span data-lang="en">Preferred contact</span></label>
-            <select name="preferred">
-              <option data-lang="fr" value="Téléphone">Téléphone</option>
-              <option data-lang="fr" value="Courriel">Courriel</option>
-              <option data-lang="en" value="Phone">Phone</option>
-              <option data-lang="en" value="Email">Email</option>
-            </select>
-          </div>
-          <div class="field">
-            <label><span data-lang="fr">Date de consultation souhaitée</span><span data-lang="en">Preferred consultation date</span></label>
-            <input type="date" name="date">
+        <div class="card" style="margin-top:20px;">
+          <h3 data-i18n="contact.follow.h">Follow along</h3>
+          <p style="margin-bottom:14px;">[SOCIAL MEDIA LINKS PLACEHOLDER]</p>
+          <div class="footer-social" style="margin-top:0;">
+            <a href="#" style="border-color:var(--border-strong); color:var(--color-primary);" aria-label="Facebook">f</a>
+            <a href="#" style="border-color:var(--border-strong); color:var(--color-primary);" aria-label="Instagram">ig</a>
+            <a href="#" style="border-color:var(--border-strong); color:var(--color-primary);" aria-label="LinkedIn">in</a>
           </div>
         </div>
-        <div class="field">
-          <label><span data-lang="fr">Comment pouvons-nous vous aider ?</span><span data-lang="en">How can we support you?</span></label>
-          <textarea name="message"></textarea>
-        </div>
-        <label class="consent-check">
-          <input type="checkbox" name="consent" required>
-          <span data-lang="fr">J'ai lu la <a href="privacy.html" target="_blank">Politique de confidentialité</a> et j'autorise Héritage de Vie à utiliser ces renseignements pour répondre à ma demande.</span>
-          <span data-lang="en">I have read the <a href="privacy.html" target="_blank">Privacy Policy</a> and authorize Héritage de Vie to use this information to respond to my request.</span>
-        </label>
-        <button class="btn btn--solid" type="submit"><span data-lang="fr">Envoyer la demande</span><span data-lang="en">Send request</span></button>
-        <p class="form-msg" style="display:none;margin-top:18px;color:var(--gold-deep)">
-          <span data-lang="fr">Merci. Votre demande a été reçue — nous vous contacterons sous peu.</span>
-          <span data-lang="en">Thank you. Your request has been received — we'll be in touch shortly.</span>
-        </p>
-        <p class="form-err" style="display:none;margin-top:18px;color:#a8402d">
-          <span data-lang="fr">Une erreur est survenue. Veuillez réessayer ou nous appeler directement.</span>
-          <span data-lang="en">Something went wrong. Please try again or call us directly.</span>
-        </p>
-      </form>
-
+      </div>
     </div>
   </div>
 </section>
+
+<script>
+// Same Supabase project as your dashboard app — paste the same values
+// from app/js/config.js here so this form can actually submit.
+const CONTACT_SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL";
+const CONTACT_SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+</script>
+
+
+<script>
+(function(){
+  var pkg = new URLSearchParams(window.location.search).get("package");
+  if (!pkg) return;
+  var labels = {
+    starter: { desc: "I'm interested in the Starter Website package (starting at $199). Please send me a quote." },
+    business: { desc: "I'm interested in the Business Website package (starting at $399). Please send me a quote." },
+    advanced: { desc: "I'm interested in an Advanced / Custom Website project. Please reach out to discuss what I need." }
+  };
+  var info = labels[pkg];
+  if (!info) return;
+  var newWebsiteCheckbox = document.querySelector('input[name="needs"][value="New website"]');
+  if (newWebsiteCheckbox && pkg !== "advanced") newWebsiteCheckbox.checked = true;
+  var customCheckbox = document.querySelector('input[name="needs"][value="Custom feature"]');
+  if (customCheckbox && pkg === "advanced") customCheckbox.checked = true;
+  var descField = document.getElementById("description");
+  if (descField && !descField.value) descField.value = info.desc;
+})();
+</script>
 
 <footer class="site-footer">
-  <div class="wrap">
-    <div class="foot-grid">
-      <div>
-        <img class="foot-logo" src="assets/crest-white.webp" alt="Héritage de Vie">
-        <p data-lang="fr">Accompagnement funéraire humain et professionnel pour les familles du Grand Montréal.</p>
-        <p data-lang="en">Compassionate, professional funeral support for families across Greater Montréal.</p>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="index.html" class="brand"><span class="mark"><img src="images/logo-icon.png" alt="Chezmaxo"></span> Chezmaxo</a>
+        <p><span data-i18n="footer.tagline">Professional websites without the technical stress. We design, launch, and take care of websites for small businesses so you can focus on running yours.</span></p>
+        <div class="footer-social">
+          <a href="#" aria-label="Facebook">f</a>
+          <a href="#" aria-label="Instagram">ig</a>
+          <a href="#" aria-label="LinkedIn">in</a>
+        </div>
       </div>
-      <div>
-        <h4><span data-lang="fr">Navigation</span><span data-lang="en">Navigation</span></h4>
-        <a href="index.html"><span data-lang="fr">Accueil</span><span data-lang="en">Home</span></a>
-        <a href="about.html"><span data-lang="fr">À propos</span><span data-lang="en">About</span></a>
-        <a href="services.html"><span data-lang="fr">Services</span><span data-lang="en">Services</span></a>
-        <a href="packages.html"><span data-lang="fr">Forfaits</span><span data-lang="en">Packages</span></a>
-        <a href="faq.html">FAQ</a>
-        <a href="resources.html"><span data-lang="fr">Ressources</span><span data-lang="en">Resources</span></a>
-        <a href="careers.html"><span data-lang="fr">Carrières</span><span data-lang="en">Careers</span></a>
-        <a href="portal.html"><span data-lang="fr">Portail famille</span><span data-lang="en">Family Portal</span></a>
-        <a href="contact.html"><span data-lang="fr">Contact</span><span data-lang="en">Contact</span></a>
-        <a href="booking.html"><span data-lang="fr">Réserver</span><span data-lang="en">Book a Consultation</span></a>
+      <div class="footer-col">
+        <h4><span data-i18n="footer.company">Company</span></h4>
+        <ul>
+          <li><a href="about.html"><span data-i18n="footer.about">About Us</span></a></li>
+          <li><a href="portfolio.html"><span data-i18n="footer.portfolio">Portfolio</span></a></li>
+          <li><a href="how-it-works.html"><span data-i18n="footer.how">How It Works</span></a></li>
+          <li><a href="contact.html"><span data-i18n="footer.contact">Contact</span></a></li>
+        </ul>
       </div>
-      <div>
-        <h4><span data-lang="fr">Nous joindre</span><span data-lang="en">Contact</span></h4>
-        <p><a href="tel:+15140000000">+1 (514) 000-0000</a></p>
-        <p><a href="mailto:info@heritagedevie.ca">info@heritagedevie.ca</a></p>
-        <p data-lang="fr">Grand Montréal, Québec</p>
-        <p data-lang="en">Greater Montréal, Quebec</p>
+      <div class="footer-col">
+        <h4><span data-i18n="footer.services">Services</span></h4>
+        <ul>
+          <li><a href="services.html"><span data-i18n="footer.design">Website Design</span></a></li>
+          <li><a href="services.html#management"><span data-i18n="footer.management">Website Management</span></a></li>
+          <li><a href="services.html#upgrades"><span data-i18n="footer.upgrades">Website Upgrades</span></a></li>
+          <li><a href="pricing.html"><span data-i18n="footer.careplans">Care Plans & Pricing</span></a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4><span data-i18n="footer.contacth">Contact</span></h4>
+        <ul>
+          <li>marxanc@outlook.com</li>
+          <li>514-943-1535</li>
+          <li><span data-i18n="footer.area">Service Area:</span> <span data-i18n="common.servicearea">Canada & USA</span></li>
+          <li><span data-i18n="footer.hours">Hours:</span> <span data-i18n="common.hours">Noon – 11 PM, 7 days a week</span></li>
+        </ul>
       </div>
     </div>
-    <div class="foot-bottom">
-      <span>© 2026 Héritage de Vie · Legacy of Life · <a href="dashboard.html" style="color:rgba(247,243,236,.45)">Personnel / Staff</a></span>
-      <span data-lang="fr">Service de coordination — nous ne sommes pas une maison funéraire.</span>
-      <span data-lang="en">Coordination service — we are not a funeral home.</span>
-      <span class="foot-legal"><a href="privacy.html" style="color:rgba(247,243,236,.45)"><span data-lang="fr">Politique de confidentialité</span><span data-lang="en">Privacy Policy</span></a> · <a href="terms.html" style="color:rgba(247,243,236,.45)"><span data-lang="fr">Conditions d'utilisation</span><span data-lang="en">Terms of Service</span></a></span>
+    <div class="footer-bottom">
+      <span>&copy; <span data-year></span> Chezmaxo. <span data-i18n="footer.rights">All rights reserved.</span></span>
+      <div class="footer-legal">
+        <a href="privacy-policy.html"><span data-i18n="footer.privacy">Privacy Policy</span></a>
+        <a href="terms-of-service.html"><span data-i18n="footer.terms">Terms of Service</span></a>
+        <a href="care-plan-terms.html"><span data-i18n="footer.careterms">Website Care Plan Terms</span></a>
+      </div>
     </div>
   </div>
 </footer>
-
-<script src="assets/config.js"></script>
-<script src="assets/site.js"></script>
-<script src="assets/livechat.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>
